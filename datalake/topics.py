@@ -11,6 +11,8 @@ TOPIC_NFT_ITEMS = "ton.parsed.nft_items"
 TOPIC_NFT_TRANSFERS = "ton.public.nft_transfers"
 TOPIC_NFT_SALES = "ton.public.getgems_nft_sales"
 TOPIC_NFT_AUCTIONS = "ton.public.getgems_nft_auctions"
+TOPIC_NFT_ITEMS_METADATA = "ton.parsed.nft_item_metadata"
+TOPIC_NFT_COLLECTIONS_METADATA = "ton.parsed.nft_collection_metadata"
 
 TOPIC_DEX_SWAPS = "ton.parsed.dex_swap_parsed"
 TOPIC_GASPUMP_EVENTS = "ton.parsed.gaspump_trade"

@@ -1,0 +1,124 @@
+{
+  "namespace": "ton",
+  "type": "record",
+  "name": "nft_metadata",
+  "fields": [
+    {
+      "name": "type",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "address",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "update_time_onchain",
+      "type": [
+        "int",
+        "null"
+      ]
+    },
+    {
+      "name": "update_time_metadata",
+      "type": [
+        "int",
+        "null"
+      ]
+    },
+    {
+      "name": "parent_address",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    {
+      "name": "content_onchain",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    {
+      "name": "metadata_status",
+      "type": [
+        "int",
+        "null"
+      ]
+    },
+    {
+      "name": "name",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    {
+      "name": "description",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    {
+      "name": "image",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    {
+      "name": "image_data",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    {
+      "name": "attributes",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    {
+      "name": "sources",
+      "type": [
+        {
+          "type": "record",
+          "name": "sources",
+          "fields": [
+            {
+              "name": "name",
+              "type": ["string", "null"]
+            },
+            {
+              "name": "description",
+              "type": ["string", "null"]
+            },
+            {
+              "name": "image",
+              "type": ["string", "null"]
+            },
+            {
+              "name": "image_data",
+              "type": ["string", "null"]
+            },
+            {
+              "name": "attributes",
+              "type": ["string", "null"]
+            }
+          ]
+        },
+        "null"
+      ]
+    },
+    {
+      "name": "tonapi_image_url",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  ]
+}

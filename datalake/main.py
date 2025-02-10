@@ -25,6 +25,7 @@ from converters.dex_pools import DexPoolsConverter
 from converters.nft_items import NFTItemsConverter
 from converters.nft_transfers import NFTTransfersConverter
 from converters.nft_sales import NFTSalesConverter
+from converters.nft_metadata import NFTMetadataConverter
 
 AVRO_TMP_BUFFER = "tmp_buffer.avro"
 FLUSH_INTERVAL = 100
@@ -42,7 +43,8 @@ CONVERTERS = {
     "balances_history": BalancesHistoryConverter(),
     "nft_items": NFTItemsConverter(),
     "nft_transfers": NFTTransfersConverter(),
-    "nft_sales": NFTSalesConverter()
+    "nft_sales": NFTSalesConverter(),
+    "nft_metadata": NFTMetadataConverter()
 }
 
 FIELDS_TO_REMOVE = ['__op', '__table', '__source_ts_ms', '__lsn']
