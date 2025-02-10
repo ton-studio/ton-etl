@@ -585,6 +585,7 @@ class DB():
                 address=row['address'],
                 update_time_onchain=row['update_time_onchain'],
                 update_time_metadata=row['update_time_metadata'],
+                collection_address=row['collection_address'],
                 content=row['content'],
                 metadata_status=row['metadata_status'],
                 name=row['name'],
@@ -673,12 +674,13 @@ class DB():
                 attributes = json.dumps(attributes)
             cursor.execute("""
             insert into parsed.nft_item_metadata(address, update_time_onchain, update_time_metadata, 
-                           content, metadata_status, name, description, attributes,
+                           collection_address, content, metadata_status, name, description, attributes,
                            image, image_data, sources, tonapi_image_url)
-                           values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                           values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                            on conflict (address) do update
                            set update_time_onchain = EXCLUDED.update_time_onchain,
                            update_time_metadata = EXCLUDED.update_time_metadata,
+                           collection_address = EXCLUDED.collection_address,
                            content = EXCLUDED.content,
                            metadata_status = EXCLUDED.metadata_status,
                            name = EXCLUDED.name,
@@ -689,9 +691,9 @@ class DB():
                            sources = EXCLUDED.sources,
                            tonapi_image_url = EXCLUDED.tonapi_image_url
                            -- where jetton_metadata.update_time_onchain = %s and jetton_metadata.update_time_metadata = %s
-            """, (metadata.address, metadata.update_time_onchain, metadata.update_time_metadata, content, metadata.metadata_status,
-                  metadata.name, metadata.description, attributes, metadata.image, metadata.image_data, metadata.sources,
-                  metadata.tonapi_image_url, prev_ts_onchain, prev_ts_offchain))
+            """, (metadata.address, metadata.update_time_onchain, metadata.update_time_metadata, metadata.collection_address, content,
+                  metadata.metadata_status, metadata.name, metadata.description, attributes, metadata.image, metadata.image_data,
+                  metadata.sources, metadata.tonapi_image_url, prev_ts_onchain, prev_ts_offchain))
             self.updated += 1
 
     """

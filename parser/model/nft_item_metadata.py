@@ -8,6 +8,7 @@ class NFTItemMetadata:
 
     address: str
     update_time_onchain: int
+    collection_address: str
     content: str
     metadata_status: int = 0
     name: str = None

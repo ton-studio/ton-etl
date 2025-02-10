@@ -89,6 +89,10 @@ class NFTItemMetadataParser(Parser):
 
         if metadata:
             logger.info(f"NFT item metadata for {address} already exists")
+            if metadata.collection_address != obj.get("collection_address", None):
+                onchain_updated = True
+                logger.info(f"Collection address has been changed for {address}: {metadata.collection_address} -> {obj.get('collection_address', None)}")
+                metadata.collection_address = obj.get("collection_address", None)
             if normalize_json(metadata.content) != normalize_json(obj.get("content", None)):
                 onchain_updated = True
                 logger.info(f"NFT item content has been changed for {address}: {metadata.content} -> {obj.get('content', None)}")
@@ -98,6 +102,7 @@ class NFTItemMetadataParser(Parser):
             metadata = NFTItemMetadata(
                 address=address,
                 update_time_onchain=obj.get("last_tx_now", None),
+                collection_address=obj.get("collection_address", None),
                 content=obj.get("content", None),
             )
             created = True

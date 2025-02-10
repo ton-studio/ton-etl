@@ -380,6 +380,8 @@ CREATE TABLE parsed.nft_item_metadata (
 	tonapi_image_url varchar NULL
 );
 
+ALTER TABLE parsed.nft_item_metadata ADD collection_address public."tonaddr" NULL;
+
 -- NFT collection metadata
 
 CREATE TABLE parsed.nft_collection_metadata (
