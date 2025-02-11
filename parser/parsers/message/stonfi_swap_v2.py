@@ -50,7 +50,9 @@ ROUTERS = set(map(Parser.uf2raw, [
     # stable coin router for AquaUSDT
     'EQDkncuJ267Py3EmL2XAN7YsSNQMUu8u-GHsW9jVljcH8fr5',
     # 2024-12-16
-    'EQCiz74FCV2lYlvFPEYhL3Jql8WwIO7QvbvYT-LQH0SmtCgI'
+    'EQCiz74FCV2lYlvFPEYhL3Jql8WwIO7QvbvYT-LQH0SmtCgI',
+    # 2025-02-11
+    'EQBwpBGEAb-NgjUxpmARAgVl8C4F_5GsXxZ3dpsA1qzQerNl',
     ]))
 
 class StonfiSwapV2(Parser):
