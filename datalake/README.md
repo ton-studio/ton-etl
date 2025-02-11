@@ -367,6 +367,38 @@ Contains history of NFT sales contracts. Includes the following fields:
 * last_bit_at, last_member - information about the last bid
 * timestamp, lt - state timestamp and logical time
 
+## NFT metadata
+
+[AVRO schema](./schemas/nft_metadata.avsc)
+
+Partition field: __adding_at__
+URL: **s3://ton-blockchain-public-datalake/v1/nft_metadata/**
+
+This data source is quite similar to [jetton_metadata](#jetton-metadata). It contains NFT metadata for both items and collections.
+
+Fields description:
+* type - possible values: ``item`` or ``collection``
+* address - NFT item/collection address
+* update_time_onchain - time of on-chain update (for example in case of admin address transfer)
+* update_time_metadata - time of off-chain update
+* parent_address - collection owner address if type is ``collection``, otherwise collection address for the item
+* content_onchain - JSON serialized into string with on-chain metadata content
+* metadata_status - off-chain metadata update status (0 - no off-chain metadata, 1 - success, -1 - error)
+* name - TEP-64 NFT name (on-chain or off-chain value, see sources field for details)
+* description - TEP-64 NFT description (on-chain or off-chain value, see sources field for details)
+* image - TEP-64 NFT image url (on-chain or off-chain value, see sources field for details)
+* image_data - TEP-64 NFT image data (on-chain or off-chain value, see sources field for details)
+* attributes - TEP-64 NFT attributes (on-chain or off-chain value, see sources field for details). Only for items.
+* sources - recored with sources of NFT metadata fields (5 fields for name, description, image, image_data, attributes). Possible values are:
+    * "" - field is not set
+    * "onchain" - field is based on on-chain value
+    * "offchain" - field is based on off-chain value
+    * "tonapi" - tonapi was used to get the value (fallback)
+* tonapi_image_url - tonapi cached image url
+* adding_date - partition field, date when the output file was created
+
+In most cases we don't need to use the full history of NFT metadata, so we recommend to use ``nft_metadata_latest`` view to get the latest snapshot of NFT metadata (see [athena_ddl.sql](./athena_ddl.sql)).
+
 # Data corrections
 
 This section describes the list of data corrections that were applied to the data lake and should be removed or fixed. 

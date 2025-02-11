@@ -448,6 +448,48 @@ TBLPROPERTIES (
   'transactional'='false', 
   'write.compression'='SNAPPY')
 
+  CREATE EXTERNAL TABLE `nft_metadata`(
+  `type` string COMMENT 'from deserializer', 
+  `address` string COMMENT 'from deserializer', 
+  `update_time_onchain` int COMMENT 'from deserializer', 
+  `update_time_metadata` int COMMENT 'from deserializer', 
+  `parent_address` string COMMENT 'from deserializer', 
+  `content_onchain` string COMMENT 'from deserializer', 
+  `metadata_status` int COMMENT 'from deserializer', 
+  `name` string COMMENT 'from deserializer', 
+  `description` string COMMENT 'from deserializer', 
+  `image` string COMMENT 'from deserializer', 
+  `image_data` string COMMENT 'from deserializer', 
+  `attributes` string COMMENT 'from deserializer', 
+  `sources` struct<name:string,description:string,image:string,image_data:string,attributes:string> COMMENT 'from deserializer', 
+  `tonapi_image_url` string COMMENT 'from deserializer')
+PARTITIONED BY ( 
+  `adding_date` string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+WITH SERDEPROPERTIES ( 
+  'avro.schema.literal'='{\"type\":\"record\",\"name\":\"nft_metadata\",\"namespace\":\"ton\",\"fields\":[{\"name\":\"type\",\"type\":[\"string\",\"null\"]},{\"name\":\"address\",\"type\":[\"string\",\"null\"]},{\"name\":\"update_time_onchain\",\"type\":[\"int\",\"null\"]},{\"name\":\"update_time_metadata\",\"type\":[\"int\",\"null\"]},{\"name\":\"parent_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"content_onchain\",\"type\":[\"string\",\"null\"]},{\"name\":\"metadata_status\",\"type\":[\"int\",\"null\"]},{\"name\":\"name\",\"type\":[\"string\",\"null\"]},{\"name\":\"description\",\"type\":[\"string\",\"null\"]},{\"name\":\"image\",\"type\":[\"string\",\"null\"]},{\"name\":\"image_data\",\"type\":[\"string\",\"null\"]},{\"name\":\"attributes\",\"type\":[\"string\",\"null\"]},{\"name\":\"sources\",\"type\":[{\"type\":\"record\",\"name\":\"sources\",\"fields\":[{\"name\":\"name\",\"type\":[\"string\",\"null\"]},{\"name\":\"description\",\"type\":[\"string\",\"null\"]},{\"name\":\"image\",\"type\":[\"string\",\"null\"]},{\"name\":\"image_data\",\"type\":[\"string\",\"null\"]},{\"name\":\"attributes\",\"type\":[\"string\",\"null\"]}]},\"null\"]},{\"name\":\"tonapi_image_url\",\"type\":[\"string\",\"null\"]}]}') 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+LOCATION
+  's3://ton-blockchain-public-datalake/v1/nft_metadata/'
+TBLPROPERTIES (
+  'CrawlerSchemaDeserializerVersion'='1.0', 
+  'CrawlerSchemaSerializerVersion'='1.0', 
+  'UPDATED_BY_CRAWLER'='archival_added_at', 
+  'averageRecordSize'='999', 
+  'avro.schema.literal'='{\"type\":\"record\",\"name\":\"nft_metadata\",\"namespace\":\"ton\",\"fields\":[{\"name\":\"type\",\"type\":[\"string\",\"null\"]},{\"name\":\"address\",\"type\":[\"string\",\"null\"]},{\"name\":\"update_time_onchain\",\"type\":[\"int\",\"null\"]},{\"name\":\"update_time_metadata\",\"type\":[\"int\",\"null\"]},{\"name\":\"parent_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"content_onchain\",\"type\":[\"string\",\"null\"]},{\"name\":\"metadata_status\",\"type\":[\"int\",\"null\"]},{\"name\":\"name\",\"type\":[\"string\",\"null\"]},{\"name\":\"description\",\"type\":[\"string\",\"null\"]},{\"name\":\"image\",\"type\":[\"string\",\"null\"]},{\"name\":\"image_data\",\"type\":[\"string\",\"null\"]},{\"name\":\"attributes\",\"type\":[\"string\",\"null\"]},{\"name\":\"sources\",\"type\":[{\"type\":\"record\",\"name\":\"sources\",\"fields\":[{\"name\":\"name\",\"type\":[\"string\",\"null\"]},{\"name\":\"description\",\"type\":[\"string\",\"null\"]},{\"name\":\"image\",\"type\":[\"string\",\"null\"]},{\"name\":\"image_data\",\"type\":[\"string\",\"null\"]},{\"name\":\"attributes\",\"type\":[\"string\",\"null\"]}]},\"null\"]},{\"name\":\"tonapi_image_url\",\"type\":[\"string\",\"null\"]}]}', 
+  'classification'='avro', 
+  'compressionType'='none', 
+  'objectCount'='3', 
+  'partition_filtering.enabled'='true', 
+  'recordCount'='300212', 
+  'sizeKey'='300042446', 
+  'typeOfData'='file')
+
+
 -- daily query to generate balances_snapshot
 insert into datalake.balances_snapshot(address, asset, amount, mintless_claimed, timestamp, lt, block_date)
 with ranks as (
@@ -533,3 +575,19 @@ SELECT
 FROM ALL_TRADES
 GROUP BY 1, 2
 ORDER BY 1, 2 DESC;
+
+
+-- latest values for NFT metadata
+
+create or replace view "nft_metadata_latest"
+as
+with ranks as (
+ select type, address, update_time_onchain, update_time_metadata,
+  parent_address, content_onchain, metadata_status, name,description,
+  image, image_data, attributes, sources, tonapi_image_url,
+ row_number() over (partition by type, address order by update_time_metadata desc, update_time_onchain desc) as rank
+ from "datalake"."nft_metadata"
+)
+select type, address, update_time_onchain, update_time_metadata,
+  parent_address, content_onchain, metadata_status, name,description,
+image, image_data, attributes, sources, tonapi_image_url from ranks where rank = 1

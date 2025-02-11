@@ -132,6 +132,24 @@ services:
       driver: local
       options:
         max-size: 10M
+
+  exporter_nft_metadata:
+    build: ./
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      - KAFKA_GROUP_ID=exporter_nft_metadata
+      - KAFKA_TOPICS=ton.parsed.nft_item_metadata,ton.parsed.nft_collection_metadata
+      - CONVERTER=nft_metadata
+      - PARTITION_MODE=adding_date
+    env_file:
+      - exporter.env
+    logging:
+      driver: local
+      options:
+        max-size: 10M
         
   exporter_dex_trades:
     build: ./
