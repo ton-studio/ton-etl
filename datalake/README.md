@@ -397,6 +397,8 @@ Fields description:
 * tonapi_image_url - tonapi cached image url
 * adding_date - partition field, date when the output file was created
 
+In most cases we don't need to use the full history of NFT metadata, so we recommend to use ``nft_metadata_latest`` view to get the latest snapshot of NFT metadata (see [athena_ddl.sql](./athena_ddl.sql)).
+
 # Data corrections
 
 This section describes the list of data corrections that were applied to the data lake and should be removed or fixed. 
