@@ -140,6 +140,8 @@ class NFTCollectionMetadataParser(Parser):
                 def update_metadata(index, obj, key, prev, source=METADATA_OFFCHAIN):
                     if sources[index] == "" and obj.get(key, None):
                         value = obj.get(key, None)
+                        if isinstance(value, str):
+                            value = value.replace("\x00", "")
                         logger.info(f"Using {source} {key}: {value}")
                         sources[index] = source
                         return value
