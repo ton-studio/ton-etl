@@ -34,6 +34,7 @@ services:
     restart: always
     ports:
       - '9092:9092'
+      - '7072:7072'
     environment:
       KAFKA_CFG_NODE_ID: 1
       KAFKA_KRAFT_CLUSTER_ID: ${KAFKA_UUID} # base64 UUID
@@ -77,4 +78,4 @@ services:
     image: danielqsj/kafka-exporter:v1.8.0
     command: ["--kafka.server=cdc-using-debezium-kafka:29092"]
     ports:
-      - 7072:9308
+      - 7073:9308
