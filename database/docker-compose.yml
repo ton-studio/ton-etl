@@ -74,3 +74,8 @@ services:
       - cdc-using-debezium-kafka
     environment:
       KAFKA_BROKERCONNECT: cdc-using-debezium-kafka:29092
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.8.0
+    command: ["--kafka.server=cdc-using-debezium-kafka:29092"]
+    ports:
+      - 7073:9308
