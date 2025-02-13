@@ -156,8 +156,15 @@ class JettonMastersMetadataParser(Parser):
                 def update_metadata(index, obj, key, prev, source=METADATA_OFFCHAIN):
                     if sources[index] == "" and obj.get(key, None):
                         value = obj.get(key, None)
-                        if isinstance(value, str):
-                            value = value.replace("\x00", "")
+                        try:
+                            if isinstance(value, str):
+                                value = value.replace("\x00", "")
+                            elif isinstance(value, (dict, list)):
+                                value = json.dumps(value)
+                            else:
+                                value = str(value)
+                        except Exception:
+                            value = None
                         logger.info(f"Using {source} {key}: {value}")
                         sources[index] = source
                         return value
