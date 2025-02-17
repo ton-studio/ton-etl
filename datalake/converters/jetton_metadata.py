@@ -22,7 +22,7 @@ class JettonMetadataConverter(Converter):
         return [TOPIC_JETTON_METADATA]
 
     def convert(self, obj, table_name=None):
-        sources_raw = obj['sources'].split(",")
+        sources_raw = obj['sources'].split(",") if obj['sources'] else [None, None, None, None, None, None]
         sources = {
             "symbol": sources_raw[0],
             "name": sources_raw[1],
