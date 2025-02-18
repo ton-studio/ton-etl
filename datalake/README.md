@@ -437,6 +437,7 @@ and sent 12 ext-outs. The fix was applied in [#65](https://github.com/re-doubt/t
 * __messages__, __account_states__ and other tables contains wrong values for [anycast addresses](https://docs.ton.org/v3/documentation/data-formats/tlb/msg-tlb#addr_std10) for messages before 02/02/2025 21:30 UTC.
 * [Meridian NFT collection](https://tonviewer.com/EQAVGhk_3rUA3ypZAZ1SkVGZIaDt7UdvwA4jsSGRKRo-MRDN?section=overview) has a lack of onchain metadata for items before 2025-01-23 (out of gas issue for get methods).
 * [DIGGER GAME PASS NFT collection](https://tonviewer.com/EQAQQD4LjKX7vOut9VZDnwDdXZVH4dCJ9s-_cqznLT9dCo1v) is not indexed due to frozen collection address.
+* pTON ("wrapped" TON) transfers have incorrect amount field and have to be ignored for the following jettons: ``8CDC1D7640AD5EE326527FC1AD0514F468B30DC84B0173F0E155F451B4E11F7C`` and ``671963027F7F85659AB55B821671688601CDCF1EE674FC7FBBB1A776A18D34A3``
 
 
 # Integration with Athena
