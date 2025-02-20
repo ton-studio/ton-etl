@@ -399,6 +399,62 @@ Fields description:
 
 In most cases we don't need to use the full history of NFT metadata, so we recommend to use ``nft_metadata_latest`` view to get the latest snapshot of NFT metadata (see [athena_ddl.sql](./athena_ddl.sql)).
 
+## NFT Events
+
+TODO avro schema
+
+Partition field: __timestamp__
+URL: **s3://ton-blockchain-public-datalake/v1/nft_events/**
+
+Comprehensive data mart build on top of ``nft_items``, ``nft_transfers``, ``messages`` and ``nft_sales`` tables. Includes
+all NFT related events including mint, transfer, sales, auctions, etc.
+Fields:
+* type - event type (see below)
+* nft_item_address - NFT item address
+* is_init - true if the NFT is initialized
+* nft_item_index - NFT index
+* collection_address - NFT collection address (may be null)
+* owner_address - NFT owner address
+* content_onchain - NFT metadata extracted from the on-chain data
+* timestamp - timestamp of the NFT state update or action
+* lt - logical time of the NFT state update or action
+* tx_hash - transaction hash (if applicable)
+* trace_id - trace id (if applicable)
+* prev_owner - previous owner address (if applicable)
+* query_id - query id (if exists)
+* forward_amount - amount of the forward message from transfer message (if related to the event)
+* forward_payload - payload of the forward message from transfer message (if related to the event)
+* comment - text comment from forward_payload
+* custom_payload - custom payload from the transfer message (if related to the event)
+* sale_contract - address of the sale contract (if related to the event)
+* sale_type - type of the sale (``sale`` or ``auction``)
+* sale_end_time - end time of the sale (if applicable)
+* marketplace_address - address of the marketplace
+* marketplace_fee_address - address of the marketplace fee
+* marketplace_fee - amount of the marketplace fee
+* sale_price - price of the NFT
+* payment_asset - asset type of the payment (only ``TON`` is supported)
+* royalty_address - address of the royalty
+* royalty_amount - amount of the royalty
+* auction_max_bid, auction_min_bid, auction_min_step - max bid, min bid and min bit step for auction
+
+Supported event types:
+
+| Type | prev_owner | Comments |
+|------|------------|----------|
+| mint | deployer address | Tx related to the NFT deployment |
+| put_on_sale | null | NFT is put on sale via sale contract |
+| cancel_sale | null | Sale is cancelled and NFT is returned to the owner |
+| sale | seller | NFT is sold via sale contract, see sale related fields for details |
+| transfer | previous owner | Direct NFT transfer between addresses. Also includes automatic transfers of TON DNS in case of expiration. |
+| bid | bidder | New bid for an auction |
+
+NFT events are generated using the following script: [nft_events.sql](./nft_events.sql). In terms of sales
+it the following implementations are supported:
+* [GetGems compatible](https://github.com/getgems-io/nft-contracts) sales contracts
+* [TON DNS NFTs](https://tonviewer.com/EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz)
+* [Telemint NFTs](https://github.com/TelegramMessenger/telemint)
+
 # Data corrections
 
 This section describes the list of data corrections that were applied to the data lake and should be removed or fixed. 
