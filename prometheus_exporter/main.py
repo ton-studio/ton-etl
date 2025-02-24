@@ -153,6 +153,7 @@ class P2pPerformanceGauge(PerformanceGauge):
     def _calc_metrics(self):
         if not self._data["traces"]:
             logger.warning("No trace data available for calculating metrics")
+            return None
 
         data_list = [value["delay"] for value in self._data["traces"].values()]
 
@@ -168,6 +169,7 @@ class JettonTransfersPerformanceGauge(PerformanceGauge):
     def _calc_metrics(self):
         if not self._data["jetton_transfers"]:
             logger.warning("No jetton transfer data available for calculating metrics")
+            return None
 
         data_list = [
             self._data["traces"][value["trace_id"]]["delay"]
@@ -177,7 +179,7 @@ class JettonTransfersPerformanceGauge(PerformanceGauge):
 
         if not data_list:
             logger.warning("No matching trace data found for jetton transfers")
-            return []
+            return None
 
         return self._metrics_from_delay(data_list)
 
@@ -199,6 +201,7 @@ class DexPerformanceGauge(PerformanceGauge):
     def _calc_metrics(self):
         if not self._data["dex_swap_parsed"]:
             logger.warning("No DEX swap data available for calculating metrics")
+            return None
 
         data_list = [
             self._data["traces"][value["trace_id"]]["delay"]
@@ -208,7 +211,7 @@ class DexPerformanceGauge(PerformanceGauge):
 
         if not data_list:
             logger.warning("No matching trace data found for DEX swaps")
-            return []
+            return None
 
         return self._metrics_from_delay(data_list)
 
@@ -222,6 +225,7 @@ class TracesPerformanceGauge(PerformanceGauge):
     def _calc_metrics(self):
         if not self._data["traces"]:
             logger.warning("No trace data available for calculating metrics")
+            return None
 
         finished_ops_per_second = (
             len([value for value in self._data["traces"].values() if value["status"] == "complete"]) / self._interval
