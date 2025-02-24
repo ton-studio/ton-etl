@@ -20,7 +20,7 @@ class PerformanceGauge(Gauge):
         update_interval: int = 5,
         **kwargs,
     ):
-        super().__init__(name, documentation, labelnames, **kwargs)
+        super().__init__(name=name, documentation=documentation, labelnames=labelnames, **kwargs)
         self._interval = interval
         self._last_timestamp = 0
         self._last_update = time.time()
@@ -146,7 +146,14 @@ class PerformanceGauge(Gauge):
 
 class P2pPerformanceGauge(PerformanceGauge):
     def __init__(self, name: str, documentation: str, interval: int = 60, update_interval: int = 5, **kwargs):
-        super().__init__(name, documentation, ["column"], interval, update_interval, **kwargs)
+        super().__init__(
+            name=name,
+            documentation=documentation,
+            labelnames=["column"],
+            interval=interval,
+            update_interval=update_interval,
+            **kwargs,
+        )
         self._tables = ["blocks", "traces"]
         self._trace_nodes = [2]
 
@@ -162,7 +169,14 @@ class P2pPerformanceGauge(PerformanceGauge):
 
 class JettonTransfersPerformanceGauge(PerformanceGauge):
     def __init__(self, name: str, documentation: str, interval: int = 60, update_interval: int = 5, **kwargs):
-        super().__init__(name, documentation, ["column"], interval, update_interval, **kwargs)
+        super().__init__(
+            name=name,
+            documentation=documentation,
+            labelnames=["column"],
+            interval=interval,
+            update_interval=update_interval,
+            **kwargs,
+        )
         self._tables = ["blocks", "traces", "jetton_transfers"]
         self._trace_nodes = [3, 4, 5]
 
@@ -194,7 +208,14 @@ class DexPerformanceGauge(PerformanceGauge):
         update_interval: int = 5,
         **kwargs,
     ):
-        super().__init__(name, documentation, ["column"], interval, update_interval, **kwargs)
+        super().__init__(
+            name=name,
+            documentation=documentation,
+            labelnames=["column"],
+            interval=interval,
+            update_interval=update_interval,
+            **kwargs,
+        )
         self._tables = ["blocks", "traces", "dex_swap_parsed"]
         self._platforms = platforms
 
@@ -218,7 +239,14 @@ class DexPerformanceGauge(PerformanceGauge):
 
 class TracesPerformanceGauge(PerformanceGauge):
     def __init__(self, name: str, documentation: str, interval: int = 60, update_interval: int = 5, **kwargs):
-        super().__init__(name, documentation, ["column"], interval, update_interval, **kwargs)
+        super().__init__(
+            name=name,
+            documentation=documentation,
+            labelnames=["column"],
+            interval=interval,
+            update_interval=update_interval,
+            **kwargs,
+        )
         self._tables = ["blocks", "traces"]
         self._trace_states = ["complete", "pending"]
 
