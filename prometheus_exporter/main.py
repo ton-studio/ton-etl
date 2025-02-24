@@ -254,9 +254,9 @@ if __name__ == "__main__":
         max_poll_records=int(os.environ.get("KAFKA_MAX_POLL_RECORDS", "500")),
     )
 
-    for topic in topics.split(","):
-        logger.info(f"Subscribing to {topic}")
-        consumer.subscribe(topic)
+    topic_list = topics.split(",")
+    logger.info(f"Subscribing to: {topic_list}")
+    consumer.subscribe(topic_list)
 
     start_http_server(int(sys.argv[1]))
 
