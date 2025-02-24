@@ -18,8 +18,9 @@ class PerformanceGauge(Gauge):
         labelnames: Iterable[str] = (),
         interval: int = 60,
         update_interval: int = 5,
+        **kwargs,
     ):
-        super().__init__(name=name, documentation=documentation, labelnames=labelnames)
+        super().__init__(name=name, documentation=documentation, labelnames=labelnames, **kwargs)
         self._interval = interval
         self._last_timestamp = 0
         self._last_update = time.time()
@@ -121,7 +122,7 @@ class PerformanceGauge(Gauge):
         return [
             {"labels": ["average"], "value": round(sum(data_list) / len(data_list))},
             {"labels": ["p50"], "value": self._percentile(data_list, 0.5)},
-            {"labels": ["P75"], "value": self._percentile(data_list, 0.75)},
+            {"labels": ["p75"], "value": self._percentile(data_list, 0.75)},
             {"labels": ["p95"], "value": self._percentile(data_list, 0.95)},
             {"labels": ["tx_count"], "value": len(data_list)},
         ]
@@ -148,15 +149,18 @@ class P2pPerformanceGauge(PerformanceGauge):
         self,
         name: str,
         documentation: str,
+        labelnames: Iterable[str] = (),
         interval: int = 60,
         update_interval: int = 5,
+        **kwargs,
     ):
         super().__init__(
             name=name,
             documentation=documentation,
-            labelnames=["column"],
+            labelnames=labelnames,
             interval=interval,
             update_interval=update_interval,
+            **kwargs,
         )
         self._tables = ["blocks", "traces"]
         self._trace_nodes = [2]
@@ -176,15 +180,18 @@ class JettonTransfersPerformanceGauge(PerformanceGauge):
         self,
         name: str,
         documentation: str,
+        labelnames: Iterable[str] = (),
         interval: int = 60,
         update_interval: int = 5,
+        **kwargs,
     ):
         super().__init__(
             name=name,
             documentation=documentation,
-            labelnames=["column"],
+            labelnames=labelnames,
             interval=interval,
             update_interval=update_interval,
+            **kwargs,
         )
         self._tables = ["blocks", "traces", "jetton_transfers"]
         self._trace_nodes = [3, 4, 5]
@@ -212,16 +219,19 @@ class DexPerformanceGauge(PerformanceGauge):
         self,
         name: str,
         documentation: str,
+        labelnames: Iterable[str] = (),
         platforms: Iterable[str] = (),
         interval: int = 60,
         update_interval: int = 5,
+        **kwargs,
     ):
         super().__init__(
             name=name,
             documentation=documentation,
-            labelnames=["column"],
+            labelnames=labelnames,
             interval=interval,
             update_interval=update_interval,
+            **kwargs,
         )
         self._tables = ["blocks", "traces", "dex_swap_parsed"]
         self._platforms = platforms
@@ -249,15 +259,18 @@ class TracesPerformanceGauge(PerformanceGauge):
         self,
         name: str,
         documentation: str,
+        labelnames: Iterable[str] = (),
         interval: int = 60,
         update_interval: int = 5,
+        **kwargs,
     ):
         super().__init__(
             name=name,
             documentation=documentation,
-            labelnames=["column"],
+            labelnames=labelnames,
             interval=interval,
             update_interval=update_interval,
+            **kwargs,
         )
         self._tables = ["blocks", "traces"]
         self._trace_states = ["complete", "pending"]
@@ -304,18 +317,21 @@ if __name__ == "__main__":
         P2pPerformanceGauge(
             "ton_etl_common_operations_p2p",
             "TON ETL common operations metrics: p2p transfers",
+            ["col"],
             calc_interval,
             update_interval,
         ),
         JettonTransfersPerformanceGauge(
             "ton_etl_common_operations_jettons",
             "TON ETL common operations metrics: simple jetton transfers",
+            ["col"],
             calc_interval,
             update_interval,
         ),
         DexPerformanceGauge(
             "ton_etl_common_operations_dedust",
             "TON ETL common operations metrics: DeDust swaps",
+            ["col"],
             ["dedust"],
             calc_interval,
             update_interval,
@@ -323,6 +339,7 @@ if __name__ == "__main__":
         DexPerformanceGauge(
             "ton_etl_common_operations_stonfi",
             "TON ETL common operations metrics: Ston.fi swaps",
+            ["col"],
             ["ston.fi", "ston.fi_v2"],
             calc_interval,
             update_interval,
@@ -330,6 +347,7 @@ if __name__ == "__main__":
         TracesPerformanceGauge(
             "ton_etl_common_operations_traces",
             "TON ETL common operations metrics: Traces",
+            ["col"],
             600,
             update_interval,
         ),
