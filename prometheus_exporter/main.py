@@ -27,7 +27,7 @@ class PerformanceGauge(Gauge):
         self._update_interval = update_interval
         self._tables = []
         self._trace_nodes = []
-        self._trace_statuses = ["complete"]
+        self._trace_states = ["complete"]
         self._platforms = []
         self._data = defaultdict(dict)
         self._table_props = {
@@ -69,7 +69,7 @@ class PerformanceGauge(Gauge):
         if not all([trace_id, start_utime, end_utime, state]):
             return
 
-        if state in self._trace_statuses and (not self._trace_nodes or obj.get("nodes_") in self._trace_nodes):
+        if state in self._trace_states and (not self._trace_nodes or obj.get("nodes_") in self._trace_nodes):
             self._data["traces"][trace_id] = {
                 "timestamp": end_utime,
                 "delay": end_utime - start_utime,
@@ -220,7 +220,7 @@ class TracesPerformanceGauge(PerformanceGauge):
     def __init__(self, name: str, documentation: str, interval: int = 60, update_interval: int = 5, **kwargs):
         super().__init__(name, documentation, ["column"], interval, update_interval, **kwargs)
         self._tables = ["blocks", "traces"]
-        self._trace_statuses = ["complete", "pending"]
+        self._trace_states = ["complete", "pending"]
 
     def _calc_metrics(self):
         if not self._data["traces"]:
@@ -228,9 +228,9 @@ class TracesPerformanceGauge(PerformanceGauge):
             return None
 
         finished_ops_per_second = (
-            len([value for value in self._data["traces"].values() if value["status"] == "complete"]) / self._interval
+            len([value for value in self._data["traces"].values() if value["state"] == "complete"]) / self._interval
         )
-        pending_operations = len([value for value in self._data["traces"].values() if value["status"] == "pending"])
+        pending_operations = len([value for value in self._data["traces"].values() if value["state"] == "pending"])
 
         return [
             {"labels": ["finished_ops_per_second"], "value": finished_ops_per_second},
