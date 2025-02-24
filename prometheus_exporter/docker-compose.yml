@@ -7,6 +7,8 @@ services:
     restart: always
     environment:
       - KAFKA_GROUP_ID=performance_exporter
+      - EXPORTER_PORT=8066
+      - KAFKA_TOPICS=ton.public.blocks,ton.public.traces,ton.public.jetton_transfers,ton.parsed.dex_swap_parsed
     env_file:
       - prometheus_exporter.env
     logging:

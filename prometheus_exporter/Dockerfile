@@ -6,4 +6,4 @@ RUN pip3 install -r /opt/app/requirements.txt
 COPY main.py /opt/app/
 
 WORKDIR /opt/app/
-CMD ["python3", "main.py", "8084"]
+CMD ["python3", "main.py"]
