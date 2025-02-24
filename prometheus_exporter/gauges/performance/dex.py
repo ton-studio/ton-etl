@@ -9,10 +9,10 @@ class DexPerformanceGauge(PerformanceGauge):
         self,
         name: str,
         documentation: str,
-        labelnames: Iterable[str],
-        platforms: Iterable[str],
-        interval: int,
-        update_interval: int,
+        labelnames: Iterable[str] = (),
+        platforms: Iterable[str] = (),
+        interval: int = 600,
+        update_interval: int = 5,
         **kwargs,
     ):
         super().__init__(
