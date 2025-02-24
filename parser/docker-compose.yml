@@ -211,7 +211,9 @@ services:
         max-size: 10M
 
   performance_metrics:
-    build: ./
+    build:
+      context: ./
+      dockerfile: metrics/Dockerfile
     restart: always
     environment:
       - KAFKA_GROUP_ID=performance_metrics
