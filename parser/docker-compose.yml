@@ -210,20 +210,6 @@ services:
       options:
         max-size: 10M
 
-  performance_metrics:
-    build:
-      context: ./
-      dockerfile: metrics/Dockerfile
-    restart: always
-    environment:
-      - KAFKA_GROUP_ID=performance_metrics
-    env_file:
-      - parser.env
-    logging:
-      driver: local
-      options:
-        max-size: 10M
-
 
 networks:
   default:

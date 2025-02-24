@@ -1,0 +1,20 @@
+version: '3.9'
+
+services:
+
+  performance_exporter:
+    build: ./
+    restart: always
+    environment:
+      - KAFKA_GROUP_ID=performance_exporter
+    env_file:
+      - prometheus_exporter.env
+    logging:
+      driver: local
+      options:
+        max-size: 10M
+
+networks:
+  default:
+    name: database_default
+    external: true

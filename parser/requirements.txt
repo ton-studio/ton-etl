@@ -4,4 +4,3 @@ psycopg2==2.9.9
 pytoniq-core==0.1.37
 git+https://github.com/shuva10v/pytvm.git
 pytoniq==0.1.39
-prometheus-client
