@@ -645,3 +645,15 @@ with ranks as (
 select type, address, update_time_onchain, update_time_metadata,
   parent_address, content_onchain, metadata_status, name,description,
 image, image_data, attributes, sources, tonapi_image_url from ranks where rank = 1
+
+-- latest owners for NFT items
+
+create view datalake.nft_items_latest_state
+as
+with latest_ranks as (
+SELECT nft_item_address, collection_address, owner_address, timestamp,
+row_number() over(partition by nft_item_address, owner_address order by timestamp desc) as rank  FROM "datalake"."nft_events"
+where type !='bid'
+)
+select nft_item_address, collection_address, owner_address
+from latest_ranks where rank = 1

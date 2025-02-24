@@ -1,0 +1,290 @@
+{
+ "type": "record",
+ "name": "nft_events",
+ "fields": [
+  {
+   "name": "type",
+   "type": [
+    "null",
+    {
+     "type": "string",
+     "logicalType": "varchar",
+     "maxLength": 11
+    }
+   ],
+   "default": null
+  },
+  {
+   "name": "nft_item_address",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "is_init",
+   "type": [
+    "null",
+    "boolean"
+   ],
+   "default": null
+  },
+  {
+   "name": "nft_item_index",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "collection_address",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "owner_address",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "content_onchain",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "timestamp",
+   "type": [
+    "null",
+    "long"
+   ],
+   "default": null
+  },
+  {
+   "name": "lt",
+   "type": [
+    "null",
+    "long"
+   ],
+   "default": null
+  },
+  {
+   "name": "tx_hash",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "trace_id",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "prev_owner",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "query_id",
+   "type": [
+    "null",
+    {
+     "type": "bytes",
+     "logicalType": "decimal",
+     "precision": 20,
+     "scale": 0
+    }
+   ],
+   "default": null
+  },
+  {
+   "name": "forward_amount",
+   "type": [
+    "null",
+    {
+     "type": "bytes",
+     "logicalType": "decimal",
+     "precision": 38,
+     "scale": 0
+    }
+   ],
+   "default": null
+  },
+  {
+   "name": "forward_payload",
+   "type": [
+    "null",
+    "bytes"
+   ],
+   "default": null
+  },
+  {
+   "name": "comment",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "custom_payload",
+   "type": [
+    "null",
+    "bytes"
+   ],
+   "default": null
+  },
+  {
+   "name": "sale_contract",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "sale_type",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "sale_end_time",
+   "type": [
+    "null",
+    "long"
+   ],
+   "default": null
+  },
+  {
+   "name": "marketplace_address",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "marketplace_fee_address",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "marketplace_fee",
+   "type": [
+    "null",
+    {
+     "type": "bytes",
+     "logicalType": "decimal",
+     "precision": 38,
+     "scale": 0
+    }
+   ],
+   "default": null
+  },
+  {
+   "name": "sale_price",
+   "type": [
+    "null",
+    {
+     "type": "bytes",
+     "logicalType": "decimal",
+     "precision": 38,
+     "scale": 0
+    }
+   ],
+   "default": null
+  },
+  {
+   "name": "payment_asset",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "royalty_address",
+   "type": [
+    "null",
+    "string"
+   ],
+   "default": null
+  },
+  {
+   "name": "royalty_amount",
+   "type": [
+    "null",
+    {
+     "type": "bytes",
+     "logicalType": "decimal",
+     "precision": 38,
+     "scale": 0
+    }
+   ],
+   "default": null
+  },
+  {
+   "name": "auction_max_bid",
+   "type": [
+    "null",
+    {
+     "type": "bytes",
+     "logicalType": "decimal",
+     "precision": 38,
+     "scale": 0
+    }
+   ],
+   "default": null
+  },
+  {
+   "name": "auction_min_bid",
+   "type": [
+    "null",
+    {
+     "type": "bytes",
+     "logicalType": "decimal",
+     "precision": 38,
+     "scale": 0
+    }
+   ],
+   "default": null
+  },
+  {
+   "name": "auction_min_step",
+   "type": [
+    "null",
+    {
+     "type": "bytes",
+     "logicalType": "decimal",
+     "precision": 38,
+     "scale": 0
+    }
+   ],
+   "default": null
+  }
+ ]
+}

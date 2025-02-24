@@ -401,7 +401,7 @@ In most cases we don't need to use the full history of NFT metadata, so we recom
 
 ## NFT Events
 
-TODO avro schema
+[AVRO schema](./schemas/nft_events.avsc)
 
 Partition field: __timestamp__
 URL: **s3://ton-blockchain-public-datalake/v1/nft_events/**
