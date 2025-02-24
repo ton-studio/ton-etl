@@ -12,7 +12,7 @@ from gauges.performance.traces import TracesPerformanceGauge
 
 
 if __name__ == "__main__":
-    exporter_port = os.environ.get("EXPORTER_PORT", "8066")
+    exporter_port = int(os.environ.get("EXPORTER_PORT", "8066"))
     commit_batch_size = int(os.environ.get("COMMIT_BATCH_SIZE", "100"))
     calc_interval = int(os.environ.get("CALC_INTERVAL", "3600"))
     traces_calc_interval = int(os.environ.get("TRACES_CALC_INTERVAL", "600"))
