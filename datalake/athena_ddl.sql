@@ -490,6 +490,60 @@ TBLPROPERTIES (
   'typeOfData'='file')
 
 
+  CREATE EXTERNAL TABLE `nft_events`(
+  `type` varchar(11) COMMENT 'from deserializer', 
+  `nft_item_address` string COMMENT 'from deserializer', 
+  `is_init` boolean COMMENT 'from deserializer', 
+  `nft_item_index` string COMMENT 'from deserializer', 
+  `collection_address` string COMMENT 'from deserializer', 
+  `owner_address` string COMMENT 'from deserializer', 
+  `content_onchain` string COMMENT 'from deserializer', 
+  `timestamp` bigint COMMENT 'from deserializer', 
+  `lt` bigint COMMENT 'from deserializer', 
+  `tx_hash` string COMMENT 'from deserializer', 
+  `trace_id` string COMMENT 'from deserializer', 
+  `prev_owner` string COMMENT 'from deserializer', 
+  `query_id` decimal(20,0) COMMENT 'from deserializer', 
+  `forward_amount` decimal(38,0) COMMENT 'from deserializer', 
+  `forward_payload` binary COMMENT 'from deserializer', 
+  `comment` string COMMENT 'from deserializer', 
+  `custom_payload` binary COMMENT 'from deserializer', 
+  `sale_contract` string COMMENT 'from deserializer', 
+  `sale_type` string COMMENT 'from deserializer', 
+  `sale_end_time` bigint COMMENT 'from deserializer', 
+  `marketplace_address` string COMMENT 'from deserializer', 
+  `marketplace_fee_address` string COMMENT 'from deserializer', 
+  `marketplace_fee` decimal(38,0) COMMENT 'from deserializer', 
+  `sale_price` decimal(38,0) COMMENT 'from deserializer', 
+  `payment_asset` string COMMENT 'from deserializer', 
+  `royalty_address` string COMMENT 'from deserializer', 
+  `royalty_amount` decimal(38,0) COMMENT 'from deserializer', 
+  `auction_max_bid` decimal(38,0) COMMENT 'from deserializer', 
+  `auction_min_bid` decimal(38,0) COMMENT 'from deserializer', 
+  `auction_min_step` decimal(38,0) COMMENT 'from deserializer')
+PARTITIONED BY ( 
+  `block_date` string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+LOCATION
+  's3://ton-blockchain-public-datalake/nft_events/'
+TBLPROPERTIES (
+  'auto.purge'='false', 
+  'bucketing_format'='hive', 
+  'bucketing_version'='1', 
+  'has_encrypted_data'='false', 
+  'numFiles'='-1', 
+  'presto_query_id'='20250220_132704_00041_h9xpu', 
+  'presto_version'='0.215-21824-g6a177b2', 
+  'totalSize'='-1', 
+  'transactional'='false', 
+  'write.compression'='SNAPPY')
+
+
 -- daily query to generate balances_snapshot
 insert into datalake.balances_snapshot(address, asset, amount, mintless_claimed, timestamp, lt, block_date)
 with ranks as (
@@ -591,3 +645,15 @@ with ranks as (
 select type, address, update_time_onchain, update_time_metadata,
   parent_address, content_onchain, metadata_status, name,description,
 image, image_data, attributes, sources, tonapi_image_url from ranks where rank = 1
+
+-- latest owners for NFT items
+
+create view datalake.nft_items_latest_state
+as
+with latest_ranks as (
+SELECT nft_item_address, collection_address, owner_address, timestamp,
+row_number() over(partition by nft_item_address, owner_address order by timestamp desc) as rank  FROM "datalake"."nft_events"
+where type !='bid'
+)
+select nft_item_address, collection_address, owner_address
+from latest_ranks where rank = 1
