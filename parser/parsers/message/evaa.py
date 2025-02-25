@@ -9,6 +9,7 @@ from model.evaa import EvaaSupply, EvaaWithdraw, EvaaLiquidation
 EVAA_POOLS = [
     Parser.uf2raw("EQC8rUZqR_pWV1BylWUlPNBzyiTYVoBEmQkMIQDZXICfnuRr"),  # EVAA main pool
     Parser.uf2raw("EQBIlZX2URWkXCSg3QF2MJZU-wC5XkBoLww-hdWk2G37Jc6N"),  # EVAA LP pool
+    Parser.uf2raw("EQANURVS3fhBO9bivig34iyJQi97FhMbpivo1aUEAS2GYSu-"),  # EVAA Alts pool
     Parser.uf2raw("EQBozwKVDya9IL3Kw4mR5AQph4yo15EuMdyX8nLljeaUxrpM"),  # Coffin pool
 ]
 
