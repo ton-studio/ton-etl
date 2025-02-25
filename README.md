@@ -98,6 +98,12 @@ you can scale number of parser instances to handle more events per second.
 is used to export data. After the launch exporter discovers schema from PostgresDB and use this schema for
 AVRO serialization.
 
+## TON Performance Prometheus exporter
+
+[TON Performance Prometheus exporter](./prometheus_exporter/)  is a showcase of streaming analytics built on top of 
+Kafka streams produces by TON-ETL. It listens to blocks, traces, jetton_transfers and dex_swaps topics to calculate
+number of events, medain and average time of operations.
+
 # DB Schema
 
 DB contains multiple schemas:
