@@ -14,7 +14,7 @@ Datalake endpoints:
 
 All data tables are stored in separate folders and named by data type. Data is partitioned by block date. Block date
 is extracted from specific field for each data type and converted into string in __YYYYMMDD__ format.
-Initially data is partitioned by adding date, but at the end of the day it is re-partitioned using [this script](./repartition.py).
+Initially data is partitioned by adding date, but at the end of the day it is re-partitioned using [Airflow DAG](./airflow/dags/datalake_daily_sync.py) (see below).
 
 SNS notifications are enabled for the bucket, SNS ARN is ``arn:aws:sns:eu-central-1:180088995794:TONPublicDataLakeNotifications``.
 
@@ -449,7 +449,7 @@ Supported event types:
 | transfer | previous owner | Direct NFT transfer between addresses. Also includes automatic transfers of TON DNS in case of expiration. |
 | bid | bidder | New bid for an auction |
 
-NFT events are generated using the following script: [nft_events.sql](./nft_events.sql). In terms of sales
+NFT events are generated using the following script: [nft_events.sql](./nft_events.sql), daily sync DAG is available [here](./airflow/dags/datalake_daily_sync.py). In terms of sales
 it the following implementations are supported:
 * [GetGems compatible](https://github.com/getgems-io/nft-contracts) sales contracts
 * [TON DNS NFTs](https://tonviewer.com/EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz)
@@ -516,3 +516,40 @@ select symbol, jetton_master, operations from top_jettons
 join jetton_metadata_latest on jetton_master = address
 order by operations desc
 ```
+
+Get actual owners for Telegram NFTs and TON DNS based on the ``nft_events`` table:
+
+```sql
+select 
+case
+    when collection_address = '0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF' 
+    then 'TON DNS'
+    when collection_address = '0:0E41DC1DC3C9067ED24248580E12B3359818D83DEE0304FABCF80845EAFAFDB2' 
+    then 'TG Anonymous number'
+    when collection_address = '0:80D78A35F955A14B679FAA887FF4CD5BFC0F43B4A4EEA2A7E6927F3701B273C2' 
+    then 'TG Username'
+end as asset_type,
+case
+    when collection_address = '0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF' 
+    then json_extract_scalar(content_onchain, '$.domain')
+    when collection_address = '0:0E41DC1DC3C9067ED24248580E12B3359818D83DEE0304FABCF80845EAFAFDB2' 
+    then replace(replace(json_extract_scalar(content_onchain, '$.uri'), 'https://nft.fragment.com/number/', ''), '.json', '')
+    when collection_address = '0:80D78A35F955A14B679FAA887FF4CD5BFC0F43B4A4EEA2A7E6927F3701B273C2' 
+    then replace(replace(json_extract_scalar(content_onchain, '$.uri'), 'https://nft.fragment.com/username/', ''), '.json', '')
+end as name,
+owner_address, nft_item_address, content_onchain
+from datalake.nft_items_latest_state 
+where collection_address = '0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF'
+ or collection_address = '0:0E41DC1DC3C9067ED24248580E12B3359818D83DEE0304FABCF80845EAFAFDB2'
+ or collection_address = '0:80D78A35F955A14B679FAA887FF4CD5BFC0F43B4A4EEA2A7E6927F3701B273C2'
+```
+
+# Airflow DAGs
+
+Daily increments are prepared using the following DAG: [datalake_daily_sync.py](./airflow/dags/datalake_daily_sync.py).
+It is tested on Airflow 2.3.4. Required variables:
+* DATALAKE_KAFKA_BROKER - Kafka broker endpoint
+* DATALAKE_SOURCE_DATABASE - source database name for the tables from exporters
+* DATALAKE_TARGET_DATABASE - target database name for the tables with daily increments
+* DATALAKE_TMP_LOCATION - temporary location for Athena
+* DATALAKE_ATHENA_WORKGROUP - Athena workgroup name
