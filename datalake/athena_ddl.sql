@@ -530,7 +530,7 @@ STORED AS INPUTFORMAT
 OUTPUTFORMAT 
   'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
 LOCATION
-  's3://ton-blockchain-public-datalake/nft_events/'
+  's3://ton-blockchain-public-datalake/v1/nft_events/'
 TBLPROPERTIES (
   'auto.purge'='false', 
   'bucketing_format'='hive', 
@@ -651,9 +651,9 @@ image, image_data, attributes, sources, tonapi_image_url from ranks where rank =
 create view datalake.nft_items_latest_state
 as
 with latest_ranks as (
-SELECT nft_item_address, collection_address, owner_address, timestamp,
+SELECT nft_item_address, content_onchain, collection_address, owner_address, timestamp,
 row_number() over(partition by nft_item_address, owner_address order by timestamp desc) as rank  FROM "datalake"."nft_events"
 where type !='bid'
 )
-select nft_item_address, collection_address, owner_address
+select nft_item_address, content_onchain, collection_address, owner_address
 from latest_ranks where rank = 1
