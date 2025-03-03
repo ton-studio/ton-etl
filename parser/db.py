@@ -29,7 +29,7 @@ def serialize_addr(addr: Union[Address, ExternalAddress, None]) -> str:
     return None
     
 class DB():
-    def __init__(self, use_message_content: bool, dex_pool_history: bool=False):
+    def __init__(self, use_message_content: bool, dex_pool_history: bool=False, run_migrations: bool=False):
         self.use_message_content = use_message_content
         self.dex_pool_history = dex_pool_history
         self.pool = pool.SimpleConnectionPool(1, 3)
@@ -39,6 +39,13 @@ class DB():
         self.updated = 0
         self.conn = None
         self.dex_pools_cache = set()
+
+        if run_migrations:
+            conn = self.pool.getconn()
+            conn.autocommit = True
+            with open("createdb.sql", "r") as f:
+                conn.execute(f.read())
+            self.pool.putconn(conn)
         
     """
     Acquires connection from the pool. After the end of the session caller has to release it

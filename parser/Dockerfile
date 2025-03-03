@@ -35,6 +35,7 @@ RUN pip3 install -r /opt/app/requirements.txt
 
 COPY model /opt/app/model
 COPY parsers /opt/app/parsers
+COPY createdb.sql /opt/app/
 COPY db.py /opt/app/
 COPY main.py /opt/app/
 

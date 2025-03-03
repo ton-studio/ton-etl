@@ -1,14 +1,13 @@
 -- initial script
 
-CREATE TABLE parsed.mc_libraries (
+CREATE TABLE IF NOT EXISTS parsed.mc_libraries (
 	boc varchar NULL
 );
-CREATE UNIQUE INDEX mc_libraries_md5_idx ON parsed.mc_libraries USING btree (md5((boc)::text));
-
+CREATE UNIQUE INDEX IF NOT EXISTS mc_libraries_md5_idx ON parsed.mc_libraries USING btree (md5((boc)::text));
 
 -- core prices
 
-CREATE TABLE prices.core (
+CREATE TABLE IF NOT EXISTS prices.core (
 	tx_hash bpchar(44) NOT NULL,
 	lt int8 NULL,
 	asset varchar NOT NULL,
@@ -18,12 +17,12 @@ CREATE TABLE prices.core (
 	updated timestamp NULL,
 	CONSTRAINT core_pkey PRIMARY KEY (tx_hash)
 );
-CREATE INDEX core_asset_idx ON prices.core USING btree (asset, price_ts DESC);
+CREATE INDEX IF NOT EXISTS core_asset_idx ON prices.core USING btree (asset, price_ts DESC);
 
 
 -- Tradoor
 
-CREATE TABLE parsed.tradoor_perp_order (
+CREATE TABLE IF NOT EXISTS parsed.tradoor_perp_order (
     tx_hash bpchar(44) NULL primary key,
     trace_id bpchar(44) NULL,
     event_time int4 NULL,
@@ -43,7 +42,7 @@ CREATE TABLE parsed.tradoor_perp_order (
     updated timestamp NULL
 );
 
-CREATE TABLE parsed.tradoor_perp_position_change (
+CREATE TABLE IF NOT EXISTS parsed.tradoor_perp_position_change (
     tx_hash bpchar(44) NULL primary key,
     trace_id bpchar(44) NULL,
     event_time int4 NULL,
@@ -67,7 +66,7 @@ CREATE TABLE parsed.tradoor_perp_position_change (
 );
 
 
-CREATE TABLE parsed.tradoor_option_order (
+CREATE TABLE IF NOT EXISTS parsed.tradoor_option_order (
     tx_hash bpchar(44) NULL primary key,
     trace_id bpchar(44) NULL,
     event_time int4 NULL,
@@ -93,9 +92,13 @@ CREATE TABLE parsed.tradoor_option_order (
 
 -- GasPump events
 
-create type parsed.gaspump_event as enum('DeployAndBuyEmitEvent', 'BuyEmitEvent', 'SellEmitEvent');
+DO $$ BEGIN
+    create type parsed.gaspump_event as enum('DeployAndBuyEmitEvent', 'BuyEmitEvent', 'SellEmitEvent');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
-CREATE TABLE parsed.gaspump_trade (
+CREATE TABLE IF NOT EXISTS parsed.gaspump_trade (
     tx_hash bpchar(44) NULL primary key,
     trace_id bpchar(44) NULL,
     event_time int4 NULL,
@@ -112,12 +115,16 @@ CREATE TABLE parsed.gaspump_trade (
 );
 
 
+DO $$ BEGIN
 -- DEX Swaps
 CREATE TYPE public."dex_name" AS ENUM (
 	'dedust',
 	'ston.fi');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
-CREATE TABLE parsed.dex_swap_parsed (
+CREATE TABLE IF NOT EXISTS parsed.dex_swap_parsed (
 	tx_hash bpchar(44) NULL,
 	msg_hash bpchar(44) NOT NULL,
 	trace_id bpchar(44) NULL,
@@ -140,16 +147,21 @@ CREATE TABLE parsed.dex_swap_parsed (
 	updated timestamp NULL,
 	CONSTRAINT dex_swap_parsed_pkey PRIMARY KEY (msg_hash)
 );
-CREATE INDEX dex_swap_parsed_swap_utime_idx ON parsed.dex_swap_parsed USING btree (swap_utime);
-CREATE INDEX dex_swap_parsed_tx_hash_idx ON parsed.dex_swap_parsed USING btree (tx_hash);
+CREATE INDEX IF NOT EXISTS dex_swap_parsed_swap_utime_idx ON parsed.dex_swap_parsed USING btree (swap_utime);
+CREATE INDEX IF NOT EXISTS dex_swap_parsed_tx_hash_idx ON parsed.dex_swap_parsed USING btree (tx_hash);
 
 -- ston.fi V2 support
-ALTER TYPE public.dex_name ADD VALUE 'ston.fi_v2' AFTER 'ston.fi';
+DO $$ BEGIN
+    ALTER TYPE public.dex_name ADD VALUE 'ston.fi_v2' AFTER 'ston.fi';
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 ALTER TABLE parsed.dex_swap_parsed ADD column if not exists router varchar NULL;
 
 -- EVAA
 
-CREATE TABLE parsed.evaa_supply (
+CREATE TABLE IF NOT EXISTS parsed.evaa_supply (
     tx_hash bpchar(44) NULL primary key,
     msg_hash bpchar(44) NULL,
     trace_id bpchar(44) NULL,
@@ -165,7 +177,7 @@ CREATE TABLE parsed.evaa_supply (
     updated timestamp NULL
 );
 
-CREATE TABLE parsed.evaa_withdraw (
+CREATE TABLE IF NOT EXISTS parsed.evaa_withdraw (
     tx_hash bpchar(44) NULL primary key,
     msg_hash bpchar(44) NULL,
     trace_id bpchar(44) NULL,
@@ -183,7 +195,7 @@ CREATE TABLE parsed.evaa_withdraw (
     updated timestamp NULL
 );
 
-CREATE TABLE parsed.evaa_liquidation (
+CREATE TABLE IF NOT EXISTS parsed.evaa_liquidation (
     tx_hash bpchar(44) NULL primary key,
     msg_hash bpchar(44) NULL,
     trace_id bpchar(44) NULL,
@@ -219,7 +231,7 @@ ALTER TABLE parsed.evaa_liquidation ADD column if not exists pool_address varcha
 
 -- Jetton wallet balances
 
-CREATE TABLE parsed.jetton_wallet_balances (
+CREATE TABLE IF NOT EXISTS parsed.jetton_wallet_balances (
     address varchar NULL,
     tx_lt int8 NULL,
     jetton_master varchar NULL,
@@ -230,7 +242,7 @@ CREATE TABLE parsed.jetton_wallet_balances (
     PRIMARY KEY(address, tx_lt)
 );
 
-CREATE TABLE parsed.jetton_mint (
+CREATE TABLE IF NOT EXISTS parsed.jetton_mint (
     tx_hash bpchar(44) NULL primary key,
     msg_hash bpchar(44) NULL,
     trace_id bpchar(44) NULL,
@@ -252,12 +264,12 @@ ALTER TABLE parsed.jetton_mint ADD column if not exists "owner" varchar NULL;
 ALTER TABLE parsed.jetton_mint ADD column if not exists "jetton_master_address" varchar NULL;
 
 --  required for fast lookup of parent message by msg_hash
-CREATE INDEX trace_edges_msg_hash_idx ON public.trace_edges (msg_hash);
+CREATE INDEX IF NOT EXISTS trace_edges_msg_hash_idx ON public.trace_edges (msg_hash);
 
 -- to be aligned with jetton_transfers and jetton_burn
-ALTER TABLE parsed.jetton_mint ADD tx_lt int8 NULL;
+ALTER TABLE parsed.jetton_mint ADD column if not exists "tx_lt" int8 NULL;
 
-CREATE TABLE parsed.jetton_metadata (
+CREATE TABLE IF NOT EXISTS parsed.jetton_metadata (
     address public."tonaddr" not NULL primary key,
     update_time_onchain int4 null, -- onchain
     update_time_metadata int4 null, -- metadata update time
@@ -278,13 +290,17 @@ CREATE TABLE parsed.jetton_metadata (
 );
 
 -- megaton dex support
-ALTER TYPE public.dex_name ADD VALUE 'megaton' AFTER 'ston.fi_v2';
+DO $$ BEGIN
+    ALTER TYPE public.dex_name ADD VALUE 'megaton' AFTER 'ston.fi_v2';
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- required for megaton parser
-CREATE INDEX jetton_transfers_trace_id_idx ON public.jetton_transfers (trace_id);
+CREATE INDEX IF NOT EXISTS jetton_transfers_trace_id_idx ON public.jetton_transfers (trace_id);
 
 -- TonFun
-CREATE TABLE parsed.tonfun_bcl_trade (
+CREATE TABLE IF NOT EXISTS parsed.tonfun_bcl_trade (
     tx_hash bpchar(44) NULL primary key,
     trace_id bpchar(44) NULL,
     event_time int4 NULL,
@@ -302,15 +318,19 @@ CREATE TABLE parsed.tonfun_bcl_trade (
 );
 
 -- Adding usd volume for memepads
-ALTER TABLE parsed.gaspump_trade ADD volume_usd numeric NULL;
-ALTER TABLE parsed.tonfun_bcl_trade ADD volume_usd numeric NULL;
+ALTER TABLE parsed.gaspump_trade ADD column if not exists "volume_usd" numeric NULL;
+ALTER TABLE parsed.tonfun_bcl_trade ADD column if not exists "volume_usd" numeric NULL;
 
 -- tonco DEC support
-ALTER TYPE public.dex_name ADD VALUE 'tonco' AFTER 'megaton';
+DO $$ BEGIN
+    ALTER TYPE public.dex_name ADD VALUE 'tonco' AFTER 'megaton';
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Add fees info for dex swaps
 
-CREATE TABLE prices.dex_pool (
+CREATE TABLE IF NOT EXISTS prices.dex_pool (
 	pool varchar NOT null primary KEY,
 	platform public.dex_name NULL,
 	discovered_at int4 null,
@@ -325,11 +345,11 @@ CREATE TABLE prices.dex_pool (
     is_liquid boolean null
 );
 
-ALTER TABLE prices.dex_pool ADD lp_fee numeric NULL;
-ALTER TABLE prices.dex_pool ADD protocol_fee numeric NULL;
-ALTER TABLE prices.dex_pool ADD referral_fee numeric NULL;
+ALTER TABLE prices.dex_pool ADD column if not exists "lp_fee" numeric NULL;
+ALTER TABLE prices.dex_pool ADD column if not exists "protocol_fee" numeric NULL;
+ALTER TABLE prices.dex_pool ADD column if not exists "referral_fee" numeric NULL;
 
-CREATE TABLE prices.dex_pool_link (
+CREATE TABLE IF NOT EXISTS prices.dex_pool_link (
     id serial primary key,
     jetton varchar null,
     pool varchar null references prices.dex_pool(pool)
@@ -337,7 +357,7 @@ CREATE TABLE prices.dex_pool_link (
 
 -- Staking pools
 
-CREATE TABLE parsed.staking_pools_nominators (
+CREATE TABLE IF NOT EXISTS parsed.staking_pools_nominators (
     pool varchar NULL,
     address varchar NULL,
     utime int4 NULL,
@@ -347,11 +367,11 @@ CREATE TABLE parsed.staking_pools_nominators (
     CONSTRAINT staking_pools_nominators_pkey PRIMARY KEY (pool, address)
 );
 
-CREATE INDEX staking_pools_nominators_idx ON parsed.staking_pools_nominators (address);
+CREATE INDEX IF NOT EXISTS staking_pools_nominators_idx ON parsed.staking_pools_nominators (address);
 
 -- NFT items
 
-CREATE TABLE parsed.nft_items (
+CREATE TABLE IF NOT EXISTS parsed.nft_items (
 	address public."tonaddr" NOT NULL,
 	init bool NULL,
 	"index" numeric NULL,
@@ -365,7 +385,7 @@ CREATE TABLE parsed.nft_items (
 
 -- NFT item metadata
 
-CREATE TABLE parsed.nft_item_metadata (
+CREATE TABLE IF NOT EXISTS parsed.nft_item_metadata (
 	address public.tonaddr NOT NULL PRIMARY KEY,
 	update_time_onchain int4 NULL,
 	update_time_metadata int4 NULL,
@@ -380,11 +400,11 @@ CREATE TABLE parsed.nft_item_metadata (
 	tonapi_image_url varchar NULL
 );
 
-ALTER TABLE parsed.nft_item_metadata ADD collection_address public."tonaddr" NULL;
+ALTER TABLE parsed.nft_item_metadata ADD column if not exists "collection_address" public."tonaddr" NULL;
 
 -- NFT collection metadata
 
-CREATE TABLE parsed.nft_collection_metadata (
+CREATE TABLE IF NOT EXISTS parsed.nft_collection_metadata (
 	address public.tonaddr NOT NULL PRIMARY KEY,
 	update_time_onchain int4 NULL,
 	update_time_metadata int4 NULL,

@@ -56,6 +56,7 @@ services:
       - SUPPORTED_PARSERS=StonfiSwap,StonfiSwapV2,DedustSwap,TradoorPerpOrder,TradoorOptionOrder,GasPumpTrade,TradoorPerpPositionChange,EvaaSupplyParser,EvaaWithdrawAndLiquidationParser,JettonMintParser,HipoTokensMinted,TonFunTrade,TONCOSwap
       - KAFKA_TOPICS=ton.public.messages
       - MIN_MATURITY_SECONDS=300
+      - RUN_MIGRATIONS=1
     env_file:
       - parser.env
     logging:
