@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # to avoid race conditions we will process messages with maturity greater than MIN_MATURITY_SECONDS
     min_maturity = int(os.environ.get("MIN_MATURITY_SECONDS", "0")) * 1000
     save_dex_pool_history = int(os.environ.get("DEX_POOL_HISTORY", "0"))
-    db = DB(Parser.USE_MESSAGE_CONTENT, dex_pool_history=save_dex_pool_history)
+    db = DB(Parser.USE_MESSAGE_CONTENT, dex_pool_history=save_dex_pool_history, run_migrations=os.environ.get("RUN_MIGRATIONS", "0") == "1")
     db.acquire()
 
     consumer = KafkaConsumer(
