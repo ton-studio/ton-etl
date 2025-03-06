@@ -5,6 +5,9 @@ import decimal
 from typing import List
 import avro.schema
 
+
+decimal.getcontext().prec = 80
+
 @dataclass
 class NumericField:
     name: str
@@ -38,8 +41,8 @@ class Converter:
     def decode_numeric(self, numeric) -> decimal.Decimal:
         if numeric is not None:
             assert type(numeric) == dict and 'value' in numeric and 'scale' in numeric, f"Wrong format for numeric value: {numeric}"
-            decoded = int.from_bytes(base64.b64decode(numeric['value']), 'big') / pow(10, numeric['scale'])
-            return decimal.Decimal(decoded)
+            decoded = decimal.Decimal(int.from_bytes(base64.b64decode(numeric['value']), 'big', signed=True)) / pow(10, numeric['scale'])
+            return decoded
         else:
             return None
 
