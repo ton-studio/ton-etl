@@ -27,4 +27,4 @@ jobs:
         pip install -r requirements.txt
     - name: Test
       run: |
-        py.test parser/parsers
+        py.test
