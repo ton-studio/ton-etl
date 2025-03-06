@@ -44,7 +44,8 @@ class DB():
             conn = self.pool.getconn()
             conn.autocommit = True
             with open("createdb.sql", "r") as f:
-                conn.execute(f.read())
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(f.read())
             self.pool.putconn(conn)
         
     """
