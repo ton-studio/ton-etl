@@ -9,9 +9,12 @@ def encode_large_number(number: int) -> str:
         return base64.b64encode(b"\x00").decode()
 
     num_bytes = (number.bit_length() + 7) // 8 or 1
-    if number < 0:
-        num_bytes += 1
-    encoded_bytes = number.to_bytes(num_bytes, byteorder="big", signed=True)
+    while True:
+        try:
+            encoded_bytes = number.to_bytes(num_bytes, byteorder="big", signed=True)
+            break
+        except OverflowError:
+            num_bytes += 1
     return base64.b64encode(encoded_bytes).decode()
 
 
@@ -35,6 +38,7 @@ def converter():
         (-1230000, 6, decimal.Decimal("-1.23")),
         (1234567890123456789012345678901234567890, 0, decimal.Decimal("1234567890123456789012345678901234567890")),
         (-1234567890123456789012345678901234567890, 0, decimal.Decimal("-1234567890123456789012345678901234567890")),
+        (115791955467923778615336135071079405595011160656684247460013328087252849393664, 0, decimal.Decimal("115791955467923778615336135071079405595011160656684247460013328087252849393664")),
     ],
 )
 def test_decode_numeric_synthetic_data(converter, number, scale, result):
@@ -54,6 +58,7 @@ def test_decode_numeric_synthetic_data(converter, number, scale, result):
         ({"scale": 0, "value": "ANPCG87M7aD///8="}, decimal.Decimal("999999999999999999999999")),
         ({"scale": 0, "value": "/wl7IKk8H+QndVTIH4AA"}, decimal.Decimal("-5000000000000000005000000000000000")),
         ({"scale": 0, "value": "A6DJIHXA2/O4rLxfls4/CtI="}, decimal.Decimal("1234567890123456789012345678901234567890")),
+        ({"scale": 0, "value": "AP//7J43rAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}, decimal.Decimal("115791955467923778615336135071079405595011160656684247460013328087252849393664")),
     ],
 )
 def test_decode_numeric_real_data(converter, numeric, result):
