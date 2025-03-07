@@ -41,11 +41,23 @@ class DB():
         self.dex_pools_cache = set()
 
         if run_migrations:
+            logger.info("Running migration")
             conn = self.pool.getconn()
             conn.autocommit = True
             with open("createdb.sql", "r") as f:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(f.read())
+                buffer = []
+                block = False
+                for line in f.read().split("\n"):
+                    buffer.append(line)
+                    if line.startswith("DO"):
+                        block = True
+                    if not block and line.strip().endswith(";") or block and line.startswith("END $$"):
+                        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                            sql = "\n".join(buffer)
+                            logger.info(f"Running statement: {sql}")
+                            cursor.execute(sql)
+                        block = False
+                        buffer = []
             self.pool.putconn(conn)
         
     """
