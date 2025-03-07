@@ -9,6 +9,7 @@ from gauges.performance.dex import DexPerformanceGauge
 from gauges.performance.jetton_transfers import JettonTransfersPerformanceGauge
 from gauges.performance.p2p import P2pPerformanceGauge
 from gauges.performance.traces import TracesPerformanceGauge
+from gauges.performance.tps import TPSPerformanceGauge
 
 
 if __name__ == "__main__":
@@ -16,6 +17,7 @@ if __name__ == "__main__":
     commit_batch_size = int(os.environ.get("COMMIT_BATCH_SIZE", "100"))
     calc_interval = int(os.environ.get("CALC_INTERVAL", "3600"))
     traces_calc_interval = int(os.environ.get("TRACES_CALC_INTERVAL", "600"))
+    tps_calc_interval = int(os.environ.get("TPS_CALC_INTERVAL", "100"))
     update_interval = int(os.environ.get("UPDATE_INTERVAL", "5"))
     topics = os.environ.get(
         "KAFKA_TOPICS", "ton.public.blocks,ton.public.traces,ton.public.jetton_transfers,ton.parsed.dex_swap_parsed"
@@ -71,6 +73,13 @@ if __name__ == "__main__":
             "TON ETL common operations metrics: Traces",
             ["col"],
             traces_calc_interval,
+            update_interval,
+        ),
+        TPSPerformanceGauge(
+            "ton_etl_common_operations_tps",
+            "TON ETL common operations metrics: TPS",
+            ["col"],
+            tps_calc_interval,
             update_interval,
         ),
     ]
