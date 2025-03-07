@@ -1,3 +1,6 @@
+create schema if not exists parsed;
+create schema if not exists prices;
+
 -- initial script
 
 CREATE TABLE IF NOT EXISTS parsed.mc_libraries (
