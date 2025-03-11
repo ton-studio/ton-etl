@@ -13,6 +13,10 @@ TELEMINT_COLLECTIONS = [
     Address('EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N'), # Anonymous Telegram Numbers 
     Address('EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi') # Telegram Usernames 
     ]
+TELEMINT_CODE_HASHES = [
+    'i3EeaAlnLAM13GHR2h3MQFnJcySK9we9WGJFCF6nCzI=',  # Telegram gifts
+    'MNzX1bb89ZaMJ5Hh4xrXMvJnLymG4daXDrA8yiLSMlE=',  # Telegram gifts
+]
 KEY_DOMAIN = 'domain'
 KEY_MAX_BID_ADDRESS = 'max_bid_address'
 KEY_MAX_BID_AMOUNT = 'max_bid_amount'
@@ -176,7 +180,7 @@ class NFTItemsParser(EmulatorParser):
                 except Exception as e:
                     logger.warning(f"Failed to get nft content: {e}")
                     content = {}
-            if collection_address in TELEMINT_COLLECTIONS:
+            if collection_address in TELEMINT_COLLECTIONS or obj['code_hash'] in TELEMINT_CODE_HASHES:
                 try:
                     bidder_address, bid, bid_ts, min_bid, end_time = self._execute_method(emulator, 'get_telemint_auction_state', [], db, obj)
                     additional_content['bidder_address'] = bidder_address.load_address().to_str(0).upper()
