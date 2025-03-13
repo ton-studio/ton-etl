@@ -889,7 +889,7 @@ def datalake_daily_sync():
 
         telemint_sale as (
             select distinct address, is_init, index, collection_address, owner_address as buyer, prev_owner as seller, content_onchain, timestamp, lt, block_date, 
-            coalesce(cast(json_extract_scalar(prev_content, '$.bid') as bigint), 0) as price,
+            coalesce(cast(json_extract_scalar(prev_content, '$.bid') as bigint), cast(json_extract_scalar(prev_content, '$.max_bid') as bigint), 0) as price,
             try(cast(json_extract_scalar(prev_content, '$.max_bid') as bigint)) as max_bid,
             try(cast(json_extract_scalar(prev_content, '$.min_bid') as bigint)) as min_bid,
             try(cast(json_extract_scalar(prev_content, '$.min_bid_step') as bigint)) as min_bid_step,
@@ -898,7 +898,7 @@ def datalake_daily_sync():
             from telemint_bids_history where
             json_extract_scalar(prev_content, '$.duration') is not null and 
             json_extract_scalar(content_onchain, '$.duration') is null
-            and owner_address is not null and prev_owner is not null and owner_address != prev_owner
+            and owner_address is not null and (prev_owner is not null and owner_address != prev_owner or prev_owner is null)
             
             and block_date = '{current_date}'
         ),
