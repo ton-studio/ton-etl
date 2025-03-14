@@ -63,6 +63,9 @@ Perform daily sync of data of the datalake
     tags=['ton', 'datalake']
 )
 def datalake_daily_sync():
+    datalake_output_bucket = Variable.get("DATALAKE_ATHENA_DATALAKE_OUTPUT_BUCKET")
+    datalake_athena_temp_bucket = Variable.get("DATALAKE_TMP_LOCATION")
+
     def safe_python_callable(func, kwargs, step_name):
         try:
             func(kwargs)
@@ -220,7 +223,7 @@ def datalake_daily_sync():
         def execute_athena_query(query, database=source_database):
             query_id = athena.run_query(query,
                                         query_context={"Database": database},
-                                        result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                        result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                         workgroup=workgroup)
             final_state = athena.poll_query_status(query_id)
             if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -363,9 +366,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_blocks"),
         op_kwargs={
             'repartition_field': 'gen_utime',
-            'source_table': 'archival_adding_dateblocks',
+            'source_table': 'blocks',
             'target_table': 'blocks',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/blocks',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/blocks',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_archive_blocks'
         }
@@ -376,9 +379,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_transactions"),
         op_kwargs={
             'repartition_field': 'now',
-            'source_table': 'archival_adding_datetransactions',
+            'source_table': 'transactions',
             'target_table': 'transactions',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/transactions',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/transactions',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_archive_transactions'
         }
@@ -389,9 +392,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_messages"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'archival_adding_datemessages',
+            'source_table': 'messages',
             'target_table': 'messages',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/messages',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/messages',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_archive_messages'
         }
@@ -402,9 +405,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_messages_with_data"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'archival_adding_datemessages_with_data',
+            'source_table': 'messages_with_data',
             'target_table': 'messages_with_data',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/messages_with_data',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/messages_with_data',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_archive_messages_with_data'
         }
@@ -415,9 +418,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_accounts"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'archival_adding_date_latest_account_states',
+            'source_table': 'latest_account_states',
             'target_table': 'account_states',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/account_states',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/account_states',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_account_states_3'
         }
@@ -468,9 +471,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_dex_trades"),
         op_kwargs={
             'repartition_field': 'event_time',
-            'source_table': 'archival_adding_date_dex_swaps',
+            'source_table': 'dex_swaps',
             'target_table': 'dex_trades',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/dex_trades',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/dex_trades',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_dex_trades_fix',
             'primary_key': 'tx_hash',
@@ -487,9 +490,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_jetton_events"),
         op_kwargs={
             'repartition_field': 'utime',
-            'source_table': 'archival_adding_date_jetton_events',
+            'source_table': 'jetton_events',
             'target_table': 'jetton_events',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/jetton_events',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/jetton_events',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_jetton_events',
             # 'primary_key': 'tx_hash',
@@ -507,9 +510,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_dex_tvl"),
         op_kwargs={
             'repartition_field': 'last_updated',
-            'source_table': 'archival_adding_date_dex_pool',
+            'source_table': 'dex_pool',
             'target_table': 'dex_pools',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/dex_pools',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/dex_pools',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_dex_pools',
             'allow_empty_partitions': 3
@@ -521,9 +524,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_balances_history"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'archival_adding_date_balances_history',
+            'source_table': 'balances_history',
             'target_table': 'balances_history',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/balances_history',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/balances_history',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_balances_history',
             'topics_timestamp_field': {
@@ -538,9 +541,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_items"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'archival_adding_date_nft_items_history',
+            'source_table': 'nft_items_history',
             'target_table': 'nft_items',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/nft_items',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_items',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_nft_items',
             'topics_timestamp_field': {
@@ -564,9 +567,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_transfers"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'archival_adding_date_nft_transfers',
+            'source_table': 'nft_transfers',
             'target_table': 'nft_transfers',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/nft_transfers',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_transfers',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_nft_transfers'
         }
@@ -577,9 +580,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_sales"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'archival_adding_date_nft_sales',
+            'source_table': 'nft_sales',
             'target_table': 'nft_sales',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/nft_sales',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_sales',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_nft_sales_4',
             'topics_timestamp_field': {
@@ -606,7 +609,7 @@ def datalake_daily_sync():
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -624,7 +627,7 @@ def datalake_daily_sync():
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -1121,7 +1124,7 @@ def datalake_daily_sync():
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -1138,7 +1141,7 @@ def datalake_daily_sync():
 
         query_id = athena.run_query(f"MSCK REPAIR TABLE nft_events",
                                     query_context={"Database": target_database},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -1147,7 +1150,7 @@ def datalake_daily_sync():
 
         query_id = athena.run_query(f"select count(1) as count from \"{target_database}\".nft_events where block_date = '{current_date}'",
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         
         final_state = athena.poll_query_status(query_id)
@@ -1161,7 +1164,7 @@ def datalake_daily_sync():
 
         query_id = athena.run_query(f"select type, count(1) as count from \"{target_database}\".nft_events where block_date = '{current_date}' group by 1",
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         
         final_state = athena.poll_query_status(query_id)
@@ -1185,7 +1188,7 @@ def datalake_daily_sync():
         task_id=f'nft_events',
         python_callable=lambda **kwargs: safe_python_callable(nft_events, kwargs, "nft_events"),
         op_kwargs={
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/nft_events',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_events',
         }
     )
 
