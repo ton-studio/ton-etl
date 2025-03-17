@@ -18,8 +18,8 @@ jobs:
             image_suffix: "parser"
             context: "parser"  
           - dockerfile: "prometheus_exporter/Dockerfile"
-            image_suffix: "parser"
-            context: "prometheus-exporter"  
+            image_suffix: "prometheus-exporter"
+            context: "prometheus_exporter"  
     runs-on: ubuntu-latest
     env:
       APP_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/canary' && 'canary' || github.ref == 'refs/heads/staging' && 'staging' || 'unknown' }}
