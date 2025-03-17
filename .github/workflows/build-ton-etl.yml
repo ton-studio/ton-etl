@@ -1,10 +1,25 @@
-name: Build and deploy parser
+name: Build
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        include:
+          - dockerfile: "datalake/Dockerfile"
+            image_suffix: "datalake"
+            context: "datalake"
+          - dockerfile: "datalake/Dockerfile.streaming"
+            image_suffix: "datalake-streaming"
+            context: "datalake"
+          - dockerfile: "parser/Dockerfile"
+            image_suffix: "parser"
+            context: "parser"  
+          - dockerfile: "prometheus_exporter/Dockerfile"
+            image_suffix: "parser"
+            context: "prometheus-exporter"  
     runs-on: ubuntu-latest
     env:
       APP_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/canary' && 'canary' || github.ref == 'refs/heads/staging' && 'staging' || 'unknown' }}
@@ -38,20 +53,22 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ steps.lower-repo.outputs.repository }}-parser
+          images: ghcr.io/${{ steps.lower-repo.outputs.repository }}-{{ matrix.image_suffix }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           tags: |
             type=sha
             type=sha,format=long
             type=ref,event=branch
 
-      - name: Build and push Docker image ${{ steps.lower-repo.outputs.repository }}-parser:${{ env.APP_ENV }}
+      - name: Build and push Docker images in parallel
         uses: docker/build-push-action@v6
         with:
-          context: parser
-          file: parser/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
-          tags: ghcr.io/${{ steps.lower-repo.outputs.repository }}-parser:${{ env.GITHUB_SHA_SHORT }},ghcr.io/${{ steps.lower-repo.outputs.repository }}-parser:${{ env.APP_ENV }}
+          tags: |
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}-${{ matrix.image_suffix }}:${{ env.GITHUB_SHA_SHORT }}
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}-${{ matrix.image_suffix }}:${{ env.APP_ENV }}
           build-args: |
             sha=${{ github.sha }}
             sha_short=${{ env.GITHUB_SHA_SHORT }}
