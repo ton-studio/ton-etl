@@ -83,7 +83,7 @@ def datalake_daily_sync():
         LAST_BLOCK_MATURITY_PERIOD = 10 * 60 # 10 minutes
         logical_time = kwargs['logical_time']
         logging.info(f"logical_time raw: {logical_time}")
-        logical_time = logical_time.split("T")[0] # time in form of YYYY-MM-DD
+        logical_time = logical_time[0:10]
         logging.info(f"Logical time: {logical_time}")
         start_of_the_day = datetime.strptime(logical_time, "%Y-%m-%d")
         end_of_the_day = start_of_the_day + timedelta(days=1)
