@@ -430,7 +430,7 @@ def datalake_daily_sync():
         task_id=f'check_main_parser_offset',
         python_callable=lambda **kwargs: safe_python_callable(check_kafka_offset, kwargs, "check_main_parser_offset"),
         op_kwargs={
-            'kafka_group_id': 'messages_parsers_part1',
+            'kafka_group_id': 'messages_parsers',
             'topic': 'ton.public.messages',
             'field': 'tx_now'
         }
@@ -440,7 +440,7 @@ def datalake_daily_sync():
         task_id=f'check_core_prices_offset',
         python_callable=lambda **kwargs: safe_python_callable(check_kafka_offset, kwargs, "check_core_prices_offset"),
         op_kwargs={
-            'kafka_group_id': 'core_prices_full',
+            'kafka_group_id': 'core_prices',
             'topic': 'ton.public.latest_account_states',
             'field': 'timestamp'
         }
