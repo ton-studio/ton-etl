@@ -366,7 +366,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_blocks"),
         op_kwargs={
             'repartition_field': 'gen_utime',
-            'source_table': 'blocks',
+            'source_table': 'exporters_blocks',
             'target_table': 'blocks',
             'target_table_location': f's3://{datalake_output_bucket}/v1/blocks',
             'dedup_depth': 3,
@@ -379,7 +379,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_transactions"),
         op_kwargs={
             'repartition_field': 'now',
-            'source_table': 'transactions',
+            'source_table': 'exporters_transactions',
             'target_table': 'transactions',
             'target_table_location': f's3://{datalake_output_bucket}/v1/transactions',
             'dedup_depth': 3,
@@ -392,7 +392,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_messages"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'messages',
+            'source_table': 'exporters_messages',
             'target_table': 'messages',
             'target_table_location': f's3://{datalake_output_bucket}/v1/messages',
             'dedup_depth': 3,
@@ -405,7 +405,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_messages_with_data"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'messages_with_data',
+            'source_table': 'exporters_messages_with_data',
             'target_table': 'messages_with_data',
             'target_table_location': f's3://{datalake_output_bucket}/v1/messages_with_data',
             'dedup_depth': 3,
@@ -418,7 +418,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_accounts"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'latest_account_states',
+            'source_table': 'exporters_latest_account_states',
             'target_table': 'account_states',
             'target_table_location': f's3://{datalake_output_bucket}/v1/account_states',
             'dedup_depth': 3,
@@ -471,7 +471,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_dex_trades"),
         op_kwargs={
             'repartition_field': 'event_time',
-            'source_table': 'dex_swaps',
+            'source_table': 'exporters_dex_swaps',
             'target_table': 'dex_trades',
             'target_table_location': f's3://{datalake_output_bucket}/v1/dex_trades',
             'dedup_depth': 10000,
@@ -490,7 +490,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_jetton_events"),
         op_kwargs={
             'repartition_field': 'utime',
-            'source_table': 'jetton_events',
+            'source_table': 'exporters_jetton_events',
             'target_table': 'jetton_events',
             'target_table_location': f's3://{datalake_output_bucket}/v1/jetton_events',
             'dedup_depth': 10000,
@@ -510,7 +510,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_dex_tvl"),
         op_kwargs={
             'repartition_field': 'last_updated',
-            'source_table': 'dex_pool',
+            'source_table': 'exporters_dex_pools',
             'target_table': 'dex_pools',
             'target_table_location': f's3://{datalake_output_bucket}/v1/dex_pools',
             'dedup_depth': 10000,
@@ -524,7 +524,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_balances_history"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'balances_history',
+            'source_table': 'exporters_balances_history',
             'target_table': 'balances_history',
             'target_table_location': f's3://{datalake_output_bucket}/v1/balances_history',
             'dedup_depth': 10000,
@@ -541,7 +541,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_items"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'nft_items_history',
+            'source_table': 'exporters_nft_items_history',
             'target_table': 'nft_items',
             'target_table_location': f's3://{datalake_output_bucket}/v1/nft_items',
             'dedup_depth': 10000,
@@ -567,7 +567,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_transfers"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'nft_transfers',
+            'source_table': 'exporters_nft_transfers',
             'target_table': 'nft_transfers',
             'target_table_location': f's3://{datalake_output_bucket}/v1/nft_transfers',
             'dedup_depth': 10000,
@@ -580,7 +580,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_sales"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'nft_sales',
+            'source_table': 'exporters_nft_sales',
             'target_table': 'nft_sales',
             'target_table_location': f's3://{datalake_output_bucket}/v1/nft_sales',
             'dedup_depth': 10000,
