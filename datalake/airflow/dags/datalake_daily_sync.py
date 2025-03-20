@@ -268,7 +268,7 @@ def datalake_daily_sync():
             logging.info(response)
 
         tmp_table_name = f"{target_table}_increment_{str(uuid.uuid4()).replace('-', '')}"
-        tmp_table_location = f"{tmp_location}/{tmp_table_name}"
+        tmp_table_location = f"s3://{tmp_location}/{tmp_table_name}"
         FIELDS = ", ".join([col['Name'] for col in source_table_meta['Table']['StorageDescriptor']['Columns']])
         sql = f"""
         create table "{source_database}".{tmp_table_name}
@@ -652,7 +652,7 @@ def datalake_daily_sync():
         tmp_location = Variable.get("DATALAKE_TMP_LOCATION")
         table_location = kwargs['target_table_location']
         tmp_table_name = f"nft_events_increment_{current_date}_{str(uuid.uuid4()).replace('-', '')}"
-        tmp_table_location = f"{tmp_location}/{tmp_table_name}"
+        tmp_table_location = f"s3://{tmp_location}/{tmp_table_name}"
 
         query = f"""
         create table "{source_database}".{tmp_table_name}
