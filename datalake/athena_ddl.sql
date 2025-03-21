@@ -1,3 +1,19 @@
+CREATE EXTERNAL TABLE `excluded_rows`(
+  `table` string, 
+  `key` string)
+COMMENT 'Contains data corrections'
+ROW FORMAT DELIMITED 
+  FIELDS TERMINATED BY ',' 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.mapred.TextInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+LOCATION
+  's3://ton-blockchain-public-datalake/v1/excluded_rows'
+TBLPROPERTIES (
+  'classification'='csv', 
+  'transient_lastDdlTime'='1733881198')
+  
 CREATE EXTERNAL TABLE `account_states`(
   `account` string COMMENT 'from deserializer', 
   `hash` string COMMENT 'from deserializer', 
