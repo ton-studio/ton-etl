@@ -510,7 +510,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_dex_tvl"),
         op_kwargs={
             'repartition_field': 'last_updated',
-            'source_table': 'exporters_dex_pools',
+            'source_table': 'exporters_dex_pool',
             'target_table': 'dex_pools',
             'target_table_location': f's3://{datalake_output_bucket}/v1/dex_pools',
             'dedup_depth': 10000,
