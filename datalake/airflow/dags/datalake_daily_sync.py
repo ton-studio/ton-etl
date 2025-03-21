@@ -556,7 +556,7 @@ def datalake_daily_sync():
         task_id=f'check_nft_parser_offset',
         python_callable=lambda **kwargs: safe_python_callable(check_kafka_offset, kwargs, "check_nft_parser_offset"),
         op_kwargs={
-            'kafka_group_id': 'nft_items_parser_2',
+            'kafka_group_id': 'nft_items_parser',
             'topic': 'ton.public.latest_account_states',
             'field': 'timestamp'
         }
