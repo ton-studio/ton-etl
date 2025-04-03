@@ -594,18 +594,19 @@ def datalake_daily_sync():
 
     def generate_balances_snapshot(kwargs):
         athena = AthenaHook('s3_conn', region_name='us-east-1')
-        query = """
-        insert into datalake.balances_snapshot(address, asset, amount, mintless_claimed, timestamp, lt, block_date)
+        target_database = Variable.get("DATALAKE_TARGET_DATABASE")
+        query = f"""
+        insert into "{target_database}".balances_snapshot(address, asset, amount, mintless_claimed, timestamp, lt, block_date)
         with ranks as (
         select address, asset, amount, mintless_claimed, timestamp, lt,
         row_number() over (partition by address, asset order by lt desc) as rank
-        from "datalake"."balances_history"
+        from "{target_database}"."balances_history"
         )
         select address, asset, amount, mintless_claimed, timestamp, lt,
-        (SELECT max(block_date) FROM "datalake"."balances_history$partitions") as block_date
+        (SELECT max(block_date) FROM "{target_database}"."balances_history$partitions") as block_date
         from ranks where rank = 1
-        and (SELECT max(block_date) FROM "datalake"."balances_history$partitions") != 
-        (SELECT max(block_date) FROM "datalake"."balances_snapshot$partitions") 
+        and (SELECT max(block_date) FROM "{target_database}"."balances_history$partitions") != 
+        (SELECT max(block_date) FROM "{target_database}"."balances_snapshot$partitions") 
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
@@ -622,8 +623,9 @@ def datalake_daily_sync():
 
     def refresh_nft_metadata_partitions(kwargs):
         athena = AthenaHook('s3_conn', region_name='us-east-1')
-        query = """
-        MSCK REPAIR TABLE `datalake`.`nft_metadata`
+        target_database = Variable.get("DATALAKE_TARGET_DATABASE")
+        query = f"""
+        MSCK REPAIR TABLE "{target_database}".nft_metadata
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
@@ -668,13 +670,13 @@ def datalake_daily_sync():
 
         with nft_items_states_ranks as (
             select ni.*, row_number() over (partition by ni.address order by ni.lt asc ) as rank
-            from datalake.nft_items ni where block_date <= '{current_date}'
+            from "{target_database}".nft_items ni where block_date <= '{current_date}'
         ), nft_items_latest_state as (
             select * from nft_items_states_ranks where rank = 1
         ),
         raw_min_tx as (
             SELECT ni.*, t.hash as tx_hash, t.trace_id
-            FROM datalake.transactions t 
+            FROM "{target_database}".transactions t 
             join nft_items_latest_state ni on t.account = ni.address and t.block_date = ni.block_date -- must be in the same partition
             and end_status ='active' and orig_status != 'active' -- new account deployment
             where t.block_date = '{current_date}'
@@ -691,7 +693,7 @@ def datalake_daily_sync():
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address, end_time,
             marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step
-            from datalake.nft_transfers t
+            from "{target_database}".nft_transfers t
             join nft_sales ns on ns.address = t.new_owner and t.nft_item_address = ns.nft_address
             where t.block_date = '{current_date}' and ns.block_date <= '{current_date}'
             and not t.tx_aborted
@@ -703,7 +705,7 @@ def datalake_daily_sync():
             nft_sale_contract, sale_type, end_time as sale_end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step, query_id, custom_payload
             from transfers_to_sale_contracts t
-            join datalake.nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
+            join "{target_database}".nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
             where rank = 1 -- first state of the sale contract
         ), put_on_sale as (
             select * from put_on_sale_ranks where nft_state_rank = 1
@@ -713,7 +715,7 @@ def datalake_daily_sync():
             select row_number() over(partition by ns.address order by ns.lt asc) as rank,  t.*,
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address, end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step 
-            from datalake.nft_transfers t
+            from "{target_database}".nft_transfers t
             join nft_sales ns on ns.address = t.old_owner and t.nft_item_address = ns.nft_address and ns.nft_owner_address = t.new_owner
             and (ns.is_complete or ns.is_canceled)
             where t.block_date = '{current_date}' and ns.block_date <= '{current_date}'
@@ -726,7 +728,7 @@ def datalake_daily_sync():
             nft_sale_contract, sale_type, end_time as sale_end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step, query_id, custom_payload
             from transfers_from_sale_contracts_to_owner t
-            join datalake.nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
+            join "{target_database}".nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
             where rank = 1 -- first state after sale completion
         ), cancel_sale as (
             select * from cancel_sale_ranks where nft_state_rank = 1
@@ -737,7 +739,7 @@ def datalake_daily_sync():
             select row_number() over(partition by ns.address order by ns.lt asc) as rank,  t.*,
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address as seller, t.new_owner as buyer, end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step 
-            from datalake.nft_transfers t
+            from "{target_database}".nft_transfers t
             join nft_sales ns on ns.address = t.old_owner and t.nft_item_address = ns.nft_address and ns.nft_owner_address != t.new_owner
             and (ns.is_complete or ns.is_canceled)
             where t.block_date = '{current_date}' and ns.block_date <= '{current_date}'
@@ -750,14 +752,14 @@ def datalake_daily_sync():
             nft_sale_contract, sale_type, end_time as sale_end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step, query_id, custom_payload
             from transfers_from_sale_contracts_to_buyer t
-            join datalake.nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
+            join "{target_database}".nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
             where rank = 1 -- the first state after the sale
         ), sales as (
             select * from sales_ranks where nft_state_rank = 1
         ),
 
         sales_related as (
-            select tx_hash from datalake.nft_events where type = 'sale' or type = 'cancel_sale' or type = 'put_on_sale'
+            select tx_hash from "{target_database}".nft_events where type = 'sale' or type = 'cancel_sale' or type = 'put_on_sale'
             union all
             select tx_hash from sales
             union all
@@ -766,9 +768,9 @@ def datalake_daily_sync():
             select tx_hash from cancel_sale
         ), transfers_ordinary as (
             select t.*, 
-            (select is_init from datalake.nft_items ni where ni.address = nft_item_address order by ni.lt desc limit 1) as is_init,
-            (select content_onchain from datalake.nft_items ni where ni.address = nft_item_address order by ni.lt desc limit 1) as content_onchain
-            from datalake.nft_transfers t
+            (select is_init from "{target_database}".nft_items ni where ni.address = nft_item_address order by ni.lt desc limit 1) as is_init,
+            (select content_onchain from "{target_database}".nft_items ni where ni.address = nft_item_address order by ni.lt desc limit 1) as content_onchain
+            from "{target_database}".nft_transfers t
             left join sales_related s on s.tx_hash = t.tx_hash
             where t.block_date = '{current_date}'
             and s.tx_hash is null
@@ -776,7 +778,7 @@ def datalake_daily_sync():
         ),
 
         tondns_content_history as (
-            select *, lag(content_onchain, 1) over (partition by address order by lt asc) as prev_content  from datalake.nft_items 
+            select *, lag(content_onchain, 1) over (partition by address order by lt asc) as prev_content  from "{target_database}".nft_items 
             where collection_address ='0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF'
             and block_date <= '{current_date}'
         ), tondns_bids as (
@@ -797,7 +799,7 @@ def datalake_daily_sync():
         ),
 
         tondns_owner_history as (
-            select *, lag(owner_address, 1) over (partition by address order by lt asc) as prev_owner  from datalake.nft_items 
+            select *, lag(owner_address, 1) over (partition by address order by lt asc) as prev_owner  from "{target_database}".nft_items 
             where collection_address ='0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF'
             and block_date <= '{current_date}'
         ), tondns_releases as (
@@ -810,7 +812,7 @@ def datalake_daily_sync():
 
         tondns_next_event_history as (
             select *, lag(timestamp, 1) over (partition by address order by lt desc) as next_event, lag(owner_address, 1) over (partition by address order by lt desc) as next_owner
-            from datalake.nft_items 
+            from "{target_database}".nft_items 
             where collection_address ='0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF'
             and block_date <= '{current_date}'
         ), tondns_winners as (
@@ -834,11 +836,11 @@ def datalake_daily_sync():
         ),
 
         telemint_collections as (
-            select distinct collection_address from datalake.nft_items 
+            select distinct collection_address from "{target_database}".nft_items 
             where json_extract_scalar(content_onchain, '$.bidder_address') is not null
         ), telemint_bids_history as (
             select *, lag(content_onchain, 1) over (partition by address order by lt asc) as prev_content,
-            lag(owner_address, 1) over (partition by address order by lt asc) as prev_owner from datalake.nft_items 
+            lag(owner_address, 1) over (partition by address order by lt asc) as prev_owner from "{target_database}".nft_items 
             where collection_address in (select * from telemint_collections)
             and block_date <= '{current_date}'
         ), telemint_bids as (
@@ -1174,7 +1176,7 @@ def datalake_daily_sync():
         results = results_to_df(athena.get_query_results_paginator(query_id).build_full_result())
         logging.info(f"Got {len(results)} results")
         logging.info(results)
-        output_details = [];
+        output_details = []
         for row in results:
             output_details.append(f"{row['type']}: {row['count']}")
         output_details = ", ".join(output_details)
