@@ -625,7 +625,7 @@ def datalake_daily_sync():
         athena = AthenaHook('s3_conn', region_name='us-east-1')
         target_database = Variable.get("DATALAKE_TARGET_DATABASE")
         query = f"""
-        MSCK REPAIR TABLE "{target_database}".nft_metadata
+        MSCK REPAIR TABLE `{target_database}`.`nft_metadata`
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
