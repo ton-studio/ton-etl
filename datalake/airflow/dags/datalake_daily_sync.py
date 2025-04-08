@@ -65,6 +65,7 @@ Perform daily sync of data of the datalake
 def datalake_daily_sync():
     datalake_output_bucket = Variable.get("DATALAKE_ATHENA_DATALAKE_OUTPUT_BUCKET")
     datalake_athena_temp_bucket = Variable.get("DATALAKE_TMP_LOCATION")
+    env_tag = Variable.get("DATALAKE_TARGET_DATABASE")
 
     def safe_python_callable(func, kwargs, step_name):
         try:
@@ -72,7 +73,7 @@ def datalake_daily_sync():
         except Exception as e:
             telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
             logging.error(f"Unable to perform {func.__name__} for *{step_name}* {e} {traceback.format_exc()}")
-            telegram_hook.send_message({"text": f"📛 Unable to invoke {func.__name__} for *{step_name}"})
+            telegram_hook.send_message({"text": f"📛 [{env_tag}] Unable to invoke {func.__name__} for *{step_name}"})
             raise e
 
     """
@@ -316,7 +317,7 @@ def datalake_daily_sync():
 
         finished = datetime.now().strftime("%I:%M %p")
         telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
-        telegram_hook.send_message({"text": f"🚰👌 {target_table} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files"})
+        telegram_hook.send_message({"text": f"🚰👌 [{env_tag}] {target_table} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files"})
 
     """
     Checks Kafka commited offset for the consumer group
@@ -1183,7 +1184,7 @@ def datalake_daily_sync():
 
         finished = datetime.now().strftime("%I:%M %p")
         telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
-        telegram_hook.send_message({"text": f"🚰👌 nft_events for {current_date} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files. Stats: {output_details}"})
+        telegram_hook.send_message({"text": f"🚰👌 [{env_tag}] nft_events for {current_date} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files. Stats: {output_details}"})
         
 
     nft_events_task = PythonOperator(
