@@ -53,6 +53,8 @@ ROUTERS = set(map(Parser.uf2raw, [
     'EQCiz74FCV2lYlvFPEYhL3Jql8WwIO7QvbvYT-LQH0SmtCgI',
     # 2025-02-11
     'EQBwpBGEAb-NgjUxpmARAgVl8C4F_5GsXxZ3dpsA1qzQerNl',
+    # 2025-04-17
+    "EQBjK_kjY5R_DoyTRff109VzFrSlKFCC_gOOWIMtyEvCcv2J",
     ]))
 
 class StonfiSwapV2(Parser):
