@@ -552,4 +552,5 @@ It is tested on Airflow 2.3.4. Required variables:
 * DATALAKE_SOURCE_DATABASE - source database name for the tables from exporters
 * DATALAKE_TARGET_DATABASE - target database name for the tables with daily increments
 * DATALAKE_TMP_LOCATION - temporary location for Athena
+* DATALAKE_ATHENA_DATALAKE_OUTPUT_BUCKET - S3 bucket for the datalake output
 * DATALAKE_ATHENA_WORKGROUP - Athena workgroup name

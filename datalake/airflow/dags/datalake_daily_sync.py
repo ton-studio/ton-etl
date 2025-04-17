@@ -63,13 +63,17 @@ Perform daily sync of data of the datalake
     tags=['ton', 'datalake']
 )
 def datalake_daily_sync():
+    datalake_output_bucket = Variable.get("DATALAKE_ATHENA_DATALAKE_OUTPUT_BUCKET")
+    datalake_athena_temp_bucket = Variable.get("DATALAKE_TMP_LOCATION")
+    env_tag = Variable.get("DATALAKE_TARGET_DATABASE")
+
     def safe_python_callable(func, kwargs, step_name):
         try:
             func(kwargs)
         except Exception as e:
             telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
             logging.error(f"Unable to perform {func.__name__} for *{step_name}* {e} {traceback.format_exc()}")
-            telegram_hook.send_message({"text": f"📛 Unable to invoke {func.__name__} for *{step_name}"})
+            telegram_hook.send_message({"text": f"📛 [{env_tag}] Unable to invoke {func.__name__} for *{step_name}"})
             raise e
 
     """
@@ -80,7 +84,7 @@ def datalake_daily_sync():
         LAST_BLOCK_MATURITY_PERIOD = 10 * 60 # 10 minutes
         logical_time = kwargs['logical_time']
         logging.info(f"logical_time raw: {logical_time}")
-        logical_time = logical_time.split("T")[0] # time in form of YYYY-MM-DD
+        logical_time = logical_time[0:10]
         logging.info(f"Logical time: {logical_time}")
         start_of_the_day = datetime.strptime(logical_time, "%Y-%m-%d")
         end_of_the_day = start_of_the_day + timedelta(days=1)
@@ -220,7 +224,7 @@ def datalake_daily_sync():
         def execute_athena_query(query, database=source_database):
             query_id = athena.run_query(query,
                                         query_context={"Database": database},
-                                        result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                        result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                         workgroup=workgroup)
             final_state = athena.poll_query_status(query_id)
             if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -265,7 +269,7 @@ def datalake_daily_sync():
             logging.info(response)
 
         tmp_table_name = f"{target_table}_increment_{str(uuid.uuid4()).replace('-', '')}"
-        tmp_table_location = f"{tmp_location}/{tmp_table_name}"
+        tmp_table_location = f"s3://{tmp_location}/{tmp_table_name}"
         FIELDS = ", ".join([col['Name'] for col in source_table_meta['Table']['StorageDescriptor']['Columns']])
         sql = f"""
         create table "{source_database}".{tmp_table_name}
@@ -313,7 +317,7 @@ def datalake_daily_sync():
 
         finished = datetime.now().strftime("%I:%M %p")
         telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
-        telegram_hook.send_message({"text": f"🚰👌 {target_table} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files"})
+        telegram_hook.send_message({"text": f"🚰👌 [{env_tag}] {target_table} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files"})
 
     """
     Checks Kafka commited offset for the consumer group
@@ -363,9 +367,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_blocks"),
         op_kwargs={
             'repartition_field': 'gen_utime',
-            'source_table': 'archival_adding_dateblocks',
+            'source_table': 'exporters_blocks',
             'target_table': 'blocks',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/blocks',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/blocks',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_archive_blocks'
         }
@@ -376,9 +380,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_transactions"),
         op_kwargs={
             'repartition_field': 'now',
-            'source_table': 'archival_adding_datetransactions',
+            'source_table': 'exporters_transactions',
             'target_table': 'transactions',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/transactions',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/transactions',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_archive_transactions'
         }
@@ -389,9 +393,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_messages"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'archival_adding_datemessages',
+            'source_table': 'exporters_messages',
             'target_table': 'messages',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/messages',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/messages',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_archive_messages'
         }
@@ -402,9 +406,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_messages_with_data"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'archival_adding_datemessages_with_data',
+            'source_table': 'exporters_messages_with_data',
             'target_table': 'messages_with_data',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/messages_with_data',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/messages_with_data',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_archive_messages_with_data'
         }
@@ -415,9 +419,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_accounts"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'archival_adding_date_latest_account_states',
+            'source_table': 'exporters_latest_account_states',
             'target_table': 'account_states',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/account_states',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/account_states',
             'dedup_depth': 3,
             'kafka_group_id': 'exporter_account_states_3'
         }
@@ -427,7 +431,7 @@ def datalake_daily_sync():
         task_id=f'check_main_parser_offset',
         python_callable=lambda **kwargs: safe_python_callable(check_kafka_offset, kwargs, "check_main_parser_offset"),
         op_kwargs={
-            'kafka_group_id': 'messages_parsers_part1',
+            'kafka_group_id': 'messages_parsers',
             'topic': 'ton.public.messages',
             'field': 'tx_now'
         }
@@ -437,7 +441,7 @@ def datalake_daily_sync():
         task_id=f'check_core_prices_offset',
         python_callable=lambda **kwargs: safe_python_callable(check_kafka_offset, kwargs, "check_core_prices_offset"),
         op_kwargs={
-            'kafka_group_id': 'core_prices_full',
+            'kafka_group_id': 'core_prices',
             'topic': 'ton.public.latest_account_states',
             'field': 'timestamp'
         }
@@ -468,9 +472,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_dex_trades"),
         op_kwargs={
             'repartition_field': 'event_time',
-            'source_table': 'archival_adding_date_dex_swaps',
+            'source_table': 'exporters_dex_swaps',
             'target_table': 'dex_trades',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/dex_trades',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/dex_trades',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_dex_trades_fix',
             'primary_key': 'tx_hash',
@@ -487,9 +491,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_jetton_events"),
         op_kwargs={
             'repartition_field': 'utime',
-            'source_table': 'archival_adding_date_jetton_events',
+            'source_table': 'exporters_jetton_events',
             'target_table': 'jetton_events',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/jetton_events',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/jetton_events',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_jetton_events',
             # 'primary_key': 'tx_hash',
@@ -507,9 +511,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_dex_tvl"),
         op_kwargs={
             'repartition_field': 'last_updated',
-            'source_table': 'archival_adding_date_dex_pool',
+            'source_table': 'exporters_dex_pool',
             'target_table': 'dex_pools',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/dex_pools',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/dex_pools',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_dex_pools',
             'allow_empty_partitions': 3
@@ -521,9 +525,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_balances_history"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'archival_adding_date_balances_history',
+            'source_table': 'exporters_balances_history',
             'target_table': 'balances_history',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/balances_history',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/balances_history',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_balances_history',
             'topics_timestamp_field': {
@@ -538,9 +542,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_items"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'archival_adding_date_nft_items_history',
+            'source_table': 'exporters_nft_items_history',
             'target_table': 'nft_items',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/nft_items',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_items',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_nft_items',
             'topics_timestamp_field': {
@@ -553,7 +557,7 @@ def datalake_daily_sync():
         task_id=f'check_nft_parser_offset',
         python_callable=lambda **kwargs: safe_python_callable(check_kafka_offset, kwargs, "check_nft_parser_offset"),
         op_kwargs={
-            'kafka_group_id': 'nft_items_parser_2',
+            'kafka_group_id': 'nft_items_parser',
             'topic': 'ton.public.latest_account_states',
             'field': 'timestamp'
         }
@@ -564,9 +568,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_transfers"),
         op_kwargs={
             'repartition_field': 'tx_now',
-            'source_table': 'archival_adding_date_nft_transfers',
+            'source_table': 'exporters_nft_transfers',
             'target_table': 'nft_transfers',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/nft_transfers',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_transfers',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_nft_transfers'
         }
@@ -577,9 +581,9 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(convert_table, kwargs, "convert_nft_sales"),
         op_kwargs={
             'repartition_field': 'timestamp',
-            'source_table': 'archival_adding_date_nft_sales',
+            'source_table': 'exporters_nft_sales',
             'target_table': 'nft_sales',
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/nft_sales',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_sales',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_nft_sales_4',
             'topics_timestamp_field': {
@@ -591,22 +595,23 @@ def datalake_daily_sync():
 
     def generate_balances_snapshot(kwargs):
         athena = AthenaHook('s3_conn', region_name='us-east-1')
-        query = """
-        insert into datalake.balances_snapshot(address, asset, amount, mintless_claimed, timestamp, lt, block_date)
+        target_database = Variable.get("DATALAKE_TARGET_DATABASE")
+        query = f"""
+        insert into "{target_database}".balances_snapshot(address, asset, amount, mintless_claimed, timestamp, lt, block_date)
         with ranks as (
         select address, asset, amount, mintless_claimed, timestamp, lt,
         row_number() over (partition by address, asset order by lt desc) as rank
-        from "datalake"."balances_history"
+        from "{target_database}"."balances_history"
         )
         select address, asset, amount, mintless_claimed, timestamp, lt,
-        (SELECT max(block_date) FROM "datalake"."balances_history$partitions") as block_date
+        (SELECT max(block_date) FROM "{target_database}"."balances_history$partitions") as block_date
         from ranks where rank = 1
-        and (SELECT max(block_date) FROM "datalake"."balances_history$partitions") != 
-        (SELECT max(block_date) FROM "datalake"."balances_snapshot$partitions") 
+        and (SELECT max(block_date) FROM "{target_database}"."balances_history$partitions") != 
+        (SELECT max(block_date) FROM "{target_database}"."balances_snapshot$partitions") 
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -619,12 +624,13 @@ def datalake_daily_sync():
 
     def refresh_nft_metadata_partitions(kwargs):
         athena = AthenaHook('s3_conn', region_name='us-east-1')
-        query = """
-        MSCK REPAIR TABLE `datalake`.`nft_metadata`
+        target_database = Variable.get("DATALAKE_TARGET_DATABASE")
+        query = f"""
+        MSCK REPAIR TABLE `{target_database}`.`nft_metadata`
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -649,7 +655,7 @@ def datalake_daily_sync():
         tmp_location = Variable.get("DATALAKE_TMP_LOCATION")
         table_location = kwargs['target_table_location']
         tmp_table_name = f"nft_events_increment_{current_date}_{str(uuid.uuid4()).replace('-', '')}"
-        tmp_table_location = f"{tmp_location}/{tmp_table_name}"
+        tmp_table_location = f"s3://{tmp_location}/{tmp_table_name}"
 
         query = f"""
         create table "{source_database}".{tmp_table_name}
@@ -665,13 +671,13 @@ def datalake_daily_sync():
 
         with nft_items_states_ranks as (
             select ni.*, row_number() over (partition by ni.address order by ni.lt asc ) as rank
-            from datalake.nft_items ni where block_date <= '{current_date}'
+            from "{target_database}".nft_items ni where block_date <= '{current_date}'
         ), nft_items_latest_state as (
             select * from nft_items_states_ranks where rank = 1
         ),
         raw_min_tx as (
             SELECT ni.*, t.hash as tx_hash, t.trace_id
-            FROM datalake.transactions t 
+            FROM "{target_database}".transactions t 
             join nft_items_latest_state ni on t.account = ni.address and t.block_date = ni.block_date -- must be in the same partition
             and end_status ='active' and orig_status != 'active' -- new account deployment
             where t.block_date = '{current_date}'
@@ -688,7 +694,7 @@ def datalake_daily_sync():
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address, end_time,
             marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step
-            from datalake.nft_transfers t
+            from "{target_database}".nft_transfers t
             join nft_sales ns on ns.address = t.new_owner and t.nft_item_address = ns.nft_address
             where t.block_date = '{current_date}' and ns.block_date <= '{current_date}'
             and not t.tx_aborted
@@ -700,7 +706,7 @@ def datalake_daily_sync():
             nft_sale_contract, sale_type, end_time as sale_end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step, query_id, custom_payload
             from transfers_to_sale_contracts t
-            join datalake.nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
+            join "{target_database}".nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
             where rank = 1 -- first state of the sale contract
         ), put_on_sale as (
             select * from put_on_sale_ranks where nft_state_rank = 1
@@ -710,7 +716,7 @@ def datalake_daily_sync():
             select row_number() over(partition by ns.address order by ns.lt asc) as rank,  t.*,
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address, end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step 
-            from datalake.nft_transfers t
+            from "{target_database}".nft_transfers t
             join nft_sales ns on ns.address = t.old_owner and t.nft_item_address = ns.nft_address and ns.nft_owner_address = t.new_owner
             and (ns.is_complete or ns.is_canceled)
             where t.block_date = '{current_date}' and ns.block_date <= '{current_date}'
@@ -723,7 +729,7 @@ def datalake_daily_sync():
             nft_sale_contract, sale_type, end_time as sale_end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step, query_id, custom_payload
             from transfers_from_sale_contracts_to_owner t
-            join datalake.nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
+            join "{target_database}".nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
             where rank = 1 -- first state after sale completion
         ), cancel_sale as (
             select * from cancel_sale_ranks where nft_state_rank = 1
@@ -734,7 +740,7 @@ def datalake_daily_sync():
             select row_number() over(partition by ns.address order by ns.lt asc) as rank,  t.*,
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address as seller, t.new_owner as buyer, end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step 
-            from datalake.nft_transfers t
+            from "{target_database}".nft_transfers t
             join nft_sales ns on ns.address = t.old_owner and t.nft_item_address = ns.nft_address and ns.nft_owner_address != t.new_owner
             and (ns.is_complete or ns.is_canceled)
             where t.block_date = '{current_date}' and ns.block_date <= '{current_date}'
@@ -747,14 +753,14 @@ def datalake_daily_sync():
             nft_sale_contract, sale_type, end_time as sale_end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step, query_id, custom_payload
             from transfers_from_sale_contracts_to_buyer t
-            join datalake.nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
+            join "{target_database}".nft_items ni on ni.address = nft_item_address and ni.lt <= tx_lt
             where rank = 1 -- the first state after the sale
         ), sales as (
             select * from sales_ranks where nft_state_rank = 1
         ),
 
         sales_related as (
-            select tx_hash from datalake.nft_events where type = 'sale' or type = 'cancel_sale' or type = 'put_on_sale'
+            select tx_hash from "{target_database}".nft_events where type = 'sale' or type = 'cancel_sale' or type = 'put_on_sale'
             union all
             select tx_hash from sales
             union all
@@ -763,9 +769,9 @@ def datalake_daily_sync():
             select tx_hash from cancel_sale
         ), transfers_ordinary as (
             select t.*, 
-            (select is_init from datalake.nft_items ni where ni.address = nft_item_address order by ni.lt desc limit 1) as is_init,
-            (select content_onchain from datalake.nft_items ni where ni.address = nft_item_address order by ni.lt desc limit 1) as content_onchain
-            from datalake.nft_transfers t
+            (select is_init from "{target_database}".nft_items ni where ni.address = nft_item_address order by ni.lt desc limit 1) as is_init,
+            (select content_onchain from "{target_database}".nft_items ni where ni.address = nft_item_address order by ni.lt desc limit 1) as content_onchain
+            from "{target_database}".nft_transfers t
             left join sales_related s on s.tx_hash = t.tx_hash
             where t.block_date = '{current_date}'
             and s.tx_hash is null
@@ -773,7 +779,7 @@ def datalake_daily_sync():
         ),
 
         tondns_content_history as (
-            select *, lag(content_onchain, 1) over (partition by address order by lt asc) as prev_content  from datalake.nft_items 
+            select *, lag(content_onchain, 1) over (partition by address order by lt asc) as prev_content  from "{target_database}".nft_items 
             where collection_address ='0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF'
             and block_date <= '{current_date}'
         ), tondns_bids as (
@@ -794,7 +800,7 @@ def datalake_daily_sync():
         ),
 
         tondns_owner_history as (
-            select *, lag(owner_address, 1) over (partition by address order by lt asc) as prev_owner  from datalake.nft_items 
+            select *, lag(owner_address, 1) over (partition by address order by lt asc) as prev_owner  from "{target_database}".nft_items 
             where collection_address ='0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF'
             and block_date <= '{current_date}'
         ), tondns_releases as (
@@ -807,7 +813,7 @@ def datalake_daily_sync():
 
         tondns_next_event_history as (
             select *, lag(timestamp, 1) over (partition by address order by lt desc) as next_event, lag(owner_address, 1) over (partition by address order by lt desc) as next_owner
-            from datalake.nft_items 
+            from "{target_database}".nft_items 
             where collection_address ='0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF'
             and block_date <= '{current_date}'
         ), tondns_winners as (
@@ -831,11 +837,11 @@ def datalake_daily_sync():
         ),
 
         telemint_collections as (
-            select distinct collection_address from datalake.nft_items 
+            select distinct collection_address from "{target_database}".nft_items 
             where json_extract_scalar(content_onchain, '$.bidder_address') is not null
         ), telemint_bids_history as (
             select *, lag(content_onchain, 1) over (partition by address order by lt asc) as prev_content,
-            lag(owner_address, 1) over (partition by address order by lt asc) as prev_owner from datalake.nft_items 
+            lag(owner_address, 1) over (partition by address order by lt asc) as prev_owner from "{target_database}".nft_items 
             where collection_address in (select * from telemint_collections)
             and block_date <= '{current_date}'
         ), telemint_bids as (
@@ -1121,7 +1127,7 @@ def datalake_daily_sync():
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -1138,7 +1144,7 @@ def datalake_daily_sync():
 
         query_id = athena.run_query(f"MSCK REPAIR TABLE nft_events",
                                     query_context={"Database": target_database},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
@@ -1147,7 +1153,7 @@ def datalake_daily_sync():
 
         query_id = athena.run_query(f"select count(1) as count from \"{target_database}\".nft_events where block_date = '{current_date}'",
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         
         final_state = athena.poll_query_status(query_id)
@@ -1161,7 +1167,7 @@ def datalake_daily_sync():
 
         query_id = athena.run_query(f"select type, count(1) as count from \"{target_database}\".nft_events where block_date = '{current_date}' group by 1",
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
-                                    result_configuration={'OutputLocation': 's3://tf-analytcs-athena-output/'},
+                                    result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                     workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
         
         final_state = athena.poll_query_status(query_id)
@@ -1171,21 +1177,21 @@ def datalake_daily_sync():
         results = results_to_df(athena.get_query_results_paginator(query_id).build_full_result())
         logging.info(f"Got {len(results)} results")
         logging.info(results)
-        output_details = [];
+        output_details = []
         for row in results:
             output_details.append(f"{row['type']}: {row['count']}")
         output_details = ", ".join(output_details)
 
         finished = datetime.now().strftime("%I:%M %p")
         telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
-        telegram_hook.send_message({"text": f"🚰👌 nft_events for {current_date} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files. Stats: {output_details}"})
+        telegram_hook.send_message({"text": f"🚰👌 [{env_tag}] nft_events for {current_date} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files. Stats: {output_details}"})
         
 
     nft_events_task = PythonOperator(
         task_id=f'nft_events',
         python_callable=lambda **kwargs: safe_python_callable(nft_events, kwargs, "nft_events"),
         op_kwargs={
-            'target_table_location': 's3://ton-blockchain-public-datalake/v1/nft_events',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_events',
         }
     )
 
