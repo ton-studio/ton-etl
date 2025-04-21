@@ -324,6 +324,12 @@ CREATE TABLE IF NOT EXISTS parsed.tonfun_bcl_trade (
 ALTER TABLE parsed.gaspump_trade ADD column if not exists "volume_usd" numeric NULL;
 ALTER TABLE parsed.tonfun_bcl_trade ADD column if not exists "volume_usd" numeric NULL;
 
+-- Fixing tonfun_bcl_trade primary key
+BEGIN;
+ALTER TABLE parsed.tonfun_bcl_trade DROP CONSTRAINT tonfun_bcl_trade_pkey;
+ALTER TABLE parsed.tonfun_bcl_trade ADD PRIMARY KEY (tx_hash, event_type);
+COMMIT;
+
 -- tonco DEC support
 DO $$ BEGIN
     ALTER TYPE public.dex_name ADD VALUE 'tonco' AFTER 'megaton';
