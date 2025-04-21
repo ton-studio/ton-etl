@@ -71,7 +71,9 @@ services:
       - KAFKA_GROUP_ID=jettons_megaton
       - SUPPORTED_PARSERS=MegatonDexSwap
       - KAFKA_TOPICS=ton.public.jetton_transfers
-      - MIN_MATURITY_SECONDS=300
+      - MIN_MATURITY_SECONDS=30
+      - COMMIT_BATCH_SIZE=1
+      - MAX_PROCESSED_ITEMS=1000
     env_file:
       - parser.env
     logging:
