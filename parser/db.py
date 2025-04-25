@@ -14,6 +14,7 @@ from model.dexpool import DexPool
 from model.jetton_metadata import JettonMetadata
 from model.nft_item_metadata import NFTItemMetadata
 from model.nft_collection_metadata import NFTCollectionMetadata
+from model.parser import NonCriticalParserError
 
 @dataclass
 class FakeRecord:
@@ -29,9 +30,16 @@ def serialize_addr(addr: Union[Address, ExternalAddress, None]) -> str:
     return None
     
 class DB():
-    def __init__(self, use_message_content: bool, dex_pool_history: bool=False, run_migrations: bool=False):
+    def __init__(
+            self,
+            use_message_content: bool,
+            dex_pool_history: bool = False,
+            run_migrations: bool = False,
+            ignore_missing_parent_message_body: bool = False,
+        ):
         self.use_message_content = use_message_content
         self.dex_pool_history = dex_pool_history
+        self.ignore_missing_parent_message_body = ignore_missing_parent_message_body
         self.pool = pool.SimpleConnectionPool(1, 3)
         if not self.pool:
             raise Exception("Unable to init connection")
@@ -137,7 +145,10 @@ class DB():
                             """, (msg_hash, ))
                 res = cursor.fetchone()
                 if not res:
-                    return None
+                    if self.ignore_missing_parent_message_body:
+                        raise NonCriticalParserError(f"Parent message's body was not found for msg_hash={msg_hash}")
+                    else:
+                        return None
                 return res['body_boc']
 
     """
