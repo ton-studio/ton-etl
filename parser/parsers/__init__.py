@@ -8,7 +8,6 @@ from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser
 from parsers.message.stonfi_swap_v2 import StonfiSwapV2
 from parsers.message.gaspump import GasPumpTrade
 from parsers.accounts.tvl import TVLPoolStateParser
-from parsers.swaps.price_discovery import PriceDiscovery
 from parsers.accounts.jetton_wallets_recover import JettonWalletsRecover
 from parsers.accounts.nfts_recover import NFTsRecover
 from parsers.message_contents.decode_comment import CommentsDecoder
