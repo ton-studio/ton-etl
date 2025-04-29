@@ -505,6 +505,101 @@ TBLPROPERTIES (
   'sizeKey'='300042446', 
   'typeOfData'='file')
 
+  CREATE EXTERNAL TABLE `nft_items`(
+  `address` string COMMENT 'from deserializer', 
+  `is_init` boolean COMMENT 'from deserializer', 
+  `index` string COMMENT 'from deserializer', 
+  `collection_address` string COMMENT 'from deserializer', 
+  `owner_address` string COMMENT 'from deserializer', 
+  `content_onchain` string COMMENT 'from deserializer', 
+  `timestamp` int COMMENT 'from deserializer', 
+  `lt` bigint COMMENT 'from deserializer')
+PARTITIONED BY ( 
+  `block_date` string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+WITH SERDEPROPERTIES ( 
+  'avro.schema.literal'='{\"type\":\"record\",\"name\":\"nft_items_history\",\"namespace\":\"ton\",\"fields\":[{\"name\":\"address\",\"type\":\"string\"},{\"name\":\"is_init\",\"type\":[\"boolean\",\"null\"]},{\"name\":\"index\",\"type\":[\"string\",\"null\"]},{\"name\":\"collection_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"owner_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"content_onchain\",\"type\":[\"string\",\"null\"]},{\"name\":\"timestamp\",\"type\":[\"int\",\"null\"]},{\"name\":\"lt\",\"type\":[\"long\",\"null\"]}]}') 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+LOCATION
+  's3://ton-blockchain-public-datalake/v1/nft_items'
+TBLPROPERTIES (
+)
+
+CREATE EXTERNAL TABLE `nft_sales`(
+  `address` string COMMENT 'from deserializer', 
+  `type` string COMMENT 'from deserializer', 
+  `nft_address` string COMMENT 'from deserializer', 
+  `nft_owner_address` string COMMENT 'from deserializer', 
+  `created_at` int COMMENT 'from deserializer', 
+  `is_complete` boolean COMMENT 'from deserializer', 
+  `is_canceled` boolean COMMENT 'from deserializer', 
+  `end_time` int COMMENT 'from deserializer', 
+  `marketplace_address` string COMMENT 'from deserializer', 
+  `marketplace_fee_address` string COMMENT 'from deserializer', 
+  `marketplace_fee` decimal(38,0) COMMENT 'from deserializer', 
+  `price` decimal(38,0) COMMENT 'from deserializer', 
+  `asset` string COMMENT 'from deserializer', 
+  `royalty_address` string COMMENT 'from deserializer', 
+  `royalty_amount` decimal(38,0) COMMENT 'from deserializer', 
+  `max_bid` decimal(38,0) COMMENT 'from deserializer', 
+  `min_bid` decimal(38,0) COMMENT 'from deserializer', 
+  `min_step` decimal(38,0) COMMENT 'from deserializer', 
+  `last_bid_at` int COMMENT 'from deserializer', 
+  `last_member` string COMMENT 'from deserializer', 
+  `timestamp` int COMMENT 'from deserializer', 
+  `lt` bigint COMMENT 'from deserializer')
+PARTITIONED BY ( 
+  `block_date` string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+WITH SERDEPROPERTIES ( 
+  'avro.schema.literal'='{\"type\":\"record\",\"name\":\"nft_sales\",\"namespace\":\"ton\",\"fields\":[{\"name\":\"address\",\"type\":\"string\"},{\"name\":\"type\",\"type\":\"string\"},{\"name\":\"nft_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"nft_owner_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"created_at\",\"type\":[\"int\",\"null\"]},{\"name\":\"is_complete\",\"type\":[\"boolean\",\"null\"]},{\"name\":\"is_canceled\",\"type\":[\"boolean\",\"null\"]},{\"name\":\"end_time\",\"type\":[\"int\",\"null\"]},{\"name\":\"marketplace_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"marketplace_fee_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"marketplace_fee\",\"type\":[{\"type\":\"bytes\",\"logicalType\":\"decimal\",\"precision\":38,\"scale\":0},\"null\"]},{\"name\":\"price\",\"type\":[{\"type\":\"bytes\",\"logicalType\":\"decimal\",\"precision\":38,\"scale\":0},\"null\"]},{\"name\":\"asset\",\"type\":[\"string\",\"null\"]},{\"name\":\"royalty_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"royalty_amount\",\"type\":[{\"type\":\"bytes\",\"logicalType\":\"decimal\",\"precision\":38,\"scale\":0},\"null\"]},{\"name\":\"max_bid\",\"type\":[{\"type\":\"bytes\",\"logicalType\":\"decimal\",\"precision\":38,\"scale\":0},\"null\"]},{\"name\":\"min_bid\",\"type\":[{\"type\":\"bytes\",\"logicalType\":\"decimal\",\"precision\":38,\"scale\":0},\"null\"]},{\"name\":\"min_step\",\"type\":[{\"type\":\"bytes\",\"logicalType\":\"decimal\",\"precision\":38,\"scale\":0},\"null\"]},{\"name\":\"last_bid_at\",\"type\":[\"int\",\"null\"]},{\"name\":\"last_member\",\"type\":[\"string\",\"null\"]},{\"name\":\"timestamp\",\"type\":[\"int\",\"null\"]},{\"name\":\"lt\",\"type\":[\"long\",\"null\"]}]}') 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+LOCATION
+  's3://ton-blockchain-public-datalake/v1/nft_sales'
+TBLPROPERTIES (
+)
+
+CREATE EXTERNAL TABLE `nft_transfers`(
+  `tx_hash` string COMMENT 'from deserializer', 
+  `tx_lt` bigint COMMENT 'from deserializer', 
+  `tx_now` int COMMENT 'from deserializer', 
+  `tx_aborted` boolean COMMENT 'from deserializer', 
+  `query_id` decimal(20,0) COMMENT 'from deserializer', 
+  `nft_item_address` string COMMENT 'from deserializer', 
+  `nft_item_index` string COMMENT 'from deserializer', 
+  `nft_collection_address` string COMMENT 'from deserializer', 
+  `old_owner` string COMMENT 'from deserializer', 
+  `new_owner` string COMMENT 'from deserializer', 
+  `response_destination` string COMMENT 'from deserializer', 
+  `custom_payload` binary COMMENT 'from deserializer', 
+  `forward_amount` decimal(38,0) COMMENT 'from deserializer', 
+  `forward_payload` binary COMMENT 'from deserializer', 
+  `comment` string COMMENT 'from deserializer', 
+  `trace_id` string COMMENT 'from deserializer')
+PARTITIONED BY ( 
+  `block_date` string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+WITH SERDEPROPERTIES ( 
+  'avro.schema.literal'='{\"type\":\"record\",\"name\":\"nft_transfers\",\"namespace\":\"ton\",\"fields\":[{\"name\":\"tx_hash\",\"type\":\"string\"},{\"name\":\"tx_lt\",\"type\":\"long\"},{\"name\":\"tx_now\",\"type\":\"int\"},{\"name\":\"tx_aborted\",\"type\":\"boolean\"},{\"name\":\"query_id\",\"type\":[{\"type\":\"bytes\",\"logicalType\":\"decimal\",\"precision\":20,\"scale\":0},\"null\"]},{\"name\":\"nft_item_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"nft_item_index\",\"type\":[\"string\",\"null\"]},{\"name\":\"nft_collection_address\",\"type\":[\"string\",\"null\"]},{\"name\":\"old_owner\",\"type\":[\"string\",\"null\"]},{\"name\":\"new_owner\",\"type\":[\"string\",\"null\"]},{\"name\":\"response_destination\",\"type\":[\"string\",\"null\"]},{\"name\":\"custom_payload\",\"type\":[\"bytes\",\"null\"]},{\"name\":\"forward_amount\",\"type\":[{\"type\":\"bytes\",\"logicalType\":\"decimal\",\"precision\":38,\"scale\":0},\"null\"]},{\"name\":\"forward_payload\",\"type\":[\"bytes\",\"null\"]},{\"name\":\"comment\",\"type\":[\"string\",\"null\"]},{\"name\":\"trace_id\",\"type\":[\"string\",\"null\"]}]}') 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+LOCATION
+  's3://ton-blockchain-public-datalake/v1/nft_transfers'
+TBLPROPERTIES (
+)
+  
+
 
   CREATE EXTERNAL TABLE `nft_events`(
   `type` varchar(11) COMMENT 'from deserializer', 
