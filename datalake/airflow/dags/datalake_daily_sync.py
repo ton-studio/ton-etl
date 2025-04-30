@@ -232,6 +232,7 @@ def datalake_daily_sync():
             return query_id
         
         execute_athena_query(f"MSCK REPAIR TABLE {source_table}", database=source_database)
+        execute_athena_query(f"MSCK REPAIR TABLE {target_table}", database=target_database)
 
         glue = boto3.client("glue", region_name="us-east-1")
         source_table_meta = glue.get_table(DatabaseName=source_database, Name=source_table)
@@ -653,6 +654,15 @@ def datalake_daily_sync():
         table_location = kwargs['target_table_location']
         tmp_table_name = f"nft_events_increment_{current_date}_{str(uuid.uuid4()).replace('-', '')}"
         tmp_table_location = f"s3://{tmp_location}/{tmp_table_name}"
+
+        query = """MSCK REPAIR TABLE "{target_database}".nft_events"""
+        query_id = athena.run_query(query,
+                            query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
+                            result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
+                            workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
+        final_state = athena.poll_query_status(query_id)
+        if final_state == 'FAILED' or final_state == 'CANCELLED':
+            raise Exception(f"Unable to get data from Athena: {query_id}")
 
         query = f"""
         create table "{source_database}".{tmp_table_name}
