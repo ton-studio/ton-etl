@@ -160,22 +160,6 @@ Each parser estimates deal volume in TON and USD using core prices (see below). 
 TON, stablecoins or LSDs volume will be estimated based on the core asset price at the moment of the swap. Otherwise
 (like swaps between jettons) volume will be null.
 
-
-### tradoor_perp_order
-
-Contains decoded Tradoor Perp Order events. Produced from messages table stream
-with [TradoorPerpOrder](./parser/parsers/message/tradoor_trades.py) parser. 
-
-### tradoor_perp_position_change
-
-Contains decoded Tradoor Perp Position Change events. Produced from messages table stream
-with [TradoorPerpPositionChange](./parser/parsers/message/tradoor_trades.py) parser. 
-
-### tradoor_option_order
-
-Contains decoded Tradoor Option Order events. Produced from messages table stream
-with [TradoorOptionOrder](./parser/parsers/message/tradoor_trades.py) parser. 
-
 ### gaspump_trade
 
 Contains decoded GasPump trade events. Produced from messages table stream
@@ -194,26 +178,6 @@ Includes following fields:
 * referral_ver - referral version. TONFun protocol allows to set arbitrary referral cell and the cell starts with 32-bit version (opcode). The only supported
 opcode is crc32(ref_v1).
 * partner_address, platform_tag, extra_tag - referral addresses provided by the trader
-
-### evaa_supply
-
-Contains decoded EVAA supply events. Produced from messages table stream
-with [EvaaSupplyParser](./parser/parsers/message/evaa.py). 
-
-EVAA pools:
-* EQC8rUZqR_pWV1BylWUlPNBzyiTYVoBEmQkMIQDZXICfnuRr - EVAA main pool
-* EQBIlZX2URWkXCSg3QF2MJZU-wC5XkBoLww-hdWk2G37Jc6N - EVAA LP pool
-* EQBozwKVDya9IL3Kw4mR5AQph4yo15EuMdyX8nLljeaUxrpM - Coffin pool (EVAA fork)
-
-### evaa_withdraw
-
-Contains decoded EVAA withdraw events. Produced from messages table stream
-with [EvaaWithdrawAndLiquidationParser](./parser/parsers/message/evaa.py). 
-
-### evaa_liquidation
-
-Contains decoded EVAA liquidation events. Produced from messages table stream
-with [EvaaWithdrawAndLiquidationParser](./parser/parsers/message/evaa.py). 
 
 ### staking_pools_nominators
 
@@ -272,4 +236,3 @@ tool from ``ton-index-worker`` to populate all accounts states first. Since this
 tool doesn't update jetton wallets and NFT items you can use special parsers to recover all jettton wallets and NFT items:
 * [NFTsRecover](./parser/parsers/accounts/nfts_recover.py) - recovers NFTs from the latest_accounts_states table without metadata support (deprecated)
 * [NFTItemsParser](./parser/parsers/accounts/nfts_parser.py) - more sophisticated NFTs parser with full metadata support
-* [JettonWalletsRecover](./parser/parsers/accounts/jetton_wallets_recover.py) - recovers jetton wallets from the latest_accounts_states table

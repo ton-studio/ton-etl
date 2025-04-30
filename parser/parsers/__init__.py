@@ -7,19 +7,15 @@ from parsers.message.tonfun import TonFunTrade
 from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser
 from parsers.message.stonfi_swap_v2 import StonfiSwapV2
 from parsers.message.gaspump import GasPumpTrade
-from parsers.message.tradoor_trades import TradoorOptionOrder, TradoorPerpOrder, TradoorPerpPositionChange
 from parsers.accounts.tvl import TVLPoolStateParser
-from parsers.swaps.price_discovery import PriceDiscovery
 from parsers.accounts.jetton_wallets_recover import JettonWalletsRecover
 from parsers.accounts.nfts_recover import NFTsRecover
 from parsers.message_contents.decode_comment import CommentsDecoder
 from parsers.accounts.core_prices import CorePricesHipoTON, CorePricesLSDstTON, CorePricesLSDtsTON, CorePricesStormTrade, CorePricesUSDT
 from parsers.message.dedust_swap import DedustSwap
 from parsers.message.stonfi_swap import StonfiSwap
-from parsers.message.evaa import EvaaSupplyParser, EvaaWithdrawAndLiquidationParser
 from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted
 from parsers.nft_transfer.nft_history import NftHistoryParser
-from parsers.jetton_wallets.jetton_wallet_balances import JettonWalletBalancesParser
 from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser
 from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadataParser
 from model.parser import Parser
@@ -27,7 +23,6 @@ from loguru import logger
 import os
 
 EMULATOR_PATH = os.environ.get("EMULATOR_LIBRARY")
-MIN_SWAP_VOLUME_FOR_PRICE = int(os.environ.get("MIN_SWAP_VOLUME_FOR_PRICE", "1"))
 METADATA_FETCH_TIMEOUT = int(os.environ.get("METADATA_FETCH_TIMEOUT", "10"))
 METADATA_FETCH_MAX_ATTEMPTS = int(os.environ.get("METADATA_FETCH_MAX_ATTEMPTS", "3"))
 TONAPI_ONLY_MODE = os.environ.get("TONAPI_ONLY_MODE", "0").lower() in ('true', '1')
@@ -44,15 +39,8 @@ _parsers = [
     GasPumpTrade(),
     TONCOSwap(),
     
-    TradoorPerpOrder(),
-    TradoorOptionOrder(),
-    TradoorPerpPositionChange(),
-    EvaaSupplyParser(),
-    EvaaWithdrawAndLiquidationParser(),
     JettonMintParser(),
     HipoTokensMinted(),
-
-    PriceDiscovery(MIN_SWAP_VOLUME_FOR_PRICE),
 
     CorePricesUSDT(),
     CorePricesLSDstTON(),
@@ -76,7 +64,6 @@ _parsers = [
     
     CommentsDecoder(),
 
-    JettonWalletBalancesParser(),
     JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
 
     NFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),

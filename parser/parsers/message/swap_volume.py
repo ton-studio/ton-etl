@@ -40,8 +40,6 @@ QUOTE_ASSET_TYPE_STABLE = "STABLE"
 QUOTE_ASSET_TYPE_LSD = "LSD"
 QUOTE_ASSET_TYPE_OTHER = "OTHER"
 
-NON_LIQUID_POOLS_TVL = int(os.environ.get("NON_LIQUID_POOLS_TVL", "0"))
-
 """
 Deterministically returns base and quote tokens and quote asset type
 """
@@ -157,13 +155,6 @@ def estimate_tvl(pool: DexPool, db: DB):
                 logger.warning(f"No price for {jetton} for {last_updated}")
 
         else:
-            if NON_LIQUID_POOLS_TVL:
-                price = db.get_agg_price(jetton, last_updated)
-                if price :
-                    tvl_ton = reserves * price / 1e9
-                    tvl_usd = tvl_ton * ton_price
-                else:
-                    logger.warning(f"No price for {jetton} for {last_updated}")
             is_liquid = False
 
         return tvl_usd, tvl_ton, is_liquid

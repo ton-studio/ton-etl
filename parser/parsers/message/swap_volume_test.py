@@ -18,49 +18,38 @@ AquaUSD = Address("EQAWDyxARSl3ol2G1RMLMwepr3v6Ter5ls3jiAlheKshgg0K")
 
 @pytest.mark.parametrize(
     "jetton_left, jetton_right, reserves_left, reserves_right, last_updated, "
-    "usdt_core_price, tston_core_price, not_agg_price, storm_agg_price, non_liquid_pools_tvl, "
+    "usdt_core_price, tston_core_price, not_agg_price, storm_agg_price, "
     "res_tvl_usd, res_tvl_ton, res_is_liquid",
     [
         # TONS-STABLES pool, usual case
-        (TON, USDT, 2e15, 1.1e13, 1738000000, 0.005, 1.05, 0.001, 0.005, "0", 2.1e7, 4.2e6, True),
+        (TON, USDT, 2e15, 1.1e13, 1738000000, 0.005, 1.05, 0.001, 0.005, 2.1e7, 4.2e6, True),
         # TONS-STABLES pool, no TON price found
-        (TON, USDT, 2e15, 1.1e13, 1738000000, None, 1.05, 0.001, 0.005, "0", None, None, True),
+        (TON, USDT, 2e15, 1.1e13, 1738000000, None, 1.05, 0.001, 0.005, None, None, True),
         # TONS-STABLES pool, TON price = 0
-        (TON, USDT, 2e15, 1.1e13, 1738000000, 0, 1.05, 0.001, 0.005, "0", None, None, True),
+        (TON, USDT, 2e15, 1.1e13, 1738000000, 0, 1.05, 0.001, 0.005, None, None, True),
         # TONS-ORBIT_STABLES pool, time after ORBIT_HACK_TIMESTAMP
-        (TON, oUSDT, 2e13, 1.1e11, 1738000000, 0.005, 1.05, 0.001, 0.005, "0", 2e5, 4e4, True),
+        (TON, oUSDT, 2e13, 1.1e11, 1738000000, 0.005, 1.05, 0.001, 0.005, 2e5, 4e4, True),
         # TONS-ORBIT_STABLES pool, time befor ORBIT_HACK_TIMESTAMP
-        (TON, oUSDT, 2e13, 1.1e11, 1703900000, 0.005, 1.05, 0.001, 0.005, "0", 2.1e5, 4.2e4, True),
+        (TON, oUSDT, 2e13, 1.1e11, 1703900000, 0.005, 1.05, 0.001, 0.005, 2.1e5, 4.2e4, True),
         # LSDS-STABLES pool, usual case
-        (tsTON, USDT, 2e15, 1e13, 1738000000, 0.005, 1.05, 0.001, 0.005, "0", 2.05e7, 4.1e6, True),
+        (tsTON, USDT, 2e15, 1e13, 1738000000, 0.005, 1.05, 0.001, 0.005, 2.05e7, 4.1e6, True),
         # LSDS-STABLES pool, no price for LSD
-        (tsTON, USDT, 2e15, 1e13, 1738000000, 0.005, None, 0.001, 0.005, "0", None, None, True),
+        (tsTON, USDT, 2e15, 1e13, 1738000000, 0.005, None, 0.001, 0.005, None, None, True),
         # TONS-JETTONS pool, usual case
-        (TON, NOT, 1e12, 1.1e15, 1738000000, 0.005, 1.05, 0.001, 0.005, "0", 1e4, 2e3, True),
+        (TON, NOT, 1e12, 1.1e15, 1738000000, 0.005, 1.05, 0.001, 0.005, 1e4, 2e3, True),
         # JETTONS-TONS pool, usual case
-        (NOT, TON, 1.1e15, 1e12, 1738000000, 0.005, 1.05, 0.001, 0.005, "0", 1e4, 2e3, True),
-        # TONS-JETTONS pool, usual case, NON_LIQUID_POOLS_TVL is set to '1'
-        (TON, NOT, 1e12, 1.1e15, 1738000000, 0.005, 1.05, 0.001, 0.005, "1", 1e4, 2e3, True),
-        # TONS-JETTONS pool, no price for jetton, NON_LIQUID_POOLS_TVL is set to '1'
-        (TON, NOT, 1e12, 1.1e15, 1738000000, 0.005, 1.05, None, 0.005, "1", 1e4, 2e3, True),
-        # JETTONS-JETTONS pool, usual case, NON_LIQUID_POOLS_TVL is set to '0'
-        (NOT, STORM, 5e15, 1.1e15, 1738000000, 0.005, 1.05, 0.001, 0.005, "0", None, None, False),
-        # JETTONS-JETTONS pool, usual case, NON_LIQUID_POOLS_TVL is set to '1'
-        (NOT, STORM, 5e15, 1.1e15, 1738000000, 0.005, 1.05, 0.001, 0.005, "1", 5.25e4, 1.05e4, False),
-        # JETTONS-JETTONS pool, no price for jetton, NON_LIQUID_POOLS_TVL is set to '1'
-        (NOT, STORM, 5e15, 1.1e15, 1738000000, 0.005, 1.05, 0.001, None, "1", None, None, False),
-        # JETTONS-JETTONS pool, no price for both jettons, NON_LIQUID_POOLS_TVL is set to '1'
-        (NOT, STORM, 5e15, 1.1e15, 1738000000, 0.005, 1.05, None, None, "1", None, None, False),
+        (NOT, TON, 1.1e15, 1e12, 1738000000, 0.005, 1.05, 0.001, 0.005, 1e4, 2e3, True),
+        # JETTONS-JETTONS pool, usual case
+        (NOT, STORM, 5e15, 1.1e15, 1738000000, 0.005, 1.05, 0.001, 0.005, None, None, False),
         # USDT-AquaUSD stable pool, usual case
-        (USDT, AquaUSD, 2e11, 4e11, 1738000000, 0.005, 1.05, 0.001, 0.005, "0", 6e5, 1.2e5, True),
+        (USDT, AquaUSD, 2e11, 4e11, 1738000000, 0.005, 1.05, 0.001, 0.005, 6e5, 1.2e5, True),
         # ORBIT_STABLES-JETTONS pool, time after ORBIT_HACK_TIMESTAMP
-        (oUSDT, NOT, 1e10, 1.1e10, 1738000000, 0.005, 1.05, 0.001, 0.005, "0", None, None, False),
+        (oUSDT, NOT, 1e10, 1.1e10, 1738000000, 0.005, 1.05, 0.001, 0.005, None, None, False),
         # ORBIT_STABLES-JETTONS pool, time befor ORBIT_HACK_TIMESTAMP
-        (oUSDT, NOT, 1e10, 1.1e10, 1703900000, 0.005, 1.05, 0.001, 0.005, "0", 2e4, 4e3, True),
+        (oUSDT, NOT, 1e10, 1.1e10, 1703900000, 0.005, 1.05, 0.001, 0.005, 2e4, 4e3, True),
     ],
 )
 def test_estimate_tvl(
-    monkeypatch,
     jetton_left,
     jetton_right,
     reserves_left,
@@ -70,12 +59,10 @@ def test_estimate_tvl(
     tston_core_price,
     not_agg_price,
     storm_agg_price,
-    non_liquid_pools_tvl,
     res_tvl_usd,
     res_tvl_ton,
     res_is_liquid,
 ):
-    monkeypatch.setenv("NON_LIQUID_POOLS_TVL", non_liquid_pools_tvl)
     import parser.parsers.message.swap_volume
 
     importlib.reload(parser.parsers.message.swap_volume)
