@@ -37,7 +37,7 @@ class JettonWalletsRecover(EmulatorParser):
             logger.warning(f"Jetton address is None for {wallet_address}")
             return
         # Check that jetton wallets is not faked, i.e. master returns the same address for its owner
-        master_state = db.get_latest_account_state(jetton)
+        master_state = Parser.get_account_state_safe(jetton, db)
         if master_state is None:
             logger.warning(f"No state for jetton master {jetton}")
             return

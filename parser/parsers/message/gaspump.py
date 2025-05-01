@@ -57,7 +57,7 @@ class GasPumpTrade(Parser):
             obj.get("destination", 'None') is None
 
     def handle_internal(self, obj, db: DB):
-        code_hash = db.get_latest_account_state(Address(Parser.require(obj.get('source', None))))['code_hash']
+        code_hash = Parser.get_account_state_safe(Address(Parser.require(obj.get('source', None))), db)['code_hash']
         if code_hash not in GASPUMP_CODE_HASH_WHITELIST:
             logger.warning("Code hash {} for {} not in whitelist", code_hash, obj.get('source', None))
             return

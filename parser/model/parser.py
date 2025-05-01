@@ -2,9 +2,11 @@
 #!/usr/bin/env python
 
 import os
+from typing import Any, Dict
 from pytoniq_core import Address, Cell
 from db import DB
-
+import requests
+from loguru import logger
 
 TOPIC_MESSAGES = "ton.public.messages"
 TOPIC_MESSAGE_CONTENTS = "ton.public.message_contents"
@@ -24,6 +26,8 @@ it and not going to stop parsing.
 """
 class NonCriticalParserError(Exception):
     pass
+
+ACCOUNT_STATE_CACHE: Dict[str, Dict[str, Any]] = {}
 
 """
 Base class for parser
@@ -100,3 +104,38 @@ class Parser:
     def message_body(clz, obj, db: DB) -> Cell:
         body = db.get_message_body(obj.get('body_hash')) if Parser.USE_MESSAGE_CONTENT else obj.get('body_boc')
         return Cell.one_from_boc(Parser.require(body))
+    
+    """
+    If we are indexing not from scratch, we can encounter some missing account required for the parser.
+    For example, we can have NFT item to parse but missing the account state for the collection.
+    To overcome this we can use additional step to fetch states using RPC (toncenter) and cache it to minimize RPC calls.
+    """
+    @classmethod    
+    def get_account_state_safe(clz, address: Address, db: DB):
+        res = db.get_latest_account_state(address)
+        if res:
+            return res
+
+        if address in ACCOUNT_STATE_CACHE:
+            return ACCOUNT_STATE_CACHE[address]
+        
+        logger.info(f"Fetching account state from toncenter RPC for {address}")
+        
+        res = requests.get(f"https://toncenter.com/api/v3/accountStates?address={address.to_str(is_user_friendly=False)}")
+        if res.status_code != 200:
+            raise Exception(f"Failed to fetch account state from toncenter RPC for {address}")
+        
+        result = res.json()
+        for account in result['accounts']:
+            if Address(account['address']) == address:
+                logger.info(f"Found account state for {address} in toncenter RPC")
+                account_state = {
+                    'account': address.to_str(is_user_friendly=False).upper(),
+                    'code_boc': account['code_boc'],
+                    'data_boc': account['data_boc'],
+                }
+                ACCOUNT_STATE_CACHE[address] = account_state
+                return account_state
+        
+        logger.warning(f"No account state found for {address} in toncenter RPC")
+        return None

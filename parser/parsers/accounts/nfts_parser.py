@@ -105,7 +105,7 @@ class NFTItemsParser(EmulatorParser):
             return None
         if collection_address in self.collections_emulators:
             return self.collections_emulators[collection_address]
-        res = db.get_latest_account_state(collection_address)
+        res = Parser.get_account_state_safe(collection_address, db)
         if res:
             if res is None:
                 logger.warning(f"No state for collection {collection_address}")
