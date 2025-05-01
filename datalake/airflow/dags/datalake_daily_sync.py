@@ -658,7 +658,7 @@ def datalake_daily_sync():
         tmp_table_name = f"nft_events_increment_{current_date}_{str(uuid.uuid4()).replace('-', '')}"
         tmp_table_location = f"s3://{tmp_location}/{tmp_table_name}"
 
-        query = """MSCK REPAIR TABLE "{target_database}".nft_events"""
+        query = """MSCK REPAIR TABLE nft_events"""
         query_id = athena.run_query(query,
                             query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
                             result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
