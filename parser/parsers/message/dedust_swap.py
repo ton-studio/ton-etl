@@ -26,7 +26,7 @@ class DedustSwap(EmulatorParser):
 
     def prepare(self, db: DB):
         EmulatorParser.prepare(self, db)
-        factory_state = db.get_latest_account_state(DEDUST_FACTORY_ADDRESS)
+        factory_state = Parser.get_account_state_safe(DEDUST_FACTORY_ADDRESS, db)
         self.factory = self._prepare_emulator(factory_state)
         
     
