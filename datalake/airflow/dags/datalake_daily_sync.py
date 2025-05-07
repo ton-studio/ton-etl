@@ -623,11 +623,12 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(generate_balances_snapshot, kwargs, "generate_balances_snapshot")
     )
 
-    def refresh_nft_metadata_partitions(kwargs):
+    def refresh_metadata_partitions(kwargs):
         athena = AthenaHook('s3_conn', region_name='us-east-1')
         target_database = Variable.get("DATALAKE_TARGET_DATABASE")
+        target_table = kwargs['target_table']
         query = f"""
-        MSCK REPAIR TABLE `{target_database}`.`nft_metadata`
+        MSCK REPAIR TABLE `{target_database}`.`{target_table}`
         """
         query_id = athena.run_query(query,
                                     query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
@@ -639,7 +640,18 @@ def datalake_daily_sync():
 
     refresh_nft_metadata_partitions_task = PythonOperator(
         task_id=f'refresh_nft_metadata_partitions',
-        python_callable=lambda **kwargs: safe_python_callable(refresh_nft_metadata_partitions, kwargs, "refresh_nft_metadata_partitions")
+        python_callable=lambda **kwargs: safe_python_callable(refresh_metadata_partitions, kwargs, "refresh_nft_metadata_partitions"),
+        op_kwargs={
+            'target_table': 'nft_metadata'
+        }
+    )
+
+    refresh_jetton_metadata_partitions_task = PythonOperator(
+        task_id=f'refresh_jetton_metadata_partitions',
+        python_callable=lambda **kwargs: safe_python_callable(refresh_metadata_partitions, kwargs, "refresh_jetton_metadata_partitions"),
+        op_kwargs={
+            'target_table': 'jetton_metadata'
+        }
     )
 
     def nft_events(kwargs):
@@ -1212,7 +1224,7 @@ def datalake_daily_sync():
         convert_messages_with_data_task,
         convert_accounts_task,
         (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> convert_dex_trades_task),
-        (perform_last_block_check_task >> check_main_parser_offset_task >> convert_jetton_events),
+        (perform_last_block_check_task >> check_main_parser_offset_task >> convert_jetton_events >> refresh_jetton_metadata_partitions_task),
         (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> check_tvl_parser_offset_task >> convert_dex_tvl_task),
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
     ] >> check_nft_parser_offset_task >> convert_nft_items_task >> convert_nft_transfers_task >> convert_nft_sales_task >> \
