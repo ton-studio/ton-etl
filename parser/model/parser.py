@@ -127,7 +127,7 @@ class Parser:
         
         result = res.json()
         for account in result['accounts']:
-            if Address(account['address']) == address:
+            if Address(account['address']) == address and account['status'] == 'active':
                 logger.info(f"Found account state for {address} in toncenter RPC")
                 account_state = {
                     'account': address.to_str(is_user_friendly=False).upper(),
