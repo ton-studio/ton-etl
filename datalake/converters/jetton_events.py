@@ -79,4 +79,6 @@ class JettonEventsConverter(Converter):
         # Convert base64 custom_payload into binary
         if obj.get('custom_payload', None):
             obj['custom_payload'] = base64.b64decode(obj['custom_payload'])
+        if obj['custom_payload'] == '':
+            obj['custom_payload'] = None
         return super().convert(obj, table_name)
