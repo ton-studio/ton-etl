@@ -41,6 +41,8 @@ class Parser:
     """
     USE_MESSAGE_CONTENT = int(os.environ.get("USE_MESSAGE_CONTENT", '0')) == 1
 
+    IGNORE_MISSING_PARENT_MESSAGE_BODY = int(os.environ.get("IGNORE_MISSING_PARENT_MESSAGE_BODY", '0')) == 1
+
     """
     To be invoked before starting parser with the DB instance
     """

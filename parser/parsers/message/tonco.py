@@ -1,4 +1,4 @@
-from model.parser import Parser, TOPIC_MESSAGES
+from model.parser import NonCriticalParserError, Parser, TOPIC_MESSAGES
 from loguru import logger
 from db import DB
 from pytoniq_core import Cell, Address
@@ -66,7 +66,12 @@ class TONCOSwap(Parser):
             logger.warning(f"Wallet not found for {jetton1_address} {tx_hash}")
             return
         
-        pool_swap = Cell.one_from_boc(db.get_parent_message_body(obj.get('msg_hash'))).begin_parse()
+        try:
+            pool_swap = Cell.one_from_boc(db.get_parent_message_body(obj.get('msg_hash'))).begin_parse()
+        except TypeError as e:
+            if self.IGNORE_MISSING_PARENT_MESSAGE_BODY:
+                raise NonCriticalParserError(f"Parent message's body was not found for msg_hash={obj.get('msg_hash')}")
+            raise e
         swap_op = pool_swap.load_uint(32)
         if swap_op != 0xa7fb58f8:
             logger.warning(f"Parent message for tonco swap is {swap_op}, expected 0xa7fb58f8 {tx_hash}")
