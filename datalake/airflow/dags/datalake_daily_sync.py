@@ -64,6 +64,8 @@ Perform daily sync of data of the datalake
 )
 def datalake_daily_sync():
     datalake_output_bucket = Variable.get("DATALAKE_ATHENA_DATALAKE_OUTPUT_BUCKET")
+    datalake_exporters_bucket = Variable.get("DATALAKE_ATHENA_DATALAKE_EXPORTERS_BUCKET")
+    datalake_exporters_prefix = Variable.get("DATALAKE_ATHENA_DATALAKE_EXPORTERS_PREFIX")
     datalake_athena_temp_bucket = Variable.get("DATALAKE_TMP_LOCATION")
     env_tag = Variable.get("DATALAKE_TARGET_DATABASE")
 
@@ -624,6 +626,19 @@ def datalake_daily_sync():
     )
 
     def refresh_metadata_partitions(kwargs):
+        task_instance = kwargs['task_instance']
+
+        start_of_the_day_ts = task_instance.xcom_pull(key="start_of_the_day_ts", task_ids='perform_last_block_check')
+        start_of_the_day = datetime.fromtimestamp(start_of_the_day_ts, pytz.utc)
+        current_date = (start_of_the_day).strftime("%Y%m%d")
+        
+        s3_hook = S3Hook(aws_conn_id="s3_conn")
+        target_table_location = kwargs['target_table_location']
+        source_table_location = kwargs['source_table_location'] + f"/adding_date={current_date}"
+        logging.info(f"Starting sync of {kwargs['target_table']} from {source_table_location} to {target_table_location}")
+
+        output_size, output_files = transfer_s3_objects(s3_hook.get_conn(), source_table_location, target_table_location)
+    
         athena = AthenaHook('s3_conn', region_name='us-east-1')
         target_database = Variable.get("DATALAKE_TARGET_DATABASE")
         target_table = kwargs['target_table']
@@ -637,12 +652,17 @@ def datalake_daily_sync():
         final_state = athena.poll_query_status(query_id)
         if final_state == 'FAILED' or final_state == 'CANCELLED':
             raise Exception(f"Unable to get data from Athena: {query_id}")
+        
+        telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
+        telegram_hook.send_message({"text": f"🚰👌 [{env_tag}] {target_table} synced {sizeof_fmt(output_size)} bytes, {output_files} files"})
 
     refresh_nft_metadata_partitions_task = PythonOperator(
         task_id=f'refresh_nft_metadata_partitions',
         python_callable=lambda **kwargs: safe_python_callable(refresh_metadata_partitions, kwargs, "refresh_nft_metadata_partitions"),
         op_kwargs={
-            'target_table': 'nft_metadata'
+            'target_table': 'nft_metadata',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/nft_metadata',
+            'source_table_location': f's3://{datalake_exporters_bucket}/{datalake_exporters_prefix}nft_metadata',
         }
     )
 
@@ -650,7 +670,9 @@ def datalake_daily_sync():
         task_id=f'refresh_jetton_metadata_partitions',
         python_callable=lambda **kwargs: safe_python_callable(refresh_metadata_partitions, kwargs, "refresh_jetton_metadata_partitions"),
         op_kwargs={
-            'target_table': 'jetton_metadata'
+            'target_table': 'jetton_metadata',
+            'target_table_location': f's3://{datalake_output_bucket}/v1/jetton_metadata',
+            'source_table_location': f's3://{datalake_exporters_bucket}/{datalake_exporters_prefix}jetton_metadata',
         }
     )
 
