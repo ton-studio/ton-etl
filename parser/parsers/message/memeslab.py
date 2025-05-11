@@ -87,23 +87,6 @@ def make_event(obj: dict, trade_data: dict, price_usd: float) -> MemesLabEvent:
     )
 
 
-def make_event(obj: dict, trade_data: dict, price_usd: float) -> MemesLabEvent:
-
-    return MemesLabEvent(
-        tx_hash=obj["tx_hash"],
-        trace_id=obj["trace_id"],
-        event_time=obj["created_at"],
-        jetton_master=obj["source"],
-        event_type=trade_data["type"],
-        trader_address=trade_data["trader"],
-        ton_amount=int(trade_data["ton_amount"]),
-        jetton_amount=int(trade_data["jetton_amount"]),
-        current_supply=int(trade_data["current_supply"]),
-        total_ton_collected=int(trade_data["total_ton_collected"]),
-        volume_usd=int(trade_data["ton_amount"]) * price_usd / 1e6,
-    )
-
-
 class MemesLabTrade(Parser):
     topics = lambda _: [TOPIC_MESSAGES]
     predicate = lambda _, obj: (
