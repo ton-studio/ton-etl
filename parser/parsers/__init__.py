@@ -18,6 +18,7 @@ from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted
 from parsers.nft_transfer.nft_history import NftHistoryParser
 from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser
 from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadataParser
+from parsers.message.memeslab import MemesLabTrade
 from model.parser import Parser
 from loguru import logger
 import os
@@ -38,7 +39,7 @@ _parsers = [
     TonFunTrade(),
     GasPumpTrade(),
     TONCOSwap(),
-    
+    MemesLabTrade(),
     JettonMintParser(),
     HipoTokensMinted(),
 
