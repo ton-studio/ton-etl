@@ -10,9 +10,9 @@ from parsers.message.swap_volume import USDT
 
 # Opcode mapping for event types
 EVENT_TYPES = {
-    Parser.opcode_signed(0xACE8E777),  # Buy
-    Parser.opcode_signed(0xACE8E778),  # Sell
-    Parser.opcode_signed(0xACE8E779),  # ListToken
+    Parser.opcode_signed(0xace8e777),  # Buy
+    Parser.opcode_signed(0xace8e778),  # Sell
+    Parser.opcode_signed(0xace8e779),  # ListToken
 }
 
 
@@ -20,12 +20,12 @@ def parse_memeslab_event(opcode: int, cs: Cell) -> Optional[dict]:
     try:
         raw_opcode = cs.load_uint(32)  # opcode
 
-        if raw_opcode == 0xACE8E777:  # Buy
+        if raw_opcode == 0xace8e777:  # Buy
             event_type = "Buy"
-        elif raw_opcode == 0xACE8E778:  # Sell
+        elif raw_opcode == 0xace8e778:  # Sell
             event_type = "Sell"
 
-        elif raw_opcode == 0xACE8E779:  # ListToken
+        elif raw_opcode == 0xace8e779:  # ListToken
 
             event_type = "ListToken"
             query_id = cs.load_uint(64)
@@ -56,7 +56,6 @@ def parse_memeslab_event(opcode: int, cs: Cell) -> Optional[dict]:
         token_amount = cs.load_uint(64)  # Jetton in/out
         trader = cs.load_address()  # sender
         cs.load_uint(4)  # reserved (0 or 1)
-
         return {
             "type": event_type,
             "trader": trader,
