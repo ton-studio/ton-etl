@@ -184,6 +184,12 @@ CREATE TABLE IF NOT EXISTS parsed.memeslab_trade_event (
     created timestamp NULL,
     updated timestamp NULL
 );
+-- add memeslab_trade_event primary key
+BEGIN;
+ALTER TABLE parsed.memeslab_trade_event DROP CONSTRAINT memeslab_trade_event_pkey;
+ALTER TABLE parsed.memeslab_trade_event ADD PRIMARY KEY (tx_hash, event_type);
+COMMIT;
+
 
 -- Adding usd volume for memepads
 ALTER TABLE parsed.gaspump_trade ADD column if not exists "volume_usd" numeric NULL;
