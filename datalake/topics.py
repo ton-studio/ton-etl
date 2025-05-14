@@ -17,6 +17,7 @@ TOPIC_NFT_COLLECTIONS_METADATA = "ton.parsed.nft_collection_metadata"
 TOPIC_DEX_SWAPS = "ton.parsed.dex_swap_parsed"
 TOPIC_GASPUMP_EVENTS = "ton.parsed.gaspump_trade"
 TOPIC_TONFUN = "ton.parsed.tonfun_bcl_trade"
+TOPIC_MEMESLAB = "ton.parsed.memeslab_trade_event"
 
 TOPIC_DEX_POOLS = "ton.prices.dex_pool"
 
