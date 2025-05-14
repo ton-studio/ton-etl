@@ -4,12 +4,23 @@ import time
 import os
 import base64
 import asyncio
+import json
 from loguru import logger
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 from pytvm.engine import EmulatorEngineC
 from pytoniq_core import Cell, Address, begin_cell, HashMap, Builder
 from pytoniq import LiteClient
 
+
+def create_lite_client():
+    config_path = os.getenv("LITECLIENT_CONFIG_OVERRIDE", None)
+    if config_path is None:
+        return LiteClient.from_mainnet_config(ls_i=0, trust_level=2, timeout=30)
+    else:
+        logger.info(f"Using liteclient config from {config_path}")
+        with open(config_path) as src:
+            conf = json.loads(src.read())
+            return LiteClient.from_config(conf)
 
 """
 Utility class for lazy inittialization of config cell.
@@ -24,7 +35,7 @@ class ConfigCellHolder:
         return self._CONFIG_CELL
     
     async def _get_cell(self):
-        client = LiteClient.from_mainnet_config(ls_i=0, trust_level=2, timeout=30)
+        client = create_lite_client()
         await client.connect()
         mc = await client.get_masterchain_info()
         logger.info(f"Got mc info: {mc}")
@@ -97,7 +108,7 @@ class EmulatorParser(Parser):
         self._do_parse(obj, db, emulator)
 
     async def get_lib(self, lib_hash):
-        client = LiteClient.from_mainnet_config(ls_i=0, trust_level=2, timeout=30)
+        client = create_lite_client()
         await client.connect()
         lib = await client.get_libraries([lib_hash])
         await client.close()
