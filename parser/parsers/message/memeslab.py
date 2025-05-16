@@ -96,7 +96,7 @@ class MemesLabTrade(Parser):
 
     def handle_internal(self, obj: dict, db: DB) -> None:
         jetton_master_address = Address(Parser.require(obj.get('source', None)))
-        jetton_master = db.get_latest_account_state(jetton_master_address)
+        jetton_master = db.get_jetton_master(jetton_master_address)
         if not jetton_master:
             raise Exception(f"Unable to get jetton_master from DB for {jetton_master_address}")
         code_hash = jetton_master['jetton_wallet_code_hash']
