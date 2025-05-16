@@ -708,3 +708,10 @@ class DB():
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute("select * from public.jetton_transfers where trace_id = %s", (trace_id,))
             return cursor.fetchall()
+
+    def get_jetton_master(self, address: Address) -> dict:
+        assert self.conn is not None
+        assert type(address) == Address
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("select * from jetton_masters jm where address = %s", (serialize_addr(address),))
+            return cursor.fetchone()

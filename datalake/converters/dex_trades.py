@@ -2,7 +2,7 @@ import base64
 from dataclasses import dataclass, asdict
 import decimal
 from typing import List
-from topics import TOPIC_DEX_SWAPS, TOPIC_GASPUMP_EVENTS, TOPIC_TONFUN
+from topics import TOPIC_DEX_SWAPS, TOPIC_GASPUMP_EVENTS, TOPIC_TONFUN, TOPIC_MEMESLAB
 from loguru import logger
 from converters.converter import Converter
 
@@ -15,6 +15,7 @@ PLATFORM_TYPE_LAUNCHPAD = "launchpad"
 
 PROJECT_TONFUN = "ton.fun"
 PROJECT_GASPUMP = "gaspump"
+PROJECT_MEMESLAB = "memeslab"
 
 EVENT_TYPE_TRADE = "trade"
 EVENT_TYPE_LAUNCH = "launch" # launch from bonding curve
@@ -65,7 +66,7 @@ class DexTradesConverter(Converter):
             return obj['event_time']
         
     def topics(self) -> List[str]:
-        return [TOPIC_DEX_SWAPS, TOPIC_GASPUMP_EVENTS, TOPIC_TONFUN]
+        return [TOPIC_DEX_SWAPS, TOPIC_GASPUMP_EVENTS, TOPIC_TONFUN, TOPIC_MEMESLAB]
 
     def convert(self, obj, table_name=None):
         trades = []
@@ -169,6 +170,46 @@ class DexTradesConverter(Converter):
                     amount_bought_raw=None, # N/A
                     volume_ton=None, # N/A
                     volume_usd=None, # N/A
+                ))
+        elif table_name == "memeslab_trade_event":
+            # MemesLab trades
+            common = {
+                'tx_hash': obj['tx_hash'],
+                'trace_id': obj['trace_id'],
+                'project_type': PLATFORM_TYPE_LAUNCHPAD,
+                'project': PROJECT_MEMESLAB,
+                'version': 1,
+                'event_time': obj['event_time'],
+                'pool_address': obj['jetton_master'],
+                'router_address': None, # no router in MemesLab
+                'query_id': None, # no query id in MemesLab
+                'referral_address': None, # no referral address in MemesLab
+                'platform_tag': None, # no platform tag in MemesLab
+            }
+            if obj['event_type'] == "ListToken":
+                trades.append(Trade(
+                    **common,
+                    event_type=EVENT_TYPE_LAUNCH,
+                    trader_address=None, # doesn't include
+                    token_sold_address=None, # N/A
+                    token_bought_address=None, # N/A
+                    amount_sold_raw=None, # N/A
+                    amount_bought_raw=None, # N/A
+                    volume_ton=None, # N/A
+                    volume_usd=None, # N/A
+                ))
+            else:
+                is_buy = obj['event_type'] == 'Buy'
+                trades.append(Trade(
+                    **common,
+                    event_type=EVENT_TYPE_TRADE,
+                    trader_address=obj['trader_address'],
+                    token_sold_address=TON_NATIVE_ADDRESS if is_buy else obj['jetton_master'],
+                    token_bought_address=obj['jetton_master'] if is_buy else TON_NATIVE_ADDRESS,
+                    amount_sold_raw=self.decode_numeric(obj['ton_amount'] if is_buy else obj['jetton_amount']),
+                    amount_bought_raw=self.decode_numeric(obj['jetton_amount'] if is_buy else obj['ton_amount']),
+                    volume_ton=int(self.decode_numeric(obj['ton_amount'])) / 1e9,
+                    volume_usd=self.decode_numeric(obj['volume_usd']),
                 ))
 
         for trade in trades:
