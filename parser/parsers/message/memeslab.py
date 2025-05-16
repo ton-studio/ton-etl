@@ -1,8 +1,7 @@
 import traceback
 from typing import Optional
-from decimal import Decimal
 from loguru import logger
-from pytoniq_core import Cell
+from pytoniq_core import Cell, Address
 from model.parser import NonCriticalParserError, Parser, TOPIC_MESSAGES
 from model.memeslab import MemesLabEvent
 from db import DB
@@ -15,6 +14,9 @@ EVENT_TYPES = {
     Parser.opcode_signed(0xace8e779),  # ListToken
 }
 
+JETTON_WALLET_CODE_HASH_WHITELIST = [
+    "ipKseGXVM3nzsWGuSptUyN721dwpyvwHemFB6YK/Kis=",
+]
 
 def parse_memeslab_event(opcode: int, cs: Cell) -> Optional[dict]:
     try:
@@ -93,6 +95,15 @@ class MemesLabTrade(Parser):
     )
 
     def handle_internal(self, obj: dict, db: DB) -> None:
+        jetton_master_address = Address(Parser.require(obj.get('source', None)))
+        jetton_master = db.get_latest_account_state(jetton_master_address)
+        if not jetton_master:
+            raise Exception(f"Unable to get jetton_master from DB for {jetton_master_address}")
+        code_hash = jetton_master['jetton_wallet_code_hash']
+        if code_hash not in JETTON_WALLET_CODE_HASH_WHITELIST:
+            logger.warning("Jetton wallet code hash {} for {} not in whitelist", code_hash, obj.get('source', None))
+            return
+
         try:
             cs = Parser.message_body(obj, db).begin_parse()
             trade_data = parse_memeslab_event(obj.get("opcode"), cs)
