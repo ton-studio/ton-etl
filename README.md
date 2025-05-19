@@ -181,7 +181,7 @@ opcode is crc32(ref_v1).
 
 ### memeslab_trade_event
 
-Contains decoded [Memeslab] trade events. Produced from messages table stream
+Contains decoded Memeslab trade events. Produced from messages table stream
 with [MemesLabTrade](./parser/parsers/message/memeslab.py) parser. 
 Includes following fields:
 * jetton_master - jetton master address. The same jetton master is used after the token leaves the bonding curve.
