@@ -159,7 +159,7 @@ services:
       replicas: 1
     environment:
       - KAFKA_GROUP_ID=exporter_dex_trades
-      - KAFKA_TOPICS=ton.parsed.dex_swap_parsed,ton.parsed.gaspump_trade,ton.parsed.tonfun_bcl_trade
+      - KAFKA_TOPICS=ton.parsed.dex_swap_parsed,ton.parsed.gaspump_trade,ton.parsed.tonfun_bcl_trade,ton.parsed.memeslab_trade_event
       - CONVERTER=dex_trades
       - PARTITION_MODE=adding_date
     env_file:

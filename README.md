@@ -179,6 +179,17 @@ Includes following fields:
 opcode is crc32(ref_v1).
 * partner_address, platform_tag, extra_tag - referral addresses provided by the trader
 
+### memeslab_trade_event
+
+Contains decoded Memeslab trade events. Produced from messages table stream
+with [MemesLabTrade](./parser/parsers/message/memeslab.py) parser. 
+Includes following fields:
+* jetton_master - jetton master address. The same jetton master is used after the token leaves the bonding curve.
+* event_type - ``Buy``, ``Sell`` or ``ListEvent``. ``ListEvent`` is used for the event when liquidity is collected from the bonding curve and sent to DEX
+* trader_address - address of the trader. None for the ``ListEvent`` event
+* ton_amount - amount of TON sold/bought (zero for ``ListEvent``)
+* bcl_amount - amount of jetton bought/sold (zero for ``ListEvent``)
+
 ### staking_pools_nominators
 
 Contains latest values for nominators pools. Produced from accounts table stream
