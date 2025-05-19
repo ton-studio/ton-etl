@@ -186,7 +186,7 @@ with [MemesLabTrade](./parser/parsers/message/memeslab.py) parser.
 Includes following fields:
 * jetton_master - jetton master address. The same jetton master is used after the token leaves the bonding curve.
 * event_type - ``Buy``, ``Sell`` or ``ListEvent``. ``ListEvent`` is used for the event when liquidity is collected from the bonding curve and sent to DEX
-* trader_address - address of the trader. None for the ``ListEvent`` even
+* trader_address - address of the trader. None for the ``ListEvent`` event
 * ton_amount - amount of TON sold/bought (zero for ``ListEvent``)
 * bcl_amount - amount of jetton bought/sold (zero for ``ListEvent``)
 
