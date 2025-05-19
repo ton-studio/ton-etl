@@ -230,6 +230,7 @@ Supported projects:
 | dex | [tonco](https://app.tonco.io/) | Decentralized exchange with CLMM AMM pools | router_address, query_id |
 | launchpad | [ton.fun](https://tonfun-1.gitbook.io/tonfun) | Launchpad SDK adopted by multiple projects ([Blum](https://blum.io/), [BigPump](https://docs.pocketfi.org/features/big.pump), etc) | referral_address, platform_tag |
 | launchpad | [gaspump](https://gaspump.tg/) | Bonding curve launchpad for memecoins ([docs](https://github.com/gas111-bot/gaspump-sdk)) | - |
+| launchpad | [memeslab](https://x.com/memeslabxyz) | Bonding curve launchpad for memecoins | - |
 
 TON Aliases and wrapped TONs used by the projects:
 * 0:0000000000000000000000000000000000000000000000000000000000000000 - native TON (dedust, ton.fun, gaspump)
