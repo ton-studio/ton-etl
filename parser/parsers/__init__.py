@@ -14,7 +14,7 @@ from parsers.message_contents.decode_comment import CommentsDecoder
 from parsers.accounts.core_prices import CorePricesHipoTON, CorePricesLSDstTON, CorePricesLSDtsTON, CorePricesStormTrade, CorePricesUSDT
 from parsers.message.dedust_swap import DedustSwap
 from parsers.message.stonfi_swap import StonfiSwap, TestnetStonfiSwap
-from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted
+from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted, TestnetHipoTokensMinted
 from parsers.nft_transfer.nft_history import NftHistoryParser
 from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser
 from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadataParser
@@ -75,8 +75,10 @@ _mainnet_parsers = [
 _testnet_parsers = [
     TestnetStonfiSwap(),
     TestnetStonfiSwapV2(),
+    JettonMintParser(),
+    TestnetHipoTokensMinted(),
 
-    NFTItemsParser(EMULATOR_PATH),
+    NFTItemsParser(EMULATOR_PATH),  # TODO find testnet addresses and fix parser
 
     JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
     NFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
