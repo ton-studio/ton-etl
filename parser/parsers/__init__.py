@@ -5,7 +5,7 @@ from parsers.message.tonco import TONCOSwap
 from parsers.jetton_transfer.megaton import MegatonDexSwap
 from parsers.message.tonfun import TonFunTrade
 from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser
-from parsers.message.stonfi_swap_v2 import StonfiSwapV2
+from parsers.message.stonfi_swap_v2 import StonfiSwapV2, TestnetStonfiSwapV2
 from parsers.message.gaspump import GasPumpTrade
 from parsers.accounts.tvl import TVLPoolStateParser
 from parsers.accounts.jetton_wallets_recover import JettonWalletsRecover
@@ -73,7 +73,14 @@ _mainnet_parsers = [
 ]
 
 _testnet_parsers = [
-    TestnetStonfiSwap()
+    TestnetStonfiSwap(),
+    TestnetStonfiSwapV2(),
+
+    NFTItemsParser(EMULATOR_PATH),
+
+    JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
+    NFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
+    NFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE)
 ]
 
 _parsers = _testnet_parsers if TESTNET_MODE else _mainnet_parsers
