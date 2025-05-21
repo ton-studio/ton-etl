@@ -13,7 +13,7 @@ from parsers.accounts.nfts_recover import NFTsRecover
 from parsers.message_contents.decode_comment import CommentsDecoder
 from parsers.accounts.core_prices import CorePricesHipoTON, CorePricesLSDstTON, CorePricesLSDtsTON, CorePricesStormTrade, CorePricesUSDT
 from parsers.message.dedust_swap import DedustSwap
-from parsers.message.stonfi_swap import StonfiSwap
+from parsers.message.stonfi_swap import StonfiSwap, TestnetStonfiSwap
 from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted
 from parsers.nft_transfer.nft_history import NftHistoryParser
 from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser
@@ -27,8 +27,9 @@ EMULATOR_PATH = os.environ.get("EMULATOR_LIBRARY")
 METADATA_FETCH_TIMEOUT = int(os.environ.get("METADATA_FETCH_TIMEOUT", "10"))
 METADATA_FETCH_MAX_ATTEMPTS = int(os.environ.get("METADATA_FETCH_MAX_ATTEMPTS", "3"))
 TONAPI_ONLY_MODE = os.environ.get("TONAPI_ONLY_MODE", "0").lower() in ('true', '1')
+TESTNET_MODE = int(os.environ.get("TESTNET_MODE", "0"))
 
-_parsers = [
+_mainnet_parsers = [
     NftHistoryParser(),
 
     # DEX trades
@@ -70,6 +71,12 @@ _parsers = [
     NFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
     NFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE)
 ]
+
+_testnet_parsers = [
+    TestnetStonfiSwap()
+]
+
+_parsers = _testnet_parsers if TESTNET_MODE else _mainnet_parsers
 
 """
 dict of parsers, where key is the topic name
