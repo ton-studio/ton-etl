@@ -144,5 +144,5 @@ class HipoTokensMinted(Parser):
         db.serialize(mint)
 
 
-class TestnetHipoTokensMinted(Parser):
+class TestnetHipoTokensMinted(HipoTokensMinted):
     HTON_MASTER = Parser.uf2raw("kQB519C3IXFgCr4qKj6QrtaB9Pm3Sawr-Gonlo3O0cKL_I03")
