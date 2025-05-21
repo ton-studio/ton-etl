@@ -7,8 +7,6 @@ from model.jetton_mint import JettonMint
 from pytoniq_core import Address
 
 
-HTON_MASTER = Parser.uf2raw("EQDPdq8xjAhytYqfGSX8KcFWIReCufsB9Wdg0pLlYSO_h76w")
-
 # Mint is not covered by TEP-74 and we should not be strict on the format
 class WrongMintFormat(NonCriticalParserError):
     pass
@@ -100,6 +98,8 @@ tokens_minted#5445efee
         = InternalMsgBody;
 """
 class HipoTokensMinted(Parser):
+    HTON_MASTER = Parser.uf2raw("EQDPdq8xjAhytYqfGSX8KcFWIReCufsB9Wdg0pLlYSO_h76w")
+
     def topics(self):
         return [TOPIC_MESSAGES]
 
@@ -107,7 +107,7 @@ class HipoTokensMinted(Parser):
         return (
             obj.get("opcode") == Parser.opcode_signed(0x5445efee)
             and obj.get("direction") == "in"
-            and obj.get("source") == HTON_MASTER
+            and obj.get("source") == self.HTON_MASTER
         )
 
     def handle_internal(self, obj: dict, db: DB):
@@ -118,7 +118,7 @@ class HipoTokensMinted(Parser):
         amount = cell.load_coins()  # tokens:Coins
 
         wallet = db.get_jetton_wallet(Address(Parser.require(obj.get("destination"))))
-        assert wallet['jetton'] == HTON_MASTER
+        assert wallet['jetton'] == self.HTON_MASTER
 
         tx = Parser.require(db.get_transaction(Parser.require(obj.get("tx_hash"))))
 
@@ -142,3 +142,7 @@ class HipoTokensMinted(Parser):
         )
         logger.info(f"Adding Hipo tokens_minted event {mint}")
         db.serialize(mint)
+
+
+class TestnetHipoTokensMinted(Parser):
+    HTON_MASTER = Parser.uf2raw("kQB519C3IXFgCr4qKj6QrtaB9Pm3Sawr-Gonlo3O0cKL_I03")
