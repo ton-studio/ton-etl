@@ -25,6 +25,7 @@ METADATA_TONAPI = "tonapi"
 The parser extracts on-chain and off-chain metadata from NFT items and stores it in the database.
 """
 class NFTItemMetadataParser(Parser):
+    TONAPI_BASE_URL = "https://tonapi.io/v2/nfts"
 
     def __init__(self, timeout: int = 10, max_attempts: int = 3, tonapi_only_mode: bool = False):
         self.timeout = timeout
@@ -186,7 +187,7 @@ class NFTItemMetadataParser(Parser):
                             while True:
                                 logger.info(f"Trying to get metadata from TonAPI for {address}")
                                 try:
-                                    tonapi_response = requests.get(f"https://tonapi.io/v2/nfts/{address}", timeout=timeout, headers={
+                                    tonapi_response = requests.get(f"{self.TONAPI_BASE_URL}/{address}", timeout=timeout, headers={
                                         "User-Agent": DATALAKE_USER_AGENT,
                                         "Authorization": 'Bearer %s' % os.getenv("TONAPI_API_KEY")
                                         })
@@ -226,7 +227,7 @@ class NFTItemMetadataParser(Parser):
                 if metadata.tonapi_image_url is None:
                     logger.info(f"Updating tonapi image url for {address}")
                     try:
-                        tonapi_response = requests.get(f"https://tonapi.io/v2/nfts/{address}", timeout=self.timeout, headers={
+                        tonapi_response = requests.get(f"{self.TONAPI_BASE_URL}/{address}", timeout=self.timeout, headers={
                                     "User-Agent": DATALAKE_USER_AGENT,
                                     "Authorization": 'Bearer %s' % os.getenv("TONAPI_API_KEY")
                                     })
@@ -261,3 +262,7 @@ class NFTItemMetadataParser(Parser):
         if onchain_updated or offchain_updated:
             logger.info(f"Upserting NFT item metadata for {address}")
             db.upsert_nft_item_metadata(metadata, prev_ts_onchain, prev_ts_offchain)
+
+
+class TestnetNFTItemMetadataParser(NFTItemMetadataParser):
+    TONAPI_BASE_URL = "https://testnet.tonapi.io/v2/nfts"

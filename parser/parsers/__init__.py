@@ -4,7 +4,7 @@ from parsers.accounts.staking_pools import StakingPoolsParser
 from parsers.message.tonco import TONCOSwap
 from parsers.jetton_transfer.megaton import MegatonDexSwap
 from parsers.message.tonfun import TonFunTrade
-from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser
+from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser, TestnetJettonMastersMetadataParser
 from parsers.message.stonfi_swap_v2 import StonfiSwapV2, TestnetStonfiSwapV2
 from parsers.message.gaspump import GasPumpTrade
 from parsers.accounts.tvl import TVLPoolStateParser
@@ -16,8 +16,8 @@ from parsers.message.dedust_swap import DedustSwap, TestnetDedustSwap
 from parsers.message.stonfi_swap import StonfiSwap, TestnetStonfiSwap
 from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted, TestnetHipoTokensMinted
 from parsers.nft_transfer.nft_history import NftHistoryParser
-from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser
-from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadataParser
+from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser, TestnetNFTItemMetadataParser
+from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadataParser, TestnetNFTCollectionMetadataParser
 from parsers.message.memeslab import MemesLabTrade
 from model.parser import Parser
 from loguru import logger
@@ -30,7 +30,7 @@ TONAPI_ONLY_MODE = os.environ.get("TONAPI_ONLY_MODE", "0").lower() in ('true', '
 TESTNET_MODE = int(os.environ.get("TESTNET_MODE", "0"))
 
 _mainnet_parsers = [
-    NftHistoryParser(),  # depricated?
+    NftHistoryParser(),  # depricated!
 
     # DEX trades
     DedustSwap(EMULATOR_PATH), 
@@ -60,7 +60,7 @@ _mainnet_parsers = [
     TVLPoolStateParser(EMULATOR_PATH),
     StakingPoolsParser(EMULATOR_PATH),
 
-    NFTsRecover(EMULATOR_PATH),  # depricated?
+    NFTsRecover(EMULATOR_PATH),  # depricated!
     JettonWalletsRecover(EMULATOR_PATH),  # depricated?
     NFTItemsParser(EMULATOR_PATH),
     
@@ -84,9 +84,9 @@ _testnet_parsers = [
 
     TestnetNFTItemsParser(EMULATOR_PATH),  # TODO find testnet addresses
 
-    JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),  # TODO TonApi
-    NFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
-    NFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE)
+    TestnetJettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
+    TestnetNFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
+    TestnetNFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE)
 ]
 
 _parsers = _testnet_parsers if TESTNET_MODE else _mainnet_parsers
