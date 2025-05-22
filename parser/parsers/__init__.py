@@ -12,7 +12,7 @@ from parsers.accounts.jetton_wallets_recover import JettonWalletsRecover
 from parsers.accounts.nfts_recover import NFTsRecover
 from parsers.message_contents.decode_comment import CommentsDecoder
 from parsers.accounts.core_prices import CorePricesHipoTON, CorePricesLSDstTON, CorePricesLSDtsTON, CorePricesStormTrade, CorePricesUSDT
-from parsers.message.dedust_swap import DedustSwap
+from parsers.message.dedust_swap import DedustSwap, TestnetDedustSwap
 from parsers.message.stonfi_swap import StonfiSwap, TestnetStonfiSwap
 from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted, TestnetHipoTokensMinted
 from parsers.nft_transfer.nft_history import NftHistoryParser
@@ -30,7 +30,7 @@ TONAPI_ONLY_MODE = os.environ.get("TONAPI_ONLY_MODE", "0").lower() in ('true', '
 TESTNET_MODE = int(os.environ.get("TESTNET_MODE", "0"))
 
 _mainnet_parsers = [
-    NftHistoryParser(),
+    NftHistoryParser(),  # depricated?
 
     # DEX trades
     DedustSwap(EMULATOR_PATH), 
@@ -60,11 +60,11 @@ _mainnet_parsers = [
     TVLPoolStateParser(EMULATOR_PATH),
     StakingPoolsParser(EMULATOR_PATH),
 
-    NFTsRecover(EMULATOR_PATH),
-    JettonWalletsRecover(EMULATOR_PATH),
+    NFTsRecover(EMULATOR_PATH),  # depricated?
+    JettonWalletsRecover(EMULATOR_PATH),  # depricated?
     NFTItemsParser(EMULATOR_PATH),
     
-    CommentsDecoder(),
+    CommentsDecoder(),  # depricated!
 
     JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
 
@@ -73,10 +73,14 @@ _mainnet_parsers = [
 ]
 
 _testnet_parsers = [
+    TestnetDedustSwap(EMULATOR_PATH), 
     TestnetStonfiSwap(),
     TestnetStonfiSwapV2(),
+
     JettonMintParser(),
     TestnetHipoTokensMinted(),
+
+    TVLPoolStateParser(EMULATOR_PATH),
 
     NFTItemsParser(EMULATOR_PATH),  # TODO find testnet addresses and fix parser
 
