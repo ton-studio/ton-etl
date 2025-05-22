@@ -5,7 +5,9 @@ from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 from airflow.providers.telegram.hooks.telegram import TelegramHook
+from airflow.operators.python import get_current_context
 from airflow.hooks.S3_hook import S3Hook
 from airflow.providers.amazon.aws.hooks.athena import AthenaHook
 from airflow.models import Variable, Connection
@@ -51,6 +53,18 @@ def sizeof_fmt(num, suffix="B"):
         num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
 
+def send_notification(message):
+    if Variable.get('SLACK_CHANNEL', default_var=None):
+        slack_msg = SlackAPIPostOperator(
+            task_id='send_slack_message',
+            text=message,
+            channel=Variable.get('SLACK_CHANNEL'),
+        )
+        slack_msg.execute(get_current_context())
+    else:
+        telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
+        telegram_hook.send_message({"text": message})
+
 """
 Perform daily sync of data of the datalake
 """
@@ -73,9 +87,8 @@ def datalake_daily_sync():
         try:
             func(kwargs)
         except Exception as e:
-            telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
             logging.error(f"Unable to perform {func.__name__} for *{step_name}* {e} {traceback.format_exc()}")
-            telegram_hook.send_message({"text": f"📛 [{env_tag}] Unable to invoke {func.__name__} for *{step_name}"})
+            send_notification(f"📛 [{env_tag}] Unable to invoke {func.__name__} for *{step_name}")
             raise e
 
     """
@@ -319,8 +332,7 @@ def datalake_daily_sync():
         output_count = results[0]['count']
 
         finished = datetime.now().strftime("%I:%M %p")
-        telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
-        telegram_hook.send_message({"text": f"🚰👌 [{env_tag}] {target_table} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files"})
+        send_notification(f"🚰👌 [{env_tag}] {target_table} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files")
 
     """
     Checks Kafka commited offset for the consumer group
@@ -653,8 +665,7 @@ def datalake_daily_sync():
         if final_state == 'FAILED' or final_state == 'CANCELLED':
             raise Exception(f"Unable to get data from Athena: {query_id}")
         
-        telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
-        telegram_hook.send_message({"text": f"🚰👌 [{env_tag}] {target_table} synced {sizeof_fmt(output_size)} bytes, {output_files} files"})
+        send_notification(f"🚰👌 [{env_tag}] {target_table} synced {sizeof_fmt(output_size)} bytes, {output_files} files")
 
     refresh_nft_metadata_partitions_task = PythonOperator(
         task_id=f'refresh_nft_metadata_partitions',
@@ -1227,8 +1238,7 @@ def datalake_daily_sync():
         output_details = ", ".join(output_details)
 
         finished = datetime.now().strftime("%I:%M %p")
-        telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
-        telegram_hook.send_message({"text": f"🚰👌 [{env_tag}] nft_events for {current_date} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files. Stats: {output_details}"})
+        send_notification(f"🚰👌 [{env_tag}] nft_events for {current_date} finished at {finished}. {output_count} rows, {sizeof_fmt(output_size)} bytes, {output_files} files. Stats: {output_details}")
         
 
     nft_events_task = PythonOperator(
