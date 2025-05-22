@@ -1,5 +1,5 @@
 from typing import Dict, List, Set
-from parsers.accounts.nfts_parser import NFTItemsParser
+from parsers.accounts.nfts_parser import NFTItemsParser, TestnetNFTItemsParser
 from parsers.accounts.staking_pools import StakingPoolsParser
 from parsers.message.tonco import TONCOSwap
 from parsers.jetton_transfer.megaton import MegatonDexSwap
@@ -82,9 +82,9 @@ _testnet_parsers = [
 
     TVLPoolStateParser(EMULATOR_PATH),
 
-    NFTItemsParser(EMULATOR_PATH),  # TODO find testnet addresses and fix parser
+    TestnetNFTItemsParser(EMULATOR_PATH),  # TODO find testnet addresses
 
-    JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
+    JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),  # TODO TonApi
     NFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
     NFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE)
 ]

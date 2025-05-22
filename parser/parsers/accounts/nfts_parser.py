@@ -8,15 +8,6 @@ from pytoniq_core import Cell, Address, begin_cell, HashMap, Builder, ExternalAd
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 from parsers.accounts.emulator import EmulatorException, EmulatorParser
 
-TON_DNS = Address('0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF')
-TELEMINT_COLLECTIONS = [
-    Address('EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N'), # Anonymous Telegram Numbers 
-    Address('EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi') # Telegram Usernames 
-    ]
-TELEMINT_CODE_HASHES = [
-    'i3EeaAlnLAM13GHR2h3MQFnJcySK9we9WGJFCF6nCzI=',  # Telegram gifts
-    'MNzX1bb89ZaMJ5Hh4xrXMvJnLymG4daXDrA8yiLSMlE=',  # Telegram gifts
-]
 KEY_DOMAIN = 'domain'
 KEY_MAX_BID_ADDRESS = 'max_bid_address'
 KEY_MAX_BID_AMOUNT = 'max_bid_amount'
@@ -28,6 +19,16 @@ KEYS = [(int(hashlib.sha256(k.encode()).hexdigest(), 16), k) for k in [KEY_URI, 
 Reimplementation of public.nft_items table from ton-index-worker.
 """
 class NFTItemsParser(EmulatorParser):
+    TON_DNS = Address('0:B774D95EB20543F186C06B371AB88AD704F7E256130CAF96189368A7D0CB6CCF')
+    TELEMINT_COLLECTIONS = [
+        Address('EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N'), # Anonymous Telegram Numbers 
+        Address('EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi') # Telegram Usernames 
+    ]
+    TELEMINT_CODE_HASHES = [
+        'i3EeaAlnLAM13GHR2h3MQFnJcySK9we9WGJFCF6nCzI=',  # Telegram gifts
+        'MNzX1bb89ZaMJ5Hh4xrXMvJnLymG4daXDrA8yiLSMlE=',  # Telegram gifts
+    ]
+
     def __init__(self, emulator_path):
         super().__init__(emulator_path)
         self.code_hash_blacklist = set()
@@ -165,7 +166,7 @@ class NFTItemsParser(EmulatorParser):
             if original_address != nft_address:
                 logger.warning(f"NFT address mismatch: {original_address} != {nft_address}")
                 return
-            if collection_address == TON_DNS:
+            if collection_address == self.TON_DNS:
                 domain, = self._execute_method(emulator, 'get_domain', [], db, obj)
                 max_bid_address, max_bid_amount, auction_end_time = self._execute_method(emulator, 'get_auction_info', [], db, obj)
                 content = {
@@ -180,7 +181,7 @@ class NFTItemsParser(EmulatorParser):
                 except Exception as e:
                     logger.warning(f"Failed to get nft content: {e}")
                     content = {}
-            if collection_address in TELEMINT_COLLECTIONS or obj['code_hash'] in TELEMINT_CODE_HASHES:
+            if collection_address in self.TELEMINT_COLLECTIONS or obj['code_hash'] in self.TELEMINT_CODE_HASHES:
                 try:
                     bidder_address, bid, bid_ts, min_bid, end_time = self._execute_method(emulator, 'get_telemint_auction_state', [], db, obj)
                     additional_content['bidder_address'] = bidder_address.load_address().to_str(0).upper()
@@ -215,3 +216,9 @@ class NFTItemsParser(EmulatorParser):
 
         logger.info(f"New NFT discovered: {nft_address}: {index} {collection_address} {owner_address} {obj['last_trans_lt']} {content}")
         db.insert_nft_item_v2(nft_address, index, collection_address, owner_address, obj['last_trans_lt'], obj['timestamp'], init != 0, content)
+
+
+class TestnetNFTItemsParser(NFTItemsParser):
+    TON_DNS = Address('0:E33ED33A42EB2032059F97D90C706F8400BB256D32139CA707F1564AD699C7DD')
+    TELEMINT_COLLECTIONS = []
+    TELEMINT_CODE_HASHES = []
