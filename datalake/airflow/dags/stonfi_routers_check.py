@@ -6,12 +6,27 @@ from datetime import datetime
 
 from airflow.decorators import dag
 from airflow.operators.python import PythonOperator
+from airflow.models import Variable
+from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 from airflow.providers.telegram.hooks.telegram import TelegramHook
+from airflow.operators.python import get_current_context
 
 
 STONFI_ROUTER_V1 = "EQB3ncyBUTjZUA5EnFKR5_EnOMI9V1tTEAAPaiU71gc4TiUt"
 STONFI_PARSER_V2_URL = "https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/stonfi_swap_v2.py"
 STONFI_POOLS_API_URL = "https://api.ston.fi/v1/pools?dex_v2=true"
+
+def send_notification(message):
+    if Variable.get('SLACK_CHANNEL', default_var=None):
+        slack_msg = SlackAPIPostOperator(
+            task_id='send_slack_message',
+            text=message,
+            channel=Variable.get('SLACK_CHANNEL'),
+        )
+        slack_msg.execute(get_current_context())
+    else:
+        telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
+        telegram_hook.send_message({"text": message})
 
 
 @dag(
@@ -48,9 +63,8 @@ def stonfi_new_routers_checker():
                 raise Exception(f"Response status code = {response.status_code}")
             return response.text
         except Exception as e:
-            telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
+            send_notification(f"📛 Ston.fi router checker: Unable to get data from {url}: {e}")
             logging.error(f"Unable to get data from {url}: {e}")
-            telegram_hook.send_message({"text": f"📛 Unable to get data from {url}: {e}"})
             raise e
 
     def extract_routers_from_code(code: str):
@@ -99,9 +113,8 @@ def stonfi_new_routers_checker():
         new_routers = routers_from_api - routers_from_parser
 
         if new_routers:
-            telegram_hook = TelegramHook(telegram_conn_id="telegram_watchdog_conn")
             logging.info(f"New Ston.fi routers have been found: {', '.join(new_routers)}")
-            telegram_hook.send_message({"text": f"⚠️ New Ston.fi routers have been found: {', '.join(new_routers)}"})
+            send_notification(f"⚠️ New Ston.fi routers have been found: {', '.join(new_routers)}")
 
     PythonOperator(
         task_id="check_routers",
