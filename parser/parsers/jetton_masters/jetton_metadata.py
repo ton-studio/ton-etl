@@ -25,6 +25,7 @@ METADATA_TONAPI = "tonapi"
 The parser extracts on-chain and off-chainmetadata from jetton masters and stores it in the database.
 """
 class JettonMastersMetadataParser(Parser):
+    TONAPI_BASE_URL = "https://tonapi.io/v2/jettons"
 
     def __init__(self, timeout: int = 10, max_attempts: int = 3):
         self.timeout = timeout
@@ -186,7 +187,7 @@ class JettonMastersMetadataParser(Parser):
                         logger.error(f"Error updating offchain metadata for {address}: {e}")
                         try:
                             logger.info(f"Trying to get metadata from TonAPI for {address}")
-                            tonapi_response = requests.get(f"https://tonapi.io/v2/jettons/{address}", timeout=self.timeout, headers={
+                            tonapi_response = requests.get(f"{self.TONAPI_BASE_URL}/{address}", timeout=self.timeout, headers={
                                 "User-Agent": DATALAKE_USER_AGENT,
                                 "Authorization": 'Bearer %s' % os.getenv("TONAPI_API_KEY")
                                 })
@@ -209,7 +210,7 @@ class JettonMastersMetadataParser(Parser):
                 if metadata.tonapi_image_url is None:
                     logger.info(f"Updating tonapi image url for {address}")
                     try:
-                        tonapi_response = requests.get(f"https://tonapi.io/v2/jettons/{address}", timeout=self.timeout, headers={
+                        tonapi_response = requests.get(f"{self.TONAPI_BASE_URL}/{address}", timeout=self.timeout, headers={
                                     "User-Agent": DATALAKE_USER_AGENT,
                                     "Authorization": 'Bearer %s' % os.getenv("TONAPI_API_KEY")
                                     })
@@ -249,3 +250,7 @@ class JettonMastersMetadataParser(Parser):
         if onchain_updated or offchain_updated:
             logger.info(f"Upserting jetton metadata for {address}")
             db.upsert_jetton_metadata(metadata, prev_ts_onchain, prev_ts_offchain)
+
+
+class TestnetJettonMastersMetadataParser(JettonMastersMetadataParser):
+    TONAPI_BASE_URL = "https://testnet.tonapi.io/v2/jettons"
