@@ -6,9 +6,9 @@ from pytoniq_core import Cell, Address
 from model.dexswap import DEX_STON, DexSwapParsed
 from parsers.message.swap_volume import estimate_volume
 
-STONFI_ROUTER = Parser.uf2raw('EQB3ncyBUTjZUA5EnFKR5_EnOMI9V1tTEAAPaiU71gc4TiUt')
 
 class StonfiSwap(Parser):
+    STONFI_ROUTER = Parser.uf2raw('EQB3ncyBUTjZUA5EnFKR5_EnOMI9V1tTEAAPaiU71gc4TiUt')
     
     def topics(self):
         return [TOPIC_MESSAGES]
@@ -17,7 +17,7 @@ class StonfiSwap(Parser):
         # only internal messages processed by the router
         return obj.get("opcode", None) == Parser.opcode_signed(0xf93bb43f) and \
             obj.get("direction", None) == "in" and \
-            obj.get("destination", None) == STONFI_ROUTER
+            obj.get("destination", None) == self.STONFI_ROUTER
     
 
     def handle_internal(self, obj, db: DB):
@@ -116,3 +116,7 @@ class StonfiSwap(Parser):
         estimate_volume(swap, db)
         db.serialize(swap)
         db.discover_dex_pool(swap)
+
+
+class TestnetStonfiSwap(StonfiSwap):
+    STONFI_ROUTER = Parser.uf2raw('kQB3ncyBUTjZUA5EnFKR5_EnOMI9V1tTEAAPaiU71gc4Tp6n')

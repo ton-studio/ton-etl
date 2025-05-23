@@ -1,23 +1,23 @@
 from typing import Dict, List, Set
-from parsers.accounts.nfts_parser import NFTItemsParser
+from parsers.accounts.nfts_parser import NFTItemsParser, TestnetNFTItemsParser
 from parsers.accounts.staking_pools import StakingPoolsParser
-from parsers.message.tonco import TONCOSwap
+from parsers.message.tonco import TONCOSwap, TestnetTONCOSwap
 from parsers.jetton_transfer.megaton import MegatonDexSwap
 from parsers.message.tonfun import TonFunTrade
-from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser
-from parsers.message.stonfi_swap_v2 import StonfiSwapV2
+from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser, TestnetJettonMastersMetadataParser
+from parsers.message.stonfi_swap_v2 import StonfiSwapV2, TestnetStonfiSwapV2
 from parsers.message.gaspump import GasPumpTrade
 from parsers.accounts.tvl import TVLPoolStateParser
 from parsers.accounts.jetton_wallets_recover import JettonWalletsRecover
 from parsers.accounts.nfts_recover import NFTsRecover
 from parsers.message_contents.decode_comment import CommentsDecoder
 from parsers.accounts.core_prices import CorePricesHipoTON, CorePricesLSDstTON, CorePricesLSDtsTON, CorePricesStormTrade, CorePricesUSDT
-from parsers.message.dedust_swap import DedustSwap
-from parsers.message.stonfi_swap import StonfiSwap
-from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted
+from parsers.message.dedust_swap import DedustSwap, TestnetDedustSwap
+from parsers.message.stonfi_swap import StonfiSwap, TestnetStonfiSwap
+from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted, TestnetHipoTokensMinted
 from parsers.nft_transfer.nft_history import NftHistoryParser
-from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser
-from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadataParser
+from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser, TestnetNFTItemMetadataParser
+from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadataParser, TestnetNFTCollectionMetadataParser
 from parsers.message.memeslab import MemesLabTrade
 from model.parser import Parser
 from loguru import logger
@@ -27,9 +27,10 @@ EMULATOR_PATH = os.environ.get("EMULATOR_LIBRARY")
 METADATA_FETCH_TIMEOUT = int(os.environ.get("METADATA_FETCH_TIMEOUT", "10"))
 METADATA_FETCH_MAX_ATTEMPTS = int(os.environ.get("METADATA_FETCH_MAX_ATTEMPTS", "3"))
 TONAPI_ONLY_MODE = os.environ.get("TONAPI_ONLY_MODE", "0").lower() in ('true', '1')
+TESTNET_MODE = int(os.environ.get("TESTNET_MODE", "0"))
 
-_parsers = [
-    NftHistoryParser(),
+_mainnet_parsers = [
+    NftHistoryParser(),  # depricated!
 
     # DEX trades
     DedustSwap(EMULATOR_PATH), 
@@ -59,17 +60,37 @@ _parsers = [
     TVLPoolStateParser(EMULATOR_PATH),
     StakingPoolsParser(EMULATOR_PATH),
 
-    NFTsRecover(EMULATOR_PATH),
-    JettonWalletsRecover(EMULATOR_PATH),
+    NFTsRecover(EMULATOR_PATH),  # depricated!
+    JettonWalletsRecover(EMULATOR_PATH),  # depricated?
     NFTItemsParser(EMULATOR_PATH),
     
-    CommentsDecoder(),
+    CommentsDecoder(),  # depricated!
 
     JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
 
     NFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
     NFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE)
 ]
+
+_testnet_parsers = [
+    TestnetDedustSwap(EMULATOR_PATH), 
+    TestnetStonfiSwap(),
+    TestnetStonfiSwapV2(),
+    TestnetTONCOSwap(),
+
+    JettonMintParser(),
+    TestnetHipoTokensMinted(),
+
+    TVLPoolStateParser(EMULATOR_PATH),
+
+    TestnetNFTItemsParser(EMULATOR_PATH),  # TODO find testnet addresses
+
+    TestnetJettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
+    TestnetNFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
+    TestnetNFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE)
+]
+
+_parsers = _testnet_parsers if TESTNET_MODE else _mainnet_parsers
 
 """
 dict of parsers, where key is the topic name
