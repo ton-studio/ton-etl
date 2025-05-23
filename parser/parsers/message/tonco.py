@@ -10,9 +10,8 @@ TONCO CLMM DEX swap parsing based on https://docs.tonco.io/technical-reference/c
 The parser processes ROUTERV3_PAY_TO messages from the pool to the router. If the messages
 processed successfully it means the swap was successful.
 """
-ROUTER = Parser.uf2raw('EQC_-t0nCnOFMdp7E7qPxAOCbCWGFz-e3pwxb6tTvFmshjt5')
-
 class TONCOSwap(Parser):
+    ROUTER = Parser.uf2raw('EQC_-t0nCnOFMdp7E7qPxAOCbCWGFz-e3pwxb6tTvFmshjt5')
     
     def topics(self):
         return [TOPIC_MESSAGES]
@@ -21,7 +20,7 @@ class TONCOSwap(Parser):
         # only internal messages sent to the router
         return obj.get("opcode", None) == Parser.opcode_signed(0xa1daa96d) and \
             obj.get("direction", None) == "in" and \
-            obj.get("destination", None) == ROUTER
+            obj.get("destination", None) == self.ROUTER
     
 
     def handle_internal(self, obj, db: DB):
@@ -120,3 +119,8 @@ class TONCOSwap(Parser):
         logger.info(swap)
         db.serialize(swap)
         db.discover_dex_pool(swap)
+
+
+class TestnetTONCOSwap(Parser):
+    ROUTER = Parser.uf2raw('kQDnfag9lHlc0rS6YeI7WwRq-3ltcKSsYxLiXmveB7gNU4jE')
+    

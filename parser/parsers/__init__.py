@@ -1,7 +1,7 @@
 from typing import Dict, List, Set
 from parsers.accounts.nfts_parser import NFTItemsParser, TestnetNFTItemsParser
 from parsers.accounts.staking_pools import StakingPoolsParser
-from parsers.message.tonco import TONCOSwap
+from parsers.message.tonco import TONCOSwap, TestnetTONCOSwap
 from parsers.jetton_transfer.megaton import MegatonDexSwap
 from parsers.message.tonfun import TonFunTrade
 from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser, TestnetJettonMastersMetadataParser
@@ -76,6 +76,7 @@ _testnet_parsers = [
     TestnetDedustSwap(EMULATOR_PATH), 
     TestnetStonfiSwap(),
     TestnetStonfiSwapV2(),
+    TestnetTONCOSwap(),
 
     JettonMintParser(),
     TestnetHipoTokensMinted(),
