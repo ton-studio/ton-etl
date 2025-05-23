@@ -343,6 +343,10 @@ def datalake_daily_sync():
         field = kwargs['field']
         topic = kwargs['topic']
 
+        if kwargs.get('skip_task'):
+            logging.info("Task skipped")
+            return
+
         # start_of_the_day_ts = task_instance.xcom_pull(key="start_of_the_day_ts", task_ids='perform_last_block_check')
         end_of_the_day_ts = task_instance.xcom_pull(key="end_of_the_day_ts", task_ids='perform_last_block_check')
         # logging.info(f"Start of the day: {start_of_the_day_ts}, end of the day: {end_of_the_day_ts}")
@@ -458,7 +462,8 @@ def datalake_daily_sync():
         op_kwargs={
             'kafka_group_id': 'core_prices',
             'topic': 'ton.public.latest_account_states',
-            'field': 'timestamp'
+            'field': 'timestamp',
+            'skip_task': True if int(Variable.get("TESTNET_MODE", "0")) else False
         }
     )
 
@@ -478,7 +483,8 @@ def datalake_daily_sync():
         op_kwargs={
             'kafka_group_id': 'jettons_megaton',
             'topic': 'ton.public.jetton_transfers',
-            'field': 'tx_now'
+            'field': 'tx_now',
+            'skip_task': True if int(Variable.get("TESTNET_MODE", "0")) else False
         }
     )
 
