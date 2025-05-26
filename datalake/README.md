@@ -44,7 +44,7 @@ List of topics supported:
 * indexer.streaming_dex_pools
 
 Public Kafka topics are available for free, but to provide better observability and performance we would like to ask you to
-contact us for connection credentials linked to your organisation using [the following form](https://docs.google.com/forms/d/e/1FAIpQLSc4OhA1pe6OzyaG_gb8plAG8XlJpOkcAw7vo8fSeDeBBGFmCA/viewform?usp=sf_link).
+contact us for connection credentials linked to your organisation using [@TONETLSupportBot](https://t.me/TONETLSupportBot) or [the following form](https://docs.google.com/forms/d/e/1FAIpQLSc4OhA1pe6OzyaG_gb8plAG8XlJpOkcAw7vo8fSeDeBBGFmCA/viewform?usp=sf_link).
 
 Note that the data stream is near real-time with with estimated delay in range 10-30 seconds after the block is processed. 
 This delay originates from the multiple reasons:
