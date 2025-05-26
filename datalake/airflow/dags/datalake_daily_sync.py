@@ -82,6 +82,8 @@ def datalake_daily_sync():
     datalake_exporters_prefix = Variable.get("DATALAKE_ATHENA_DATALAKE_EXPORTERS_PREFIX")
     datalake_athena_temp_bucket = Variable.get("DATALAKE_TMP_LOCATION")
     env_tag = Variable.get("DATALAKE_TARGET_DATABASE")
+    is_testnet_mode = True if int(Variable.get("TESTNET_MODE", "0")) else False
+    logging.info(f'TESTNET_MODE = {Variable.get("TESTNET_MODE")}')
 
     def safe_python_callable(func, kwargs, step_name):
         try:
