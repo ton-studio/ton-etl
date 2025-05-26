@@ -51,7 +51,7 @@ class NFTSalesConverter(Converter):
                 "created_at": obj['created_at'],
                 "is_complete": obj['end_flag'],
                 "is_canceled": obj['is_canceled'],
-                "end_time": obj['end_time'],
+                "end_time": min(0x7fffffff, obj['end_time']),
                 "marketplace_address": obj['mp_addr'],
                 "marketplace_fee_address": obj['mp_fee_addr'],
                 "marketplace_fee": decimal.Decimal(round(1.0 * obj['mp_fee_factor'] / obj['mp_fee_base'] * int(price)) if obj['mp_fee_base'] > 0 else 0),
