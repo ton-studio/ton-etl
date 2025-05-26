@@ -29,7 +29,7 @@ class JettonMintParser(Parser):
         return [TOPIC_MESSAGES]
 
     def predicate(self, obj: dict) -> bool:
-        return obj.get("opcode") == Parser.opcode_signed(0x178d4519) and obj.get("direction") == "in"
+        return obj.get("opcode") == Parser.opcode_signed(0x178d4519) and obj.get("direction") == "in" and obj.get("source") 
 
     def handle_internal(self, obj: dict, db: DB):
         # ensure we have no transfer operation before
@@ -37,6 +37,9 @@ class JettonMintParser(Parser):
         if prev_message and prev_message.get("opcode") == Parser.opcode_signed(0x0f8a7ea5):
             # skip ordinary chain transfer => internal_transfer
             return
+        if not prev_message:
+            if db.parent_message_exists(obj.get("msg_hash")):
+                raise Exception(f"trace_edges table contains a parent messages but get_parent_message_with_body returned None")
 
         logger.info(f"Parsing jetton mint message {Parser.require(obj.get('msg_hash'))}")
         cell = Parser.message_body(obj, db).begin_parse()
