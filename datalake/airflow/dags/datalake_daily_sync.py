@@ -193,6 +193,10 @@ def datalake_daily_sync():
     Converts table from raw exported items into output table
     """
     def convert_table(kwargs):
+        if kwargs.get('skip_in_testnet_mode'):
+            logging.info("Task skipped in TESTNET_MODE")
+            return
+
         task_instance = kwargs['task_instance']
 
         source_database = Variable.get("DATALAKE_SOURCE_DATABASE")
@@ -339,14 +343,14 @@ def datalake_daily_sync():
     Checks Kafka commited offset for the consumer group
     """
     def check_kafka_offset(kwargs):
+        if kwargs.get('skip_in_testnet_mode'):
+            logging.info("Task skipped in TESTNET_MODE")
+            return
+
         task_instance = kwargs['task_instance']
         group_id = kwargs['kafka_group_id']
         field = kwargs['field']
         topic = kwargs['topic']
-
-        if kwargs.get('is_testnet_mode'):
-            logging.info("Task skipped in TESTNET_MODE")
-            return
 
         # start_of_the_day_ts = task_instance.xcom_pull(key="start_of_the_day_ts", task_ids='perform_last_block_check')
         end_of_the_day_ts = task_instance.xcom_pull(key="end_of_the_day_ts", task_ids='perform_last_block_check')
@@ -464,7 +468,7 @@ def datalake_daily_sync():
             'kafka_group_id': 'core_prices',
             'topic': 'ton.public.latest_account_states',
             'field': 'timestamp',
-            'is_testnet_mode': is_testnet_mode,
+            'skip_in_testnet_mode': is_testnet_mode,
         }
     )
 
@@ -485,7 +489,7 @@ def datalake_daily_sync():
             'kafka_group_id': 'jettons_megaton',
             'topic': 'ton.public.jetton_transfers',
             'field': 'tx_now',
-            'is_testnet_mode': is_testnet_mode,
+            'skip_in_testnet_mode': is_testnet_mode,
         }
     )
 
@@ -538,7 +542,8 @@ def datalake_daily_sync():
             'target_table_location': f's3://{datalake_output_bucket}/v1/dex_pools',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_dex_pools',
-            'allow_empty_partitions': 3
+            'allow_empty_partitions': 3,
+            'skip_in_testnet_mode': is_testnet_mode,
         }
     )
 
