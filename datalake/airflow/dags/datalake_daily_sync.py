@@ -542,8 +542,7 @@ def datalake_daily_sync():
             'target_table_location': f's3://{datalake_output_bucket}/v1/dex_pools',
             'dedup_depth': 10000,
             'kafka_group_id': 'exporter_dex_pools',
-            'allow_empty_partitions': 3,
-            'skip_in_testnet_mode': is_testnet_mode,
+            'allow_empty_partitions': 3
         }
     )
 
