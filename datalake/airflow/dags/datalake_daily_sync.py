@@ -83,7 +83,6 @@ def datalake_daily_sync():
     datalake_athena_temp_bucket = Variable.get("DATALAKE_TMP_LOCATION")
     env_tag = Variable.get("DATALAKE_TARGET_DATABASE")
     is_testnet_mode = True if int(Variable.get("TESTNET_MODE", "0")) else False
-    logging.info(f'TESTNET_MODE = {Variable.get("TESTNET_MODE")}')
 
     def safe_python_callable(func, kwargs, step_name):
         try:
@@ -345,8 +344,8 @@ def datalake_daily_sync():
         field = kwargs['field']
         topic = kwargs['topic']
 
-        if kwargs.get('skip_task'):
-            logging.info("Task skipped")
+        if kwargs.get('is_testnet_mode'):
+            logging.info("Task skipped in TESTNET_MODE")
             return
 
         # start_of_the_day_ts = task_instance.xcom_pull(key="start_of_the_day_ts", task_ids='perform_last_block_check')
@@ -465,7 +464,7 @@ def datalake_daily_sync():
             'kafka_group_id': 'core_prices',
             'topic': 'ton.public.latest_account_states',
             'field': 'timestamp',
-            'skip_task': True if int(Variable.get("TESTNET_MODE", "0")) else False
+            'is_testnet_mode': is_testnet_mode,
         }
     )
 
@@ -486,7 +485,7 @@ def datalake_daily_sync():
             'kafka_group_id': 'jettons_megaton',
             'topic': 'ton.public.jetton_transfers',
             'field': 'tx_now',
-            'skip_task': True if int(Variable.get("TESTNET_MODE", "0")) else False
+            'is_testnet_mode': is_testnet_mode,
         }
     )
 
