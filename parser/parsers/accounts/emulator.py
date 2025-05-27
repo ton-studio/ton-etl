@@ -1,3 +1,4 @@
+import random
 from model.parser import TOPIC_ACCOUNT_STATES, NonCriticalParserError, Parser
 from db import DB
 import time
@@ -21,6 +22,8 @@ def create_lite_client():
         else:
             return LiteClient.from_mainnet_config(ls_i=0, trust_level=2, timeout=30)
     else:
+        if ',' in config_path:
+            config_path = random.choice(config_path.split(','))
         logger.info(f"Using liteclient config from {config_path}")
         with open(config_path) as src:
             conf = json.loads(src.read())
