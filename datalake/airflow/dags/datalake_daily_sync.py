@@ -193,10 +193,6 @@ def datalake_daily_sync():
     Converts table from raw exported items into output table
     """
     def convert_table(kwargs):
-        if kwargs.get('skip_in_testnet_mode'):
-            logging.info("Task skipped in TESTNET_MODE")
-            return
-
         task_instance = kwargs['task_instance']
 
         source_database = Variable.get("DATALAKE_SOURCE_DATABASE")
@@ -224,6 +220,9 @@ def datalake_daily_sync():
         waited = 0
         MAX_WAIT_TIME = 7200
         while True:
+            if is_testnet_mode:
+                logging.info("Kafka check skipped in TESTNET_MODE")
+                break
             group_id = kwargs['kafka_group_id']
             field = kwargs.get('topics_timestamp_field', kwargs['repartition_field'])
             min_timestamp = check_kafka_consumer_state(group_id=group_id, field=field, allow_empty=allow_empty_partitions)
