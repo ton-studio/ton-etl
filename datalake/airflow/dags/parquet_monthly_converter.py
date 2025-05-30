@@ -41,8 +41,8 @@ Utility dag to convert monthly data from AVRO to Parquet
     schedule_interval="@monthly",
     start_date=datetime(2019, 10, 1),
     catchup=False,
-    concurrency=1,
-    max_active_runs=1,
+    concurrency=4,
+    max_active_runs=4,
     tags=['ton', 'datalake']
 )
 def parquet_monthly_converter():
@@ -118,10 +118,10 @@ def parquet_monthly_converter():
         convert_table_task("dex_trades"), 
         convert_table_task("dex_pools"),
         convert_table_task("jetton_events"),
-        convert_table_task("jetton_metadata", partition_field='added_date'),
+        convert_table_task("jetton_metadata", partition_field='adding_date'),
         convert_table_task("messages_with_data"),
         
-        convert_table_task("nft_metadata", partition_field='added_date'),
+        convert_table_task("nft_metadata", partition_field='adding_date'),
         convert_table_task("nft_items"),
         convert_table_task("nft_sales"),
         convert_table_task("nft_transfers"),
