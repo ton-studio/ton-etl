@@ -38,7 +38,7 @@ def send_notification(message):
 Utility dag to convert monthly data from AVRO to Parquet
 """
 @dag(
-    schedule_interval="@daily",
+    schedule_interval=None,
     start_date=datetime(2025, 4, 1),
     catchup=False,
     concurrency=4,
