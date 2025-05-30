@@ -477,7 +477,8 @@ def datalake_daily_sync():
         op_kwargs={
             'kafka_group_id': 'dex_tvl_parsing',
             'topic': 'ton.public.latest_account_states',
-            'field': 'timestamp'
+            'field': 'timestamp',
+            'skip_in_testnet_mode': is_testnet_mode,
         }
     )
 
