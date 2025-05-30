@@ -97,7 +97,7 @@ def parquet_daily_converter():
         from datalake.{source_table_name}
         where {partition_field} like '{day}%'
         except
-        select * from datalake.{source_table_name} where date = '{day_new_format}'
+        select * from datalake_parquet.{target_table_name} where date = '{day_new_format}'
         """
         logging.info(f"Running SQL code to convert data into single file dataset {sql}")
         execute_athena_query(sql)
