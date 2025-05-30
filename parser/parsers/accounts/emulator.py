@@ -14,8 +14,12 @@ from pytoniq import LiteClient
 
 def create_lite_client():
     config_path = os.getenv("LITECLIENT_CONFIG_OVERRIDE", None)
+    is_testnet_mode = int(os.getenv("TESTNET_MODE", "0"))
     if config_path is None:
-        return LiteClient.from_mainnet_config(ls_i=0, trust_level=2, timeout=30)
+        if is_testnet_mode:
+            return LiteClient.from_testnet_config(ls_i=0, trust_level=2, timeout=30)
+        else:
+            return LiteClient.from_mainnet_config(ls_i=0, trust_level=2, timeout=30)
     else:
         logger.info(f"Using liteclient config from {config_path}")
         with open(config_path) as src:

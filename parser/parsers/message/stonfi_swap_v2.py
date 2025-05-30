@@ -9,67 +9,66 @@ from parsers.message.swap_volume import estimate_volume
 Implementation of parser for V2 ston.fi swap - https://docs.ston.fi/docs/developer-section/api-reference-v2
 V2 version allows to use multiple routers (below). TODO: sync list with ston.fi API https://api.ston.fi/v1/pools?dex_v2=true
 """
-ROUTERS = set(map(Parser.uf2raw, [
-    'EQABT9GCyDI60CbC4c6uS33HFDwaqd6MddiwIIw7CXTgNR3A',
-    'EQATvO_BXfkFocOXhlve01EZfsiyFjoV-0k9CLmpgwtzVtcN',
-    'EQAgERF5tvrNn0AM2Rrrvk-MutGP60ZL70bJPuqvCTGY-17_',
-    'EQAyY2lBQ6RsVe88CKTmeH3BWWsUCWu7ugQNaf5kwLDYAoKt',
-    'EQBCl1JANkTpMpJ9N3lZktPMpp2btRe2vVwHon0la8ibRied',
-    'EQBQErJi0DHgKYseIHtrQk4N5CQLCr3XYwkQIEw0HNs470OG',
-    'EQBZj7nhXNhB4O9rRCn4qGS82DZaPUPlyM2k6ZrbvQ1j3Ge7',
-    'EQBjM7B2PKa82IPKrUFbMFaKeQDFGTMRnrvY1TmptC7Kxz7B',
-    'EQBzkqAN4ViYdS24lD2fFPe8odHn2rUkfMYbEJ88EBKBAS1b',
-    'EQCCdNmj4QbNjrg_PM-JJE-B9f_czXLkYmrO7P9UkA6tt95m',
-    'EQCRgwuFbPRR7TGodkJwbjiBtNtb0hfzJIliV-5kY6lKr_18',
-    'EQChoROpuUM4cpN6IRzqNTrkP9iVZHYoHgxMABDVU28vlUiG',
-    'EQCpuYtq55nhkwYDmL4OWjsrdYy83gj5_49nNRQ5CrPOze49',
-    'EQCxkYVQcfXKw9uJ-MMtutvR2Cu0DVCZFfLNBp6NwXgO8vQY',
-    'EQDBYUj5KEPUQrbj7da742UYJIeT9QU5C2dKsi12SdQ3yh9a',
-    'EQDTb1w1TCohFqnNcyPrrbbBJQdAwwPn8DbCoaSUd0S5T4fB',
-    'EQDi1eWU3HWWst8owY8OMq2Dz9nJJEHUROza8R-_wEGb8yu6',
-    'EQDwyjgjnTXJVPjXji3OPtUilcCjceGVQOLGwr9_sRLjImfG',
-    # new routers v2.2
-    'EQDAPye7HAPAAl4WXpz5jOCdhf2H9h9QkkzRQ-6K5usiuQeC',
-    'EQByADL5Ra2dldrMSBctgfSm2X2W1P61NVW2RYDb8eJNJGx6',
-    'EQDQ6j53q21HuZtw6oclm7z4LU2cG6S2OKvpSSMH548d7kJT',
-    'EQDx--jUU9PUtHltPYZX7wdzIi0SPY3KZ8nvOs0iZvQJd6Ql',
-    'EQBigMnbY4NU1uwdvzertV5mv_yI7282R-ffW7XZFWPEVRDG',
-    'EQCx0HDJ_DxLxDSQyfsEqHI8Rs65nygvdmeD9Ra7rY15OWN8',
-    'EQAyD7O8CvVdR8AEJcr96fHI1ifFq21S8QMt1czi5IfJPyfA',
-    'EQCS4UEa5UaJLzOyyKieqQOQ2P9M-7kXpkO5HnP3Bv250cN3',
-    'EQCiypoBWNIEPlarBp04UePyEj5zH0ZDHxuRNqJ1WQx3FCY-',
-    'EQAQYbnb1EGK0Wb8mk3vEW4vbHTyv7cOcfJlPWQ87_6_qfzR',
-    'EQDh5oHPvfRwPu2bORBGCoLEO4WQZKL4fk5DD1gydeNG9oEH',
-    'EQCDT9dCT52pdfsLNW0e6qP5T3cgq7M4Ug72zkGYgP17tsWD',
-    'EQAiv3IuxYA6ZGEunOgZSTuMBzbpjwRbWw09-WsE-iqKKMrK',
-    'EQADEFMTMnC-gu5v2U0ZY8AYaGhAOk9TcECg1TOquAW3r-IE',
-    'EQBQ_UBQvR9ryUjKDwijtoiyyga2Wl-yJm6Y8gl0k-HDh_5x',
-    'EQBCtlN7Zy96qx-3yH0Yi4V0SNtQ-8RbhYaNs65MC4Hwfq31',
-    # memecoin router?
-    'EQAJG5pyZPWEiQiMVJdf7bDRgRLzg6QR57qKeRsOrMO-ncZN',
-    # stable coin router for AquaUSDT
-    'EQDkncuJ267Py3EmL2XAN7YsSNQMUu8u-GHsW9jVljcH8fr5',
-    # 2024-12-16
-    'EQCiz74FCV2lYlvFPEYhL3Jql8WwIO7QvbvYT-LQH0SmtCgI',
-    # 2025-02-11
-    'EQBwpBGEAb-NgjUxpmARAgVl8C4F_5GsXxZ3dpsA1qzQerNl',
-    # 2025-04-17
-    "EQBjK_kjY5R_DoyTRff109VzFrSlKFCC_gOOWIMtyEvCcv2J",
-    # 2025-04-27
-    "EQDgebEMA6yriI7SMffE65DIVA9rzSRmfGV_gy3ylIhLicY8",
-    # 2025-05-09
-    "EQACn16m9OrZ-mw186M4NlIpVP8Tb3q6SV9aX8NjSgVfJTo9",
-    "EQAGV9vw11tKW2QOCYCXEmIdyufM3p5CfcgHcY9NiiBLfZGH",
-    "EQBSNX_5mSikBVttWhIaIb0f8jJU7fL6kvyyFVppd7dWRO6M",
-    # 2025-05-21
-    "EQAiLV677BgHNXEUuDJ3Cw8K5WOiJSO86xh8YQq2LthJEoED",
-    # 2025-05-27
-    "EQAz1D0ZUiG_9XCyjrJ1-xTx-CnmnQ3J3LMKQ7sZTr-XlNZP",
-    # 2025-05-29
-    "EQBqgCTdrtSod76UrcOeALSiLCp3WuNIFQBQvyjjlQMvwLkc",
-    ]))
-
 class StonfiSwapV2(Parser):
+    ROUTERS = set(map(Parser.uf2raw, [
+        'EQABT9GCyDI60CbC4c6uS33HFDwaqd6MddiwIIw7CXTgNR3A',
+        'EQATvO_BXfkFocOXhlve01EZfsiyFjoV-0k9CLmpgwtzVtcN',
+        'EQAgERF5tvrNn0AM2Rrrvk-MutGP60ZL70bJPuqvCTGY-17_',
+        'EQAyY2lBQ6RsVe88CKTmeH3BWWsUCWu7ugQNaf5kwLDYAoKt',
+        'EQBCl1JANkTpMpJ9N3lZktPMpp2btRe2vVwHon0la8ibRied',
+        'EQBQErJi0DHgKYseIHtrQk4N5CQLCr3XYwkQIEw0HNs470OG',
+        'EQBZj7nhXNhB4O9rRCn4qGS82DZaPUPlyM2k6ZrbvQ1j3Ge7',
+        'EQBjM7B2PKa82IPKrUFbMFaKeQDFGTMRnrvY1TmptC7Kxz7B',
+        'EQBzkqAN4ViYdS24lD2fFPe8odHn2rUkfMYbEJ88EBKBAS1b',
+        'EQCCdNmj4QbNjrg_PM-JJE-B9f_czXLkYmrO7P9UkA6tt95m',
+        'EQCRgwuFbPRR7TGodkJwbjiBtNtb0hfzJIliV-5kY6lKr_18',
+        'EQChoROpuUM4cpN6IRzqNTrkP9iVZHYoHgxMABDVU28vlUiG',
+        'EQCpuYtq55nhkwYDmL4OWjsrdYy83gj5_49nNRQ5CrPOze49',
+        'EQCxkYVQcfXKw9uJ-MMtutvR2Cu0DVCZFfLNBp6NwXgO8vQY',
+        'EQDBYUj5KEPUQrbj7da742UYJIeT9QU5C2dKsi12SdQ3yh9a',
+        'EQDTb1w1TCohFqnNcyPrrbbBJQdAwwPn8DbCoaSUd0S5T4fB',
+        'EQDi1eWU3HWWst8owY8OMq2Dz9nJJEHUROza8R-_wEGb8yu6',
+        'EQDwyjgjnTXJVPjXji3OPtUilcCjceGVQOLGwr9_sRLjImfG',
+        # new routers v2.2
+        'EQDAPye7HAPAAl4WXpz5jOCdhf2H9h9QkkzRQ-6K5usiuQeC',
+        'EQByADL5Ra2dldrMSBctgfSm2X2W1P61NVW2RYDb8eJNJGx6',
+        'EQDQ6j53q21HuZtw6oclm7z4LU2cG6S2OKvpSSMH548d7kJT',
+        'EQDx--jUU9PUtHltPYZX7wdzIi0SPY3KZ8nvOs0iZvQJd6Ql',
+        'EQBigMnbY4NU1uwdvzertV5mv_yI7282R-ffW7XZFWPEVRDG',
+        'EQCx0HDJ_DxLxDSQyfsEqHI8Rs65nygvdmeD9Ra7rY15OWN8',
+        'EQAyD7O8CvVdR8AEJcr96fHI1ifFq21S8QMt1czi5IfJPyfA',
+        'EQCS4UEa5UaJLzOyyKieqQOQ2P9M-7kXpkO5HnP3Bv250cN3',
+        'EQCiypoBWNIEPlarBp04UePyEj5zH0ZDHxuRNqJ1WQx3FCY-',
+        'EQAQYbnb1EGK0Wb8mk3vEW4vbHTyv7cOcfJlPWQ87_6_qfzR',
+        'EQDh5oHPvfRwPu2bORBGCoLEO4WQZKL4fk5DD1gydeNG9oEH',
+        'EQCDT9dCT52pdfsLNW0e6qP5T3cgq7M4Ug72zkGYgP17tsWD',
+        'EQAiv3IuxYA6ZGEunOgZSTuMBzbpjwRbWw09-WsE-iqKKMrK',
+        'EQADEFMTMnC-gu5v2U0ZY8AYaGhAOk9TcECg1TOquAW3r-IE',
+        'EQBQ_UBQvR9ryUjKDwijtoiyyga2Wl-yJm6Y8gl0k-HDh_5x',
+        'EQBCtlN7Zy96qx-3yH0Yi4V0SNtQ-8RbhYaNs65MC4Hwfq31',
+        # memecoin router?
+        'EQAJG5pyZPWEiQiMVJdf7bDRgRLzg6QR57qKeRsOrMO-ncZN',
+        # stable coin router for AquaUSDT
+        'EQDkncuJ267Py3EmL2XAN7YsSNQMUu8u-GHsW9jVljcH8fr5',
+        # 2024-12-16
+        'EQCiz74FCV2lYlvFPEYhL3Jql8WwIO7QvbvYT-LQH0SmtCgI',
+        # 2025-02-11
+        'EQBwpBGEAb-NgjUxpmARAgVl8C4F_5GsXxZ3dpsA1qzQerNl',
+        # 2025-04-17
+        "EQBjK_kjY5R_DoyTRff109VzFrSlKFCC_gOOWIMtyEvCcv2J",
+        # 2025-04-27
+        "EQDgebEMA6yriI7SMffE65DIVA9rzSRmfGV_gy3ylIhLicY8",
+        # 2025-05-09
+        "EQACn16m9OrZ-mw186M4NlIpVP8Tb3q6SV9aX8NjSgVfJTo9",
+        "EQAGV9vw11tKW2QOCYCXEmIdyufM3p5CfcgHcY9NiiBLfZGH",
+        "EQBSNX_5mSikBVttWhIaIb0f8jJU7fL6kvyyFVppd7dWRO6M",
+        # 2025-05-21
+        "EQAiLV677BgHNXEUuDJ3Cw8K5WOiJSO86xh8YQq2LthJEoED",
+        # 2025-05-27
+        "EQAz1D0ZUiG_9XCyjrJ1-xTx-CnmnQ3J3LMKQ7sZTr-XlNZP",
+        # 2025-05-29
+        "EQBqgCTdrtSod76UrcOeALSiLCp3WuNIFQBQvyjjlQMvwLkc",
+    ]))
     
     def topics(self):
         return [TOPIC_MESSAGES]
@@ -78,7 +77,7 @@ class StonfiSwapV2(Parser):
         # only internal messages processed by the router
         return obj.get("opcode", None) == Parser.opcode_signed(0x657b54f5) and \
             obj.get("direction", None) == "in" and \
-            obj.get("destination", None) in ROUTERS
+            obj.get("destination", None) in self.ROUTERS
     
 
     def handle_internal(self, obj, db: DB):
@@ -182,3 +181,9 @@ class StonfiSwapV2(Parser):
         logger.info(swap)
         db.serialize(swap)
         db.discover_dex_pool(swap)
+
+
+class TestnetStonfiSwapV2(StonfiSwapV2):
+    ROUTERS = set(map(Parser.uf2raw, [
+        'kQALh-JBBIKK7gr0o4AVf9JZnEsFndqO0qTCyT-D-yBsWk0v',
+    ]))

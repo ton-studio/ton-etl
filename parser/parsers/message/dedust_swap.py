@@ -9,16 +9,15 @@ from parsers.message.swap_volume import estimate_volume
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 
 
-# twin non-stable pools to avoid wrong prices estimation
-# TODO - move to a special table?
-BLACKLIST = set([
-    Parser.uf2raw('EQA0a6c40n_Kejx_Wj0vowdeYCFYG9XnLdLMRHihXc27cng5'), 
-    Parser.uf2raw('EQDpuDAY31FH2jM9PysFsmJ3aXMMReGYb_P65aDOXVYDcCJX')
-])
-
-DEDUST_FACTORY_ADDRESS = Address('EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67')
-    
 class DedustSwap(EmulatorParser):
+    DEDUST_FACTORY_ADDRESS = Address('EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67')
+
+    # twin non-stable pools to avoid wrong prices estimation
+    # TODO - move to a special table?
+    BLACKLIST = set([
+        Parser.uf2raw('EQA0a6c40n_Kejx_Wj0vowdeYCFYG9XnLdLMRHihXc27cng5'), 
+        Parser.uf2raw('EQDpuDAY31FH2jM9PysFsmJ3aXMMReGYb_P65aDOXVYDcCJX')
+    ])
 
     def __init__(self, emulator_path):
         EmulatorParser.__init__(self, emulator_path)
@@ -26,7 +25,7 @@ class DedustSwap(EmulatorParser):
 
     def prepare(self, db: DB):
         EmulatorParser.prepare(self, db)
-        factory_state = Parser.get_account_state_safe(DEDUST_FACTORY_ADDRESS, db)
+        factory_state = Parser.get_account_state_safe(self.DEDUST_FACTORY_ADDRESS, db)
         self.factory = self._prepare_emulator(factory_state)
         
     
@@ -38,7 +37,7 @@ class DedustSwap(EmulatorParser):
         return obj.get("opcode", None) == Parser.opcode_signed(0x9c610de3) and \
             obj.get("direction", None) == "out" and \
             obj.get("destination", 'None') is None and \
-            not obj.get("source", None) in BLACKLIST
+            not obj.get("source", None) in self.BLACKLIST
     
     """
     We need to validate that the message produce by valid pool
@@ -101,3 +100,8 @@ class DedustSwap(EmulatorParser):
         estimate_volume(swap, db)
         db.serialize(swap)
         db.discover_dex_pool(swap)
+
+
+class TestnetDedustSwap(DedustSwap):
+    DEDUST_FACTORY_ADDRESS = Address('kQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YACUx')
+    BLACKLIST = set()

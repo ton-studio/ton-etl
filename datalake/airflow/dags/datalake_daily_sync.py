@@ -82,6 +82,7 @@ def datalake_daily_sync():
     datalake_exporters_prefix = Variable.get("DATALAKE_ATHENA_DATALAKE_EXPORTERS_PREFIX")
     datalake_athena_temp_bucket = Variable.get("DATALAKE_TMP_LOCATION")
     env_tag = Variable.get("DATALAKE_TARGET_DATABASE")
+    is_testnet_mode = True if int(Variable.get("TESTNET_MODE", "0")) else False
 
     def safe_python_callable(func, kwargs, step_name):
         try:
@@ -219,6 +220,9 @@ def datalake_daily_sync():
         waited = 0
         MAX_WAIT_TIME = 7200
         while True:
+            if is_testnet_mode:
+                logging.info("Kafka check skipped in TESTNET_MODE")
+                break
             group_id = kwargs['kafka_group_id']
             field = kwargs.get('topics_timestamp_field', kwargs['repartition_field'])
             min_timestamp = check_kafka_consumer_state(group_id=group_id, field=field, allow_empty=allow_empty_partitions)
@@ -338,6 +342,10 @@ def datalake_daily_sync():
     Checks Kafka commited offset for the consumer group
     """
     def check_kafka_offset(kwargs):
+        if kwargs.get('skip_in_testnet_mode'):
+            logging.info("Task skipped in TESTNET_MODE")
+            return
+
         task_instance = kwargs['task_instance']
         group_id = kwargs['kafka_group_id']
         field = kwargs['field']
@@ -458,7 +466,8 @@ def datalake_daily_sync():
         op_kwargs={
             'kafka_group_id': 'core_prices',
             'topic': 'ton.public.latest_account_states',
-            'field': 'timestamp'
+            'field': 'timestamp',
+            'skip_in_testnet_mode': is_testnet_mode,
         }
     )
 
@@ -468,7 +477,8 @@ def datalake_daily_sync():
         op_kwargs={
             'kafka_group_id': 'dex_tvl_parsing',
             'topic': 'ton.public.latest_account_states',
-            'field': 'timestamp'
+            'field': 'timestamp',
+            'skip_in_testnet_mode': is_testnet_mode,
         }
     )
 
@@ -478,7 +488,8 @@ def datalake_daily_sync():
         op_kwargs={
             'kafka_group_id': 'jettons_megaton',
             'topic': 'ton.public.jetton_transfers',
-            'field': 'tx_now'
+            'field': 'tx_now',
+            'skip_in_testnet_mode': is_testnet_mode,
         }
     )
 
