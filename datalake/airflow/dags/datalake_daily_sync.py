@@ -13,6 +13,7 @@ from airflow.providers.amazon.aws.hooks.athena import AthenaHook
 from airflow.models import Variable, Connection
 from confluent_kafka.admin import AdminClient
 from confluent_kafka import Consumer, TopicPartition, ConsumerGroupTopicPartitions
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 import traceback
 
 
@@ -1272,5 +1273,10 @@ def datalake_daily_sync():
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
     ] >> check_nft_parser_offset_task >> convert_nft_items_task >> convert_nft_transfers_task >> convert_nft_sales_task >> \
         refresh_nft_metadata_partitions_task >> nft_events_task
+        #>> TriggerDagRunOperator(
+            #task_id="trigger_parquet_daily_converter",
+            #trigger_dag_id="parquet_daily_converter",
+            #wait_for_completion=False
+        #)
 
 datalake_daily_sync_dag = datalake_daily_sync()
