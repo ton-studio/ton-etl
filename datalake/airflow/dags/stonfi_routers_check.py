@@ -99,22 +99,26 @@ def stonfi_new_routers_checker():
                                 return {ast.literal_eval(el) for el in list_node.elts}
 
     def check_routers():
-        """
-        Compares the router addresses from the parser code and the Ston.fi API.
-        If new router addresses are found, sends an alert via Telegram.
-        """
-        code = get_data(STONFI_PARSER_V2_URL)
-        routers_from_parser = extract_routers_from_code(code) | {STONFI_ROUTER_V1}
-
-        stonfi_api_data = get_data(STONFI_POOLS_API_URL)
-        pool_list = json.loads(stonfi_api_data).get("pool_list")
-        routers_from_api = {pool.get("router_address") for pool in pool_list}
-
-        new_routers = routers_from_api - routers_from_parser
-
-        if new_routers:
-            logging.info(f"New Ston.fi routers have been found: {', '.join(new_routers)}")
-            send_notification(f"⚠️ New Ston.fi routers have been found: {', '.join(new_routers)}")
+        try:
+            """
+            Compares the router addresses from the parser code and the Ston.fi API.
+            If new router addresses are found, sends an alert via Telegram.
+            """
+            code = get_data(STONFI_PARSER_V2_URL)
+            routers_from_parser = extract_routers_from_code(code) | {STONFI_ROUTER_V1}
+    
+            stonfi_api_data = get_data(STONFI_POOLS_API_URL)
+            pool_list = json.loads(stonfi_api_data).get("pool_list")
+            routers_from_api = {pool.get("router_address") for pool in pool_list}
+    
+            new_routers = routers_from_api - routers_from_parser
+    
+            if new_routers:
+                logging.info(f"New Ston.fi routers have been found: {', '.join(new_routers)}")
+                send_notification(f"⚠️ New Ston.fi routers have been found: {', '.join(new_routers)}")
+        except Exception as e:
+            send_notification(f"📛 Ston.fi router checker: {e}")
+            raise e
 
     PythonOperator(
         task_id="check_routers",
