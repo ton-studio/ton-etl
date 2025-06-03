@@ -78,7 +78,7 @@ def stonfi_new_routers_checker():
             set: A set of router addresses extracted from the code.
         """
         tree = ast.parse(code)
-        for node in tree.body:
+        for node in ast.walk(tree):
             if isinstance(node, ast.Assign):
                 for target in node.targets:
                     if (
@@ -97,25 +97,32 @@ def stonfi_new_routers_checker():
                             list_node = map_call.args[1]
                             if isinstance(list_node, ast.List):
                                 return {ast.literal_eval(el) for el in list_node.elts}
+        return None
 
     def check_routers():
+        """
+        Compares the router addresses from the parser code and the Ston.fi API.
+        If new router addresses are found, sends an alert via Telegram.
+        """
         try:
-            """
-            Compares the router addresses from the parser code and the Ston.fi API.
-            If new router addresses are found, sends an alert via Telegram.
-            """
             code = get_data(STONFI_PARSER_V2_URL)
-            routers_from_parser = extract_routers_from_code(code) | {STONFI_ROUTER_V1}
-    
+            routers_from_code = extract_routers_from_code(code)
+
+            if not routers_from_code:
+                raise Exception("Failed to extract router list from TON-ETL code")
+            
+            routers_from_parser = routers_from_code | {STONFI_ROUTER_V1}
+
             stonfi_api_data = get_data(STONFI_POOLS_API_URL)
             pool_list = json.loads(stonfi_api_data).get("pool_list")
             routers_from_api = {pool.get("router_address") for pool in pool_list}
-    
+
             new_routers = routers_from_api - routers_from_parser
-    
+
             if new_routers:
                 logging.info(f"New Ston.fi routers have been found: {', '.join(new_routers)}")
                 send_notification(f"⚠️ New Ston.fi routers have been found: {', '.join(new_routers)}")
+
         except Exception as e:
             send_notification(f"📛 Ston.fi router checker: {e}")
             raise e
