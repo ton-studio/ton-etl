@@ -814,7 +814,7 @@ def datalake_daily_sync():
         ), sales_ranks as (
             select t.block_date, nft_item_address, nft_item_index, nft_collection_address as collection_address,
             seller, buyer,
-            is_init, content_onchain, row_number() over(partition by ni.address order by ni.lt desc) as nft_state_rank, -- from nft_items
+            is_init, content_onchain, row_number() over(partition by ni.address, t.tx_hash order by ni.lt desc) as nft_state_rank, -- from nft_items
             tx_now as timestamp, tx_lt as lt, tx_hash, trace_id, forward_amount, forward_payload, comment,
             nft_sale_contract, sale_type, end_time as sale_end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step, query_id, custom_payload
