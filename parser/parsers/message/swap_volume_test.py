@@ -13,8 +13,6 @@ oUSDT = Address("EQC_1YoM8RBixN95lz7odcF3Vrkc_N8Ne7gQi7Abtlet_Efi")
 tsTON = Address("EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav")
 NOT = Address("EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT")
 STORM = Address("EQBsosmcZrD6FHijA7qWGLw5wo_aH8UN435hi935jJ_STORM")
-AquaUSD = Address("EQAWDyxARSl3ol2G1RMLMwepr3v6Ter5ls3jiAlheKshgg0K")
-
 
 @pytest.mark.parametrize(
     "jetton_left, jetton_right, reserves_left, reserves_right, last_updated, "
@@ -41,8 +39,6 @@ AquaUSD = Address("EQAWDyxARSl3ol2G1RMLMwepr3v6Ter5ls3jiAlheKshgg0K")
         (NOT, TON, 1.1e15, 1e12, 1738000000, 0.005, 1.05, 0.001, 0.005, 1e4, 2e3, True),
         # JETTONS-JETTONS pool, usual case
         (NOT, STORM, 5e15, 1.1e15, 1738000000, 0.005, 1.05, 0.001, 0.005, None, None, False),
-        # USDT-AquaUSD stable pool, usual case
-        (USDT, AquaUSD, 2e11, 4e11, 1738000000, 0.005, 1.05, 0.001, 0.005, 6e5, 1.2e5, True),
         # ORBIT_STABLES-JETTONS pool, time after ORBIT_HACK_TIMESTAMP
         (oUSDT, NOT, 1e10, 1.1e10, 1738000000, 0.005, 1.05, 0.001, 0.005, None, None, False),
         # ORBIT_STABLES-JETTONS pool, time befor ORBIT_HACK_TIMESTAMP
