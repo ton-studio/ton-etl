@@ -6,7 +6,7 @@ from loguru import logger
 from db import DB
 from pytoniq_core import Cell, Address, begin_cell
 from model.dexpool import DexPool
-from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO
+from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_BIDASK_CLMM
 from model.dedust import read_dedust_asset
 from parsers.message.swap_volume import estimate_tvl
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
@@ -120,6 +120,20 @@ class TVLPoolStateParser(EmulatorParser):
                 protocol_share = fee_protocol / 1e4
                 pool.lp_fee = base_fee * (1 - protocol_share)
                 pool.protocol_fee = base_fee * protocol_share
+        elif pool.platform == DEX_BIDASK_CLMM:
+            pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
+            _, protocol_fee, _ = self._execute_method(emulator, 'get_fees_info', [], db, obj)
+            j0_wallet, j1_wallet, bin_step, lp_fee = self._execute_method(emulator, 'get_pool_info', [], db, obj)
+
+            j0_master = Address(db.get_wallet_master(j0_wallet.load_address()))
+            j1_master = Address(db.get_wallet_master(j1_wallet.load_address()))
+            # total supply is not applicable for Bidask CLMM
+            pool.total_supply = None
+            current_jetton_left = j0_master
+            current_jetton_right = j1_master
+            if lp_fee is not None and protocol_fee is not None:
+                pool.lp_fee = lp_fee / 1e4
+                pool.protocol_fee = protocol_fee / 1e4
         else:
             raise Exception(f"DEX is not supported: {pool.platform}")
         

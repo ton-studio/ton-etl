@@ -189,6 +189,17 @@ class DB():
             res = cursor.fetchone()
             return res
         
+    def get_first_transaction(self, addr: str):
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                select * from messages WHERE destination = UPPER('%s') order by tx_lt asc limit 1
+                """, 
+                (addr,),
+            )
+            return cursor.fetchone()
+        
     def get_transaction(self, tx_hash: str):
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
