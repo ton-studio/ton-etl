@@ -139,6 +139,26 @@ class DB():
                 if not res:
                     return None
                 return res['body_boc']
+            
+    """
+    Returns True if parent message exists (i.e there is an internal message A which triggered a transactions T resulted in sending the current message M: ...A->T->M)
+    or False if the current message is the first messages in the transaction chain initiated by external message: ext->T->M
+    or throws an exception if trace_edges table does not contain the message
+    """
+    def parent_message_exists(self, msg_hash) -> bool:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                    """
+                    select trace_id, left_tx from trace_edges te
+                    where te.msg_hash = %s
+                    """, 
+                    (msg_hash, ),
+                ) 
+            res = cursor.fetchone()
+            if not res:
+                raise Exception(f"trace_edges table does not contain the message {msg_hash}")
+            return res['trace_id'] != res['left_tx']
 
     """
     Returns parent message with message body
