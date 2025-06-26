@@ -756,7 +756,7 @@ def datalake_daily_sync():
         ),
 
         transfers_to_sale_contracts as (
-            select row_number() over(partition by ns.address order by ns.lt asc) as rank, t.*,
+            select row_number() over(partition by ns.address, t.tx_hash order by ns.lt asc) as rank, t.*,
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address, end_time,
             marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step
@@ -779,7 +779,7 @@ def datalake_daily_sync():
         ),
         
         transfers_from_sale_contracts_to_owner as (
-            select row_number() over(partition by ns.address order by ns.lt asc) as rank,  t.*,
+            select row_number() over(partition by ns.address, t.tx_hash order by ns.lt asc) as rank,  t.*,
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address, end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step 
             from "{target_database}".nft_transfers t
@@ -803,7 +803,7 @@ def datalake_daily_sync():
 
 
         transfers_from_sale_contracts_to_buyer as (
-            select row_number() over(partition by ns.address order by ns.lt asc) as rank,  t.*,
+            select row_number() over(partition by ns.address, t.tx_hash order by ns.lt asc) as rank,  t.*,
             ns.address as nft_sale_contract, type as sale_type, ns.nft_owner_address as seller, t.new_owner as buyer, end_time, marketplace_address, marketplace_fee_address,
             marketplace_fee, price, asset, royalty_address, royalty_amount, max_bid, min_bid, min_step 
             from "{target_database}".nft_transfers t
