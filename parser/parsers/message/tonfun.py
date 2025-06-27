@@ -16,8 +16,11 @@ Tonfun parser implementation based on public SDK https://github.com/ton-fun-tech
 
 EVENT_TYPES = {
     Parser.opcode_signed(0xcd78325d): "buy_log",
+    Parser.opcode_signed(0xceac8af4): "buy_log",  # new Blum contract
     Parser.opcode_signed(0x5e97d116): "sell_log",
-    Parser.opcode_signed(0x0f6ab54f): "send_liq_log"
+    Parser.opcode_signed(0xef2e2def): "sell_log",  # new Blum contract
+    Parser.opcode_signed(0x0f6ab54f): "send_liq_log",
+    Parser.opcode_signed(0x30c7219b): "send_liq_log",  # new Blum contract
 }
 
 def parse_referral(cs: Slice) -> dict:
@@ -30,19 +33,26 @@ def parse_referral(cs: Slice) -> dict:
             "extra_tag": None
         }
     opcode = cs.load_uint(32) # crc32(ref_v1)
-    if opcode != 0xf7ecea4c:
-        logger.warning(f"Unknown referral opcode: {opcode}")
+    if opcode == 0xf7ecea4c:  # ton.fun referral opcode
         return {
             "referral_ver": opcode,
-            "partner_address": None,
+            "partner_address": cs.load_address(),
+            "platform_tag": cs.load_address() if cs.remaining_bits else None,
+            "extra_tag": cs.load_address() if cs.remaining_bits else None,
+        }
+    if opcode == 0x63e0e26d:  # Blum referral opcode
+        return {
+            "referral_ver": opcode,
+            "partner_address": cs.load_snake_string(),
             "platform_tag": None,
             "extra_tag": None
         }
+    logger.warning(f"Unknown referral opcode: {opcode}")
     return {
         "referral_ver": opcode,
-        "partner_address": cs.load_address(),
-        "platform_tag": cs.load_address() if cs.remaining_bits else None,
-        "extra_tag": cs.load_address() if cs.remaining_bits else None,
+        "partner_address": None,
+        "platform_tag": None,
+        "extra_tag": None
     }
 
 def parse_event(opcode: int, cs: Cell) -> Optional[dict]:
