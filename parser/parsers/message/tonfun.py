@@ -14,13 +14,17 @@ from db import DB
 Tonfun parser implementation based on public SDK https://github.com/ton-fun-tech/ton-bcl-sdk
 """
 
+BLUM_EVENT_TYPES = {
+    Parser.opcode_signed(0xceac8af4): "buy_log",
+    Parser.opcode_signed(0xef2e2def): "sell_log",
+    Parser.opcode_signed(0x30c7219b): "send_liq_log"
+}
+
 EVENT_TYPES = {
     Parser.opcode_signed(0xcd78325d): "buy_log",
-    Parser.opcode_signed(0xceac8af4): "buy_log",  # new Blum contract
     Parser.opcode_signed(0x5e97d116): "sell_log",
-    Parser.opcode_signed(0xef2e2def): "sell_log",  # new Blum contract
     Parser.opcode_signed(0x0f6ab54f): "send_liq_log",
-    Parser.opcode_signed(0x30c7219b): "send_liq_log",  # new Blum contract
+    **BLUM_EVENT_TYPES
 }
 
 def parse_referral(cs: Slice) -> dict:
@@ -104,7 +108,8 @@ def make_event(obj: dict, trade_data: dict, ton_price: float) -> TonFunTradeEven
         partner_address=trade_data["partner_address"],
         platform_tag=trade_data["platform_tag"],
         extra_tag=trade_data["extra_tag"],
-        volume_usd=int(trade_data["ton_amount"]) * ton_price / 1e6
+        volume_usd=int(trade_data["ton_amount"]) * ton_price / 1e6,
+        project="blum" if obj.get("opcode") in BLUM_EVENT_TYPES else "ton.fun"
     )
 
 class TonFunTrade(Parser):
