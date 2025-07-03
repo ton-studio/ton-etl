@@ -201,6 +201,9 @@ ALTER TABLE parsed.tonfun_bcl_trade DROP CONSTRAINT tonfun_bcl_trade_pkey;
 ALTER TABLE parsed.tonfun_bcl_trade ADD PRIMARY KEY (tx_hash, event_type);
 COMMIT;
 
+-- Adding project name
+ALTER TABLE parsed.tonfun_bcl_trade ADD column if not exists "project" varchar NULL;
+
 -- tonco DEC support
 DO $$ BEGIN
     ALTER TYPE public.dex_name ADD VALUE 'tonco' AFTER 'megaton';
