@@ -32,7 +32,7 @@ class BidaskClmmSwap(EmulatorParser):
     
     def validate_pool(self, db: DB, pool_addr: Address): 
         first_pool_tx = db.get_first_transaction(pool_addr.to_str(is_user_friendly=False))
-        if Address(first_pool_tx.get('source'), None).to_str(is_user_friendly=False) == self.BIDASK_FACTORY_ADDRESS.to_str(is_user_friendly=False):
+        if Address(first_pool_tx.get('source'), None) == self.BIDASK_FACTORY_ADDRESS:
             return True
         else:
             return False
@@ -58,14 +58,6 @@ class BidaskClmmSwap(EmulatorParser):
         amount_y = cell.load_coins()
         is_x = cell.load_bit()
         receiver_address = cell.load_address()
-        ref_cell = cell.load_maybe_ref()
-        additional_data = cell.load_maybe_ref()
-        from_address = None
-        try:
-            from_address = additional_data.begin_parse().load_address()
-        except Exception as e:
-            logger.info(e)
-            pass
 
         logger.info(f"query_id: {query_id}, from_account: {from_account}, amount_x: {amount_x}, amount_y: {amount_y}, is_x: {is_x}, receiver_address: {receiver_address}, from_address: {from_address}")
 
@@ -90,9 +82,6 @@ class BidaskClmmSwap(EmulatorParser):
         input_is_x = range_swap.load_bit()
         input_amount = range_swap.load_coins()
         input_out = range_swap.load_coins()
-        # input_exact_out = cell.load_address()
-        # ref_cell = cell.load_maybe_ref()
-        # additional_data = cell.load_maybe_ref()
 
         logger.info(f"input_query_id: {input_query_id}, input_is_account: {input_is_account}, input_is_x: {input_is_x}, input_amount: {input_amount}, is_x: {is_x}, input_out: {input_out}")
 
@@ -122,7 +111,7 @@ class BidaskClmmSwap(EmulatorParser):
             swap_src_amount=input_amount,
             swap_dst_amount=output_amount,
             referral_address=None,
-            reserve0=reserve0, #?
+            reserve0=reserve0,
             reserve1=reserve1
         )
         estimate_volume(swap, db)
