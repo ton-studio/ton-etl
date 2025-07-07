@@ -231,6 +231,7 @@ Supported projects:
 | launchpad | [ton.fun](https://tonfun-1.gitbook.io/tonfun) | Launchpad SDK adopted by multiple projects ([Blum](https://blum.io/), [BigPump](https://docs.pocketfi.org/features/big.pump), etc) | referral_address, platform_tag |
 | launchpad | [gaspump](https://gaspump.tg/) | Bonding curve launchpad for memecoins ([docs](https://github.com/gas111-bot/gaspump-sdk)) | - |
 | launchpad | [memeslab](https://x.com/memeslabxyz) | Bonding curve launchpad for memecoins | - |
+| launchpad | [blum](https://blum.io/) | Bonding curve launchpad for memecoins | referrer_token in the referral_address field |
 
 TON Aliases and wrapped TONs used by the projects:
 * 0:0000000000000000000000000000000000000000000000000000000000000000 - native TON (dedust, ton.fun, gaspump)
