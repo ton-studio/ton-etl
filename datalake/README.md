@@ -24,7 +24,7 @@ AWS S3 Data Lake is suitable for batch processing but it doesn't support real-ti
 Pulic Kafka topics are introduced to address this limitation. Data updates from TON-ETL are converted using the
 same schema converters as S3 Data Lake and sent to the public Kafka topics. 
 Kafka topics endpoints:
-* Mainnet: ton-etl-kafka.tonstudio.io
+* Mainnet: ton-etl-kafka.tonstudio.io:9094
 
 Connection params:
 * Protocol: SASL_PLAINTEXT, SCRAM-SHA-512
