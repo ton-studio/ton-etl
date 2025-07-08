@@ -78,7 +78,13 @@ class CoffeeSwap(EmulatorParser):
             assert op_id == 0xc0ffee20, f"Parent message for Coffee swap_successful_event is {op_id}"
             parent_query_id = cell.load_uint(64)
             previous_amount = cell.load_coins()
-            previous_asset_hint_body = cell.load_maybe_ref()
+            if cell.load_bit():
+                asset_type = cell.load_uint(2)
+                if asset_type == 1:
+                    wc = cell.load_uint(8)
+                    hash_part = cell.load_uint(256)
+                if asset_type == 2:
+                    asset_id = cell.load_uint(32)
             min_output_amount = cell.load_coins()
             next_body = cell.load_maybe_ref()
             swap_params = cell.load_ref().begin_parse()
