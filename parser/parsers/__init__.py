@@ -44,7 +44,7 @@ _mainnet_parsers = [
     TONCOSwap(),
     MemesLabTrade(),
     BlumTrade(),
-    CoffeeSwap(),
+    CoffeeSwap(EMULATOR_PATH),
     JettonMintParser(),
     HipoTokensMinted(),
 
