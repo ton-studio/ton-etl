@@ -211,6 +211,13 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
+-- Coffee DEX support
+DO $$ BEGIN
+    ALTER TYPE public.dex_name ADD VALUE 'coffee' AFTER 'tonco';
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 -- Add fees info for dex swaps
 
 CREATE TABLE IF NOT EXISTS prices.dex_pool (
