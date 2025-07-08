@@ -302,7 +302,7 @@ def datalake_daily_sync():
             partitioned_by = ARRAY['block_date']
         )
         as
-        select {FIELDS},
+        select distinct {FIELDS},
         date_format(from_unixtime({repartition_field}), '%Y%m%d') as block_date
         from "{source_database}".{source_table}
         where adding_date >= '{source_table_since_partition}' and date_format(from_unixtime({repartition_field}), '%Y%m%d') <= '{current_date}'
