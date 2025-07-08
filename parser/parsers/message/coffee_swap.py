@@ -112,7 +112,9 @@ class CoffeeSwap(EmulatorParser):
             swap_dst_amount=amount_out,
             referral_address=referral,
             reserve0=reserve_1,
-            reserve1=reserve_2
+            reserve1=reserve_2,
+            query_id=query_id,
+            min_out=min_output_amount
         )
         estimate_volume(swap, db)
         db.serialize(swap)
