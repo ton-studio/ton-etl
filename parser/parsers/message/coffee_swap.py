@@ -1,3 +1,4 @@
+import traceback
 from model.parser import Parser, TOPIC_MESSAGES
 from loguru import logger
 from db import DB
@@ -101,7 +102,7 @@ class CoffeeSwap(EmulatorParser):
                 return
                 
         except Exception as e:
-            logger.warning(f"Failed to parse Coffee ext message: {e}")
+            logger.warning(f"Failed to parse Coffee DEX swap (tx_hash = {obj.get('tx_hash')}): {e} {traceback.format_exc()}")
             return
 
         swap = DexSwapParsed(
