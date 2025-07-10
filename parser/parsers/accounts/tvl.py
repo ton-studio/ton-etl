@@ -6,8 +6,9 @@ from loguru import logger
 from db import DB
 from pytoniq_core import Cell, Address, begin_cell
 from model.dexpool import DexPool
-from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO
+from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE
 from model.dedust import read_dedust_asset
+from model.coffee import read_coffee_asset
 from parsers.message.swap_volume import estimate_tvl
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 from parsers.accounts.emulator import EmulatorException, EmulatorParser
@@ -120,6 +121,13 @@ class TVLPoolStateParser(EmulatorParser):
                 protocol_share = fee_protocol / 1e4
                 pool.lp_fee = base_fee * (1 - protocol_share)
                 pool.protocol_fee = base_fee * protocol_share
+        elif pool.platform == DEX_COFFEE:
+            ver, asset_1, asset_2, amm, amm_settings, is_active, pool.reserves_left, pool.reserves_right, total_supply, protocol_fee, lp_fee = self._execute_method(emulator, 'get_pool_data', [], db, obj)
+            pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
+            pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
+            if not pool.is_inited():
+                current_jetton_left = read_coffee_asset(asset_1)
+                current_jetton_right = read_coffee_asset(asset_2)
         else:
             raise Exception(f"DEX is not supported: {pool.platform}")
         
