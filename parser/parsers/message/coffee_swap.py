@@ -1,3 +1,4 @@
+import traceback
 from model.parser import Parser, TOPIC_MESSAGES
 from loguru import logger
 from db import DB
@@ -92,16 +93,18 @@ class CoffeeSwap(EmulatorParser):
             recipient = swap_params.load_address()
             referral = swap_params.load_address()
 
-            if asset_in == read_coffee_asset(asset_1):
-                asset_out = read_coffee_asset(asset_2)
-            elif asset_in == read_coffee_asset(asset_2):
-                asset_out = read_coffee_asset(asset_1)
+            asset_1_address = read_coffee_asset(asset_1)
+            asset_2_address = read_coffee_asset(asset_2)
+            if asset_in == asset_1_address:
+                asset_out = asset_2_address
+            elif asset_in == asset_2_address:
+                asset_out = asset_1_address
             else:
                 logger.warning(f"Asset in swap_successful_event message id={obj.get('msg_hash')} does not match the pool {obj.get('source')}")
                 return
                 
         except Exception as e:
-            logger.warning(f"Failed to parse Coffee ext message: {e}")
+            logger.warning(f"Failed to parse Coffee DEX swap (tx_hash = {obj.get('tx_hash')}): {e} {traceback.format_exc()}")
             return
 
         swap = DexSwapParsed(
