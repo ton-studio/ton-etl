@@ -19,6 +19,7 @@ EVENT_TYPES = {
 
 JETTON_WALLET_CODE_HASH_WHITELIST = [
     "pG74dG9OpmnCzpRVvhKbaTzRxjjLAh+qrFjH3wHgoWM=",
+    "vxzjPsq7SyRQ6FdeBKqZiAUFxkWf+vlk6uRR4MzDKhw=",
 ]
 
 def parse_referral(cs: Slice) -> dict:
