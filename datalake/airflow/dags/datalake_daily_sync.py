@@ -1,3 +1,4 @@
+import ast
 import json
 from typing import Dict, Union
 import uuid
@@ -19,6 +20,7 @@ import traceback
 from datetime import datetime, timedelta
 from time import time, sleep
 import logging
+import requests
 import boto3
 import pytz
 import os
@@ -1260,13 +1262,79 @@ def datalake_daily_sync():
         }
     )
 
+    def check_wallet_code_hashes(kwargs):
+        athena = AthenaHook('s3_conn', region_name='us-east-1')
+        task_instance = kwargs['task_instance']
+        start_of_the_day_ts = task_instance.xcom_pull(key="start_of_the_day_ts", task_ids='perform_last_block_check')
+        start_of_the_day = datetime.fromtimestamp(start_of_the_day_ts, pytz.utc)
+        current_date = (start_of_the_day).strftime("%Y%m%d")
+        project_name = kwargs['project_name']
+        file_name = kwargs['file_name']
+        url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{file_name}"
+
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code != 200:
+                raise Exception(f"Unable to get data from {url}, response status code = {response.status_code}")
+            code = response.text
+
+            hashes_from_code = None
+            tree = ast.parse(code)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id == "JETTON_WALLET_CODE_HASH_WHITELIST":
+                            if isinstance(node.value, ast.List):
+                                hashes_from_code = [ast.literal_eval(el) for el in node.value.elts]
+
+            if not hashes_from_code:
+                raise Exception("Failed to extract list of code hashes from TON-ETL code")
+            
+            query = f"""
+                SELECT DISTINCT jml.jetton_wallet_code_hash
+                FROM dex_trades dt
+                JOIN jetton_metadata_latest jml ON jml.address = dt.pool_address
+                WHERE dt.project = 'blum' AND dt.block_date = '{current_date}'
+            """
+            query_id = athena.run_query(query,
+                                        query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
+                                        result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
+                                        workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
+            final_state = athena.poll_query_status(query_id)
+            if final_state == 'FAILED' or final_state == 'CANCELLED':
+                raise Exception(f"Unable to get data from Athena: {query_id}")
+            result = athena.get_query_results(query_execution_id=query_id)
+            hashes_from_athena = [row[0] for row in result[1:]]
+
+            new_hashes = hashes_from_athena - hashes_from_code
+
+            if new_hashes:
+                log_message = f"New jetton wallet code hashes for '{project_name}' project have been found: {', '.join(new_hashes)}"
+                logging.info(log_message)
+                send_notification(f"⚠️ {log_message}")
+
+        except Exception as e:
+            send_notification(f"📛 Jetton wallet code hash checker (project = '{project_name}'): {e}")
+            raise e
+
+    check_blum_code_hashes_task = PythonOperator(
+        task_id='check_blum_code_hashes',
+        python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_blum_code_hashes"),
+        op_kwargs={
+            'source_table_location': f's3://{datalake_output_bucket}/v1/dex_trades',
+            'source_table': 'dex_trades',
+            'project_name': 'blum',
+            'file_name': 'blum.py'
+        }
+    )
+
     perform_last_block_check_task >> [
         convert_blocks_task,
         convert_transactions_task,
         convert_messages_task,
         convert_messages_with_data_task,
         convert_accounts_task,
-        (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> convert_dex_trades_task),
+        (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> convert_dex_trades_task >> check_blum_code_hashes_task),
         (perform_last_block_check_task >> check_main_parser_offset_task >> convert_jetton_events >> refresh_jetton_metadata_partitions_task),
         (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> check_tvl_parser_offset_task >> convert_dex_tvl_task),
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
