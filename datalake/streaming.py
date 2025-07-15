@@ -18,6 +18,7 @@ from converters.account_states import AccountStatesConverter
 from converters.jetton_metadata import JettonMetadataConverter
 from converters.dex_trades import DexTradesConverter
 from converters.dex_pools import DexPoolsConverter
+from converters.balances_history import BalancesHistoryConverter
 
 
 
@@ -29,7 +30,8 @@ CONVERTERS = {
     "account_states": AccountStatesConverter(),
     "jetton_metadata": JettonMetadataConverter(),
     "dex_trades": DexTradesConverter(),
-    "dex_pools": DexPoolsConverter()
+    "dex_pools": DexPoolsConverter(),
+    "balances_history": BalancesHistoryConverter(),
 }
 
 FIELDS_TO_REMOVE = ['__op', '__table', '__source_ts_ms', '__lsn']
