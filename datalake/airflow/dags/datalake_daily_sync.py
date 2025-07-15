@@ -1287,19 +1287,27 @@ def datalake_daily_sync():
                             if isinstance(node.value, ast.List):
                                 hashes_from_code = {ast.literal_eval(el) for el in node.value.elts}
                         if isinstance(target, ast.Name) and target.id == "EVENT_TYPES":
-                            if isinstance(node.value, ast.Dict):
-                                for key in node.value.keys:
-                                    if (
-                                        isinstance(key, ast.Call)
-                                        and isinstance(key.func, ast.Attribute)
-                                        and key.func.attr == "opcode_signed"
-                                        and isinstance(key.func.value, ast.Name)
-                                        and key.func.value.id == "Parser"
-                                    ):
-                                        if len(key.args) == 1 and isinstance(key.args[0], ast.Constant):
-                                            raw_value = key.args[0].value
-                                            signed_value = raw_value if raw_value < 0x80000000 else -1 * (0x100000000 - raw_value)
-                                            opcodes.add(signed_value)
+                            value = node.value
+                            if isinstance(value, ast.Dict):
+                                elements = value.keys
+                            elif isinstance(value, (ast.List, ast.Set)):
+                                elements = value.elts
+                            else:
+                                continue
+                            for elt in elements:
+                                if (
+                                    isinstance(elt, ast.Call)
+                                    and isinstance(elt.func, ast.Attribute)
+                                    and elt.func.attr == "opcode_signed"
+                                    and isinstance(elt.func.value, ast.Name)
+                                    and elt.func.value.id == "Parser"
+                                    and len(elt.args) == 1
+                                    and isinstance(elt.args[0], ast.Constant)
+                                    and isinstance(elt.args[0].value, int)
+                                ):
+                                    raw_value = elt.args[0].value
+                                    signed_value = raw_value if raw_value < 0x80000000 else -1 * (0x100000000 - raw_value)
+                                    opcodes.add(signed_value)
 
             if not hashes_from_code or not opcodes:
                 raise Exception("Failed to extract code hashes and opcodes from TON-ETL code")
