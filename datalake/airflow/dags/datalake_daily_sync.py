@@ -1289,7 +1289,8 @@ def datalake_daily_sync():
 
             if not hashes_from_code:
                 raise Exception("Failed to extract list of code hashes from TON-ETL code")
-            
+            logging.info(f"Jetton wallet code hashes from parser code: {', '.join(hashes_from_code)}")
+
             query = f"""
                 SELECT DISTINCT jm.jetton_wallet_code_hash
                 FROM dex_trades dt
@@ -1303,8 +1304,9 @@ def datalake_daily_sync():
             final_state = athena.poll_query_status(query_id)
             if final_state == 'FAILED' or final_state == 'CANCELLED':
                 raise Exception(f"Unable to get data from Athena: {query_id}")
-            result = athena.get_query_results(query_execution_id=query_id)
-            hashes_from_athena = [row[0] for row in result[1:]]
+            results = results_to_df(athena.get_query_results_paginator(query_id).build_full_result())
+            hashes_from_athena = [row['jetton_wallet_code_hash'] for row in results]
+            logging.info(f"Jetton wallet code hashes from Athens: {', '.join(hashes_from_athena)}")
 
             new_hashes = hashes_from_athena - hashes_from_code
 
