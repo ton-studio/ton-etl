@@ -1271,6 +1271,9 @@ def datalake_daily_sync():
         project_name = kwargs['project_name']
         file_name = kwargs['file_name']
         url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{file_name}"
+        opcodes = {
+            'blum': (-827553036, -282186257, 818356635)
+        }
 
         try:
             response = requests.get(url, timeout=10)
@@ -1292,10 +1295,12 @@ def datalake_daily_sync():
             logging.info(f"Jetton wallet code hashes from parser code: {', '.join(hashes_from_code)}")
 
             query = f"""
-                SELECT DISTINCT jm.jetton_wallet_code_hash
-                FROM dex_trades dt
-                JOIN jetton_metadata jm ON jm.address = dt.pool_address
-                WHERE dt.project = 'blum' AND dt.block_date = '{current_date}'
+                select distinct jm.jetton_wallet_code_hash
+                from messages m
+                join jetton_metadata jm on jm.address = m.source
+                where m.direction = 'out' and m.destination is null 
+                and m.opcode in ({', '.join(opcodes[project_name])})
+                and m.block_date = '{current_date}'
             """
             query_id = athena.run_query(query,
                                         query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
