@@ -1291,9 +1291,9 @@ def datalake_daily_sync():
                 raise Exception("Failed to extract list of code hashes from TON-ETL code")
             
             query = f"""
-                SELECT DISTINCT jml.jetton_wallet_code_hash
+                SELECT DISTINCT jm.jetton_wallet_code_hash
                 FROM dex_trades dt
-                JOIN jetton_metadata_latest jml ON jml.address = dt.pool_address
+                JOIN jetton_metadata jm ON jm.address = dt.pool_address
                 WHERE dt.project = 'blum' AND dt.block_date = '{current_date}'
             """
             query_id = athena.run_query(query,
