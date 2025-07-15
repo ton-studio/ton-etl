@@ -1278,8 +1278,8 @@ def datalake_daily_sync():
                 raise Exception(f"Unable to get data from {url}, response status code = {response.status_code}")
             code = response.text
 
-            hashes_from_code = {}
-            opcodes = {}
+            hashes_from_code = set()
+            opcodes = set()
             tree = ast.parse(code)
             for node in ast.walk(tree):
                 if isinstance(node, ast.Assign):
