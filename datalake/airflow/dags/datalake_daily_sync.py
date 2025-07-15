@@ -1269,6 +1269,7 @@ def datalake_daily_sync():
         start_of_the_day = datetime.fromtimestamp(start_of_the_day_ts, pytz.utc)
         current_date = (start_of_the_day).strftime("%Y%m%d")
         project_name = kwargs['project_name']
+        destination_condition = kwargs['destination_condition']
         url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{project_name}.py"
 
         try:
@@ -1287,19 +1288,27 @@ def datalake_daily_sync():
                             if isinstance(node.value, ast.List):
                                 hashes_from_code = {ast.literal_eval(el) for el in node.value.elts}
                         if isinstance(target, ast.Name) and target.id == "EVENT_TYPES":
-                            if isinstance(node.value, ast.Dict):
-                                for key in node.value.keys:
-                                    if (
-                                        isinstance(key, ast.Call)
-                                        and isinstance(key.func, ast.Attribute)
-                                        and key.func.attr == "opcode_signed"
-                                        and isinstance(key.func.value, ast.Name)
-                                        and key.func.value.id == "Parser"
-                                    ):
-                                        if len(key.args) == 1 and isinstance(key.args[0], ast.Constant):
-                                            raw_value = key.args[0].value
-                                            signed_value = raw_value if raw_value < 0x80000000 else -1 * (0x100000000 - raw_value)
-                                            opcodes.add(signed_value)
+                            value = node.value
+                            if isinstance(value, ast.Dict):
+                                elements = value.keys
+                            elif isinstance(value, (ast.List, ast.Set)):
+                                elements = value.elts
+                            else:
+                                continue
+                            for elt in elements:
+                                if (
+                                    isinstance(elt, ast.Call)
+                                    and isinstance(elt.func, ast.Attribute)
+                                    and elt.func.attr == "opcode_signed"
+                                    and isinstance(elt.func.value, ast.Name)
+                                    and elt.func.value.id == "Parser"
+                                    and len(elt.args) == 1
+                                    and isinstance(elt.args[0], ast.Constant)
+                                    and isinstance(elt.args[0].value, int)
+                                ):
+                                    raw_value = elt.args[0].value
+                                    signed_value = raw_value if raw_value < 0x80000000 else -1 * (0x100000000 - raw_value)
+                                    opcodes.add(signed_value)
 
             if not hashes_from_code or not opcodes:
                 raise Exception("Failed to extract code hashes and opcodes from TON-ETL code")
@@ -1311,7 +1320,7 @@ def datalake_daily_sync():
                 select distinct jm.jetton_wallet_code_hash
                 from messages m
                 join jetton_metadata jm on jm.address = m.source
-                where m.direction = 'out' and m.destination is null 
+                where m.direction = 'out' and m.destination is {destination_condition} 
                 and m.opcode in ({opcode_str}) and m.block_date = '{current_date}'
             """
             query_id = athena.run_query(query,
@@ -1341,6 +1350,16 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_blum_code_hashes"),
         op_kwargs={
             'project_name': 'blum',
+            'destination_condition': 'null',
+        }
+    )
+
+    check_memeslab_code_hashes_task = PythonOperator(
+        task_id='check_memeslab_code_hashes',
+        python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_memeslab_code_hashes"),
+        op_kwargs={
+            'project_name': 'memeslab',
+            'destination_condition': 'not null',
         }
     )
 
@@ -1355,6 +1374,6 @@ def datalake_daily_sync():
         (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> check_tvl_parser_offset_task >> convert_dex_tvl_task),
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
     ] >> check_nft_parser_offset_task >> convert_nft_items_task >> convert_nft_transfers_task >> convert_nft_sales_task >> \
-        refresh_nft_metadata_partitions_task >> nft_events_task >> [check_blum_code_hashes_task]
+        refresh_nft_metadata_partitions_task >> nft_events_task >> [check_blum_code_hashes_task, check_memeslab_code_hashes_task]
 
 datalake_daily_sync_dag = datalake_daily_sync()
