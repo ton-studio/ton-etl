@@ -1271,9 +1271,6 @@ def datalake_daily_sync():
         project_name = kwargs['project_name']
         file_name = kwargs['file_name']
         url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{file_name}"
-        opcodes = {
-            'blum': (-827553036, -282186257, 818356635)
-        }
 
         try:
             response = requests.get(url, timeout=10)
@@ -1281,7 +1278,8 @@ def datalake_daily_sync():
                 raise Exception(f"Unable to get data from {url}, response status code = {response.status_code}")
             code = response.text
 
-            hashes_from_code = None
+            hashes_from_code = {}
+            opcodes = {}
             tree = ast.parse(code)
             for node in ast.walk(tree):
                 if isinstance(node, ast.Assign):
@@ -1289,18 +1287,33 @@ def datalake_daily_sync():
                         if isinstance(target, ast.Name) and target.id == "JETTON_WALLET_CODE_HASH_WHITELIST":
                             if isinstance(node.value, ast.List):
                                 hashes_from_code = {ast.literal_eval(el) for el in node.value.elts}
+                if isinstance(target, ast.Name) and target.id == "EVENT_TYPES":
+                    if isinstance(node.value, ast.Dict):
+                        for key in node.value.keys:
+                            if (
+                                isinstance(key, ast.Call)
+                                and isinstance(key.func, ast.Attribute)
+                                and key.func.attr == "opcode_signed"
+                                and isinstance(key.func.value, ast.Name)
+                                and key.func.value.id == "Parser"
+                            ):
+                                if len(key.args) == 1 and isinstance(key.args[0], ast.Constant):
+                                    raw_value = key.args[0].value
+                                    signed_value = raw_value if raw_value < 0x80000000 else -1 * (0x100000000 - raw_value)
+                                    opcodes.add(signed_value)
 
-            if not hashes_from_code:
-                raise Exception("Failed to extract list of code hashes from TON-ETL code")
+            if not hashes_from_code or not opcodes:
+                raise Exception("Failed to extract code hashes and opcodes from TON-ETL code")
+
             logging.info(f"Jetton wallet code hashes from parser code: {', '.join(hashes_from_code)}")
 
+            opcode_str = ', '.join(str(op) for op in opcodes)
             query = f"""
                 select distinct jm.jetton_wallet_code_hash
                 from messages m
                 join jetton_metadata jm on jm.address = m.source
                 where m.direction = 'out' and m.destination is null 
-                and m.opcode in ({', '.join(opcodes[project_name])})
-                and m.block_date = '{current_date}'
+                and m.opcode in ({opcode_str}) and m.block_date = '{current_date}'
             """
             query_id = athena.run_query(query,
                                         query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
