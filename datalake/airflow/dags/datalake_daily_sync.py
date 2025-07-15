@@ -1285,7 +1285,7 @@ def datalake_daily_sync():
                     for target in node.targets:
                         if isinstance(target, ast.Name) and target.id == "JETTON_WALLET_CODE_HASH_WHITELIST":
                             if isinstance(node.value, ast.List):
-                                hashes_from_code = [ast.literal_eval(el) for el in node.value.elts]
+                                hashes_from_code = {ast.literal_eval(el) for el in node.value.elts}
 
             if not hashes_from_code:
                 raise Exception("Failed to extract list of code hashes from TON-ETL code")
@@ -1305,8 +1305,8 @@ def datalake_daily_sync():
             if final_state == 'FAILED' or final_state == 'CANCELLED':
                 raise Exception(f"Unable to get data from Athena: {query_id}")
             results = results_to_df(athena.get_query_results_paginator(query_id).build_full_result())
-            hashes_from_athena = [row['jetton_wallet_code_hash'] for row in results]
-            logging.info(f"Jetton wallet code hashes from Athens: {', '.join(hashes_from_athena)}")
+            hashes_from_athena = {row['jetton_wallet_code_hash'] for row in results}
+            logging.info(f"Jetton wallet code hashes from Athena query: {', '.join(hashes_from_athena)}")
 
             new_hashes = hashes_from_athena - hashes_from_code
 
@@ -1336,11 +1336,11 @@ def datalake_daily_sync():
         convert_messages_task,
         convert_messages_with_data_task,
         convert_accounts_task,
-        (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> convert_dex_trades_task >> check_blum_code_hashes_task),
+        (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> convert_dex_trades_task),
         (perform_last_block_check_task >> check_main_parser_offset_task >> convert_jetton_events >> refresh_jetton_metadata_partitions_task),
         (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> check_tvl_parser_offset_task >> convert_dex_tvl_task),
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
     ] >> check_nft_parser_offset_task >> convert_nft_items_task >> convert_nft_transfers_task >> convert_nft_sales_task >> \
-        refresh_nft_metadata_partitions_task >> nft_events_task
+        refresh_nft_metadata_partitions_task >> nft_events_task >> [check_blum_code_hashes_task]
 
 datalake_daily_sync_dag = datalake_daily_sync()
