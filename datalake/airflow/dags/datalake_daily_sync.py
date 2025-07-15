@@ -1269,8 +1269,7 @@ def datalake_daily_sync():
         start_of_the_day = datetime.fromtimestamp(start_of_the_day_ts, pytz.utc)
         current_date = (start_of_the_day).strftime("%Y%m%d")
         project_name = kwargs['project_name']
-        file_name = kwargs['file_name']
-        url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{file_name}"
+        url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{project_name}.py"
 
         try:
             response = requests.get(url, timeout=10)
@@ -1341,10 +1340,7 @@ def datalake_daily_sync():
         task_id='check_blum_code_hashes',
         python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_blum_code_hashes"),
         op_kwargs={
-            'source_table_location': f's3://{datalake_output_bucket}/v1/dex_trades',
-            'source_table': 'dex_trades',
             'project_name': 'blum',
-            'file_name': 'blum.py'
         }
     )
 
