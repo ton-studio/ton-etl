@@ -1,3 +1,4 @@
+import ast
 import json
 from typing import Dict, Union
 import uuid
@@ -19,6 +20,7 @@ import traceback
 from datetime import datetime, timedelta
 from time import time, sleep
 import logging
+import requests
 import boto3
 import pytz
 import os
@@ -1260,6 +1262,88 @@ def datalake_daily_sync():
         }
     )
 
+    def check_wallet_code_hashes(kwargs):
+        athena = AthenaHook('s3_conn', region_name='us-east-1')
+        task_instance = kwargs['task_instance']
+        start_of_the_day_ts = task_instance.xcom_pull(key="start_of_the_day_ts", task_ids='perform_last_block_check')
+        start_of_the_day = datetime.fromtimestamp(start_of_the_day_ts, pytz.utc)
+        current_date = (start_of_the_day).strftime("%Y%m%d")
+        project_name = kwargs['project_name']
+        url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{project_name}.py"
+
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code != 200:
+                raise Exception(f"Unable to get data from {url}, response status code = {response.status_code}")
+            code = response.text
+
+            hashes_from_code = set()
+            opcodes = set()
+            tree = ast.parse(code)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id == "JETTON_WALLET_CODE_HASH_WHITELIST":
+                            if isinstance(node.value, ast.List):
+                                hashes_from_code = {ast.literal_eval(el) for el in node.value.elts}
+                        if isinstance(target, ast.Name) and target.id == "EVENT_TYPES":
+                            if isinstance(node.value, ast.Dict):
+                                for key in node.value.keys:
+                                    if (
+                                        isinstance(key, ast.Call)
+                                        and isinstance(key.func, ast.Attribute)
+                                        and key.func.attr == "opcode_signed"
+                                        and isinstance(key.func.value, ast.Name)
+                                        and key.func.value.id == "Parser"
+                                    ):
+                                        if len(key.args) == 1 and isinstance(key.args[0], ast.Constant):
+                                            raw_value = key.args[0].value
+                                            signed_value = raw_value if raw_value < 0x80000000 else -1 * (0x100000000 - raw_value)
+                                            opcodes.add(signed_value)
+
+            if not hashes_from_code or not opcodes:
+                raise Exception("Failed to extract code hashes and opcodes from TON-ETL code")
+
+            logging.info(f"Jetton wallet code hashes from parser code: {', '.join(hashes_from_code)}")
+
+            opcode_str = ', '.join(str(op) for op in opcodes)
+            query = f"""
+                select distinct jm.jetton_wallet_code_hash
+                from messages m
+                join jetton_metadata jm on jm.address = m.source
+                where m.direction = 'out' and m.destination is null 
+                and m.opcode in ({opcode_str}) and m.block_date = '{current_date}'
+            """
+            query_id = athena.run_query(query,
+                                        query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
+                                        result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
+                                        workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
+            final_state = athena.poll_query_status(query_id)
+            if final_state == 'FAILED' or final_state == 'CANCELLED':
+                raise Exception(f"Unable to get data from Athena: {query_id}")
+            results = results_to_df(athena.get_query_results_paginator(query_id).build_full_result())
+            hashes_from_athena = {row['jetton_wallet_code_hash'] for row in results}
+            logging.info(f"Jetton wallet code hashes from Athena query: {', '.join(hashes_from_athena)}")
+
+            new_hashes = hashes_from_athena - hashes_from_code
+
+            if new_hashes:
+                log_message = f"New jetton wallet code hashes for '{project_name}' project have been found: {', '.join(new_hashes)}"
+                logging.info(log_message)
+                send_notification(f"⚠️ {log_message}")
+
+        except Exception as e:
+            send_notification(f"📛 Jetton wallet code hash checker (project = '{project_name}'): {e}")
+            raise e
+
+    check_blum_code_hashes_task = PythonOperator(
+        task_id='check_blum_code_hashes',
+        python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_blum_code_hashes"),
+        op_kwargs={
+            'project_name': 'blum',
+        }
+    )
+
     perform_last_block_check_task >> [
         convert_blocks_task,
         convert_transactions_task,
@@ -1271,6 +1355,6 @@ def datalake_daily_sync():
         (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> check_tvl_parser_offset_task >> convert_dex_tvl_task),
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
     ] >> check_nft_parser_offset_task >> convert_nft_items_task >> convert_nft_transfers_task >> convert_nft_sales_task >> \
-        refresh_nft_metadata_partitions_task >> nft_events_task
+        refresh_nft_metadata_partitions_task >> nft_events_task >> [check_blum_code_hashes_task]
 
 datalake_daily_sync_dag = datalake_daily_sync()
