@@ -1269,6 +1269,7 @@ def datalake_daily_sync():
         start_of_the_day = datetime.fromtimestamp(start_of_the_day_ts, pytz.utc)
         current_date = (start_of_the_day).strftime("%Y%m%d")
         project_name = kwargs['project_name']
+        destination_condition = kwargs['destination_condition']
         url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{project_name}.py"
 
         try:
@@ -1319,7 +1320,7 @@ def datalake_daily_sync():
                 select distinct jm.jetton_wallet_code_hash
                 from messages m
                 join jetton_metadata jm on jm.address = m.source
-                where m.direction = 'out' and m.destination is null 
+                where m.direction = 'out' and m.destination is {destination_condition} 
                 and m.opcode in ({opcode_str}) and m.block_date = '{current_date}'
             """
             query_id = athena.run_query(query,
@@ -1349,6 +1350,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_blum_code_hashes"),
         op_kwargs={
             'project_name': 'blum',
+            'destination_condition': 'null',
         }
     )
 
@@ -1357,6 +1359,7 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_memeslab_code_hashes"),
         op_kwargs={
             'project_name': 'memeslab',
+            'destination_condition': 'not null',
         }
     )
 
