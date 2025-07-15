@@ -1344,6 +1344,14 @@ def datalake_daily_sync():
         }
     )
 
+    check_memeslab_code_hashes_task = PythonOperator(
+        task_id='check_memeslab_code_hashes',
+        python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_memeslab_code_hashes"),
+        op_kwargs={
+            'project_name': 'memeslab',
+        }
+    )
+
     perform_last_block_check_task >> [
         convert_blocks_task,
         convert_transactions_task,
@@ -1355,6 +1363,6 @@ def datalake_daily_sync():
         (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> check_tvl_parser_offset_task >> convert_dex_tvl_task),
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
     ] >> check_nft_parser_offset_task >> convert_nft_items_task >> convert_nft_transfers_task >> convert_nft_sales_task >> \
-        refresh_nft_metadata_partitions_task >> nft_events_task >> [check_blum_code_hashes_task]
+        refresh_nft_metadata_partitions_task >> nft_events_task >> [check_blum_code_hashes_task, check_memeslab_code_hashes_task]
 
 datalake_daily_sync_dag = datalake_daily_sync()
