@@ -15,12 +15,6 @@ class BidaskClmmSwap(EmulatorParser):
     def __init__(self, emulator_path):
         EmulatorParser.__init__(self, emulator_path)
         self.valid_pools = set()
-
-    def prepare(self, db: DB):
-        EmulatorParser.prepare(self, db)
-        factory_state = Parser.get_account_state_safe(self.BIDASK_FACTORY_ADDRESS, db)
-        self.factory = self._prepare_emulator(factory_state)
-        
     
     def topics(self):
         return [TOPIC_MESSAGES]
@@ -32,10 +26,8 @@ class BidaskClmmSwap(EmulatorParser):
     
     def validate_pool(self, db: DB, pool_addr: Address): 
         first_pool_tx = db.get_first_transaction(pool_addr.to_str(is_user_friendly=False))
-        if Address(first_pool_tx.get('source'), None) == self.BIDASK_FACTORY_ADDRESS:
-            return True
-        else:
-            return False
+
+        return Address(first_pool_tx.get('source', None)) == self.BIDASK_FACTORY_ADDRESS
 
     # do not need emulator for the current state 
     def handle_internal(self, obj, db: DB):
@@ -47,6 +39,10 @@ class BidaskClmmSwap(EmulatorParser):
         if not self.validate_pool(db, Address(db.get('destination'), None)):
             logger.warning(f"Skipping invalid pool {obj.get('source', None)}")
             return
+
+        EmulatorParser.prepare(self, db)
+        pool_state = Parser.get_account_state_safe(obj.get("destination"), db)
+        pool_emulator = self._prepare_emulator(pool_state)
         
         cell = Parser.message_body(obj, db).begin_parse()
         cell.load_uint(32) # 0x520e4831
@@ -69,8 +65,8 @@ class BidaskClmmSwap(EmulatorParser):
                 logger.info("parrent range swap not found", e)
 
             swap_op = range_swap.load_uint(32)
-            if swap_op != 0xc09445a:
-                logger.warning(f"Parent message for bidask clmm swap is {swap_op}, expected 0xc09445a {tx_hash}")
+            if swap_op != 0x66210c65:
+                logger.warning(f"Parent message for bidask clmm swap is {swap_op}, expected 0x66210c65 {tx_hash}")
                 range_tx = db.get_parent_message_with_body(range_tx.get('msg_hash'))
                 continue
             else:
@@ -85,7 +81,7 @@ class BidaskClmmSwap(EmulatorParser):
 
         logger.info(f"input_query_id: {input_query_id}, input_is_account: {input_is_account}, input_is_x: {input_is_x}, input_amount: {input_amount}, is_x: {is_x}, input_out: {input_out}")
 
-        token_x, token_y, = self._execute_method(obj.get("destination"), 'get_pool_tokens', [], db, {})
+        token_x, token_y, = self._execute_method(pool_emulator, 'get_pool_tokens', [], db, {})
         token_x_address = token_x.load_address()
         token_y_address = token_y.load_address()
 
@@ -96,7 +92,7 @@ class BidaskClmmSwap(EmulatorParser):
         src_token_master = db.get_wallet_master(src_token)
         dst_token_master = db.get_wallet_master(dst_token)
 
-        reserve0, reserve1 = self._execute_method(obj.get("destination"), 'get_tvl', [], db, {})
+        reserve0, reserve1 = self._execute_method(pool_emulator, 'get_tvl', [], db, {})
 
         swap = DexSwapParsed(
             tx_hash=Parser.require(obj.get('tx_hash', None)),
