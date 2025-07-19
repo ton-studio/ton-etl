@@ -1,11 +1,8 @@
 import traceback
 from typing import Optional
-from functools import partial
-from operator import eq
-from decimal import Decimal
 from loguru import logger
 from parsers.message.swap_volume import USDT
-from pytoniq_core import Cell, Slice
+from pytoniq_core import Cell, Slice, Address
 from model.parser import NonCriticalParserError, Parser, TOPIC_MESSAGES
 from model.tonfun import TonFunTradeEvent
 from db import DB
@@ -19,6 +16,11 @@ EVENT_TYPES = {
     Parser.opcode_signed(0x5e97d116): "sell_log",
     Parser.opcode_signed(0x0f6ab54f): "send_liq_log"
 }
+
+JETTON_WALLET_CODE_HASH_WHITELIST = [
+    "ImgwVG3JqxaH3HK8il7cxgIQORp8YGmMT+ImYY13jWg=",
+    "nbIhmy8qr5opEioRY/o0LHTdpMh5J6myPvt4nCiNuFc=",
+]
 
 def parse_referral(cs: Slice) -> dict:
     if cs.remaining_bits < 32:
@@ -109,6 +111,15 @@ class TonFunTrade(Parser):
     )
 
     def handle_internal(self, obj: dict, db: DB) -> None:
+        jetton_master_address = Address(Parser.require(obj.get('source', None)))
+        jetton_master = db.get_jetton_master(jetton_master_address)
+        if not jetton_master:
+            raise Exception(f"Unable to get jetton_master from DB for {jetton_master_address}")
+        code_hash = jetton_master['jetton_wallet_code_hash']
+        if code_hash not in JETTON_WALLET_CODE_HASH_WHITELIST:
+            logger.warning("Jetton wallet code hash {} for {} not in whitelist", code_hash, obj.get('source', None))
+            return
+
         try:
             maybe_trade_data = parse_event(obj.get("opcode"), Parser.message_body(obj, db).begin_parse())
             if maybe_trade_data:
