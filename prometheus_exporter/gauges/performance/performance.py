@@ -99,9 +99,10 @@ class PerformanceGauge(Gauge):
                 "timestamp": swap_utime,
                 "trace_id": trace_id,
             }
+            logger.info(f"DEX swap added, total number of records = {len(self._data['dex_swap_parsed'])}, last_timestamp = {self._last_timestamp}")
 
     def _default_handler(self, obj: dict):
-        logger.warning(f"No handler defined for message type '{obj.get('__table')}'")
+        pass
 
     def _cleanup(self):
         for table, data in self._data.items():
