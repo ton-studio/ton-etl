@@ -120,6 +120,9 @@ class HipoTokensMinted(Parser):
         wallet = db.get_jetton_wallet(Address(Parser.require(obj.get("destination"))))
         assert wallet['jetton'] == self.HTON_MASTER
 
+        if not db.get_transaction(Parser.require(obj.get("tx_hash"))):
+            logger.warning(f"Missing jetton mint tx_hash = {obj.get('tx_hash', None)}")
+            return
         tx = Parser.require(db.get_transaction(Parser.require(obj.get("tx_hash"))))
 
         mint = JettonMint(
