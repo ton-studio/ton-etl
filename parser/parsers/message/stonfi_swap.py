@@ -49,6 +49,9 @@ class StonfiSwap(Parser):
         #     return
 
         # TODO Handle missing tx? is it ever possible?
+        if not db.is_tx_successful(Parser.require(obj.get('tx_hash', None))):
+            logger.warning(f"Missing Swap tx_hash = {obj.get('tx_hash', None)}")
+            return
         tx = Parser.require(db.is_tx_successful(Parser.require(obj.get('tx_hash', None))))
         if not tx:
             logger.info(f"Skipping failed tx for {obj.get('tx_hash', None)}")
