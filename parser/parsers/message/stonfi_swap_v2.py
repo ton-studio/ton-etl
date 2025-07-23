@@ -105,6 +105,8 @@ class StonfiSwapV2(Parser):
 
 
         logger.info(f"FOR DEBUG: Swap tx_hash = {obj.get('tx_hash', None)}")
+        if obj.get('tx_hash', None) in ("F6DKP9k08/TbbxhTya8xuc9BNmoCIc9IrZ654O5K2fk="):
+            return
         tx = Parser.require(db.is_tx_successful(Parser.require(obj.get('tx_hash', None))))
         if not tx:
             logger.info(f"Skipping failed tx for {obj.get('tx_hash', None)}")
