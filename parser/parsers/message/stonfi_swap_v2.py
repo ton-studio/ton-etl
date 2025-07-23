@@ -104,8 +104,8 @@ class StonfiSwapV2(Parser):
         logger.info(f"{owner} {exit_code} {fwd_ton_amount} {amount0_out} {token0_address} {amount1_out} {token1_address}")
 
 
-        logger.info(f"FOR DEBUG: Swap tx_hash = {obj.get('tx_hash', None)}")
-        if obj.get('tx_hash', None) in ("F6DKP9k08/TbbxhTya8xuc9BNmoCIc9IrZ654O5K2fk="):
+        if not db.is_tx_successful(Parser.require(obj.get('tx_hash', None))):
+            logger.warning(f"Missing Swap tx_hash = {obj.get('tx_hash', None)}")
             return
         tx = Parser.require(db.is_tx_successful(Parser.require(obj.get('tx_hash', None))))
         if not tx:
