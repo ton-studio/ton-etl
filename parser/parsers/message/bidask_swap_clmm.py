@@ -29,6 +29,9 @@ class BidaskClmmSwap(EmulatorParser):
 
         return Address(first_pool_tx.get('source', None)) == self.BIDASK_FACTORY_ADDRESS
 
+    def prepare(self, db: DB):
+        EmulatorParser.prepare(self, db)
+
     # do not need emulator for the current state 
     def handle_internal(self, obj, db: DB):
         tx_hash = Parser.require(obj.get('tx_hash', None))
@@ -40,7 +43,6 @@ class BidaskClmmSwap(EmulatorParser):
             logger.warning(f"Skipping invalid pool {obj.get('source', None)}")
             return
 
-        EmulatorParser.prepare(self, db)
         pool_state = Parser.get_account_state_safe(obj.get("destination"), db)
         pool_emulator = self._prepare_emulator(pool_state)
         
