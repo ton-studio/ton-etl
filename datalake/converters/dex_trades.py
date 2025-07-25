@@ -99,7 +99,7 @@ class DexTradesConverter(Converter):
                 'tx_hash': obj['tx_hash'],
                 'trace_id': obj['trace_id'],
                 'project_type': PLATFORM_TYPE_LAUNCHPAD,
-                'project': "ton.fun",
+                'project': obj.get('project') or "ton.fun",
                 'version': 1,
                 'event_time': obj['event_time'],
                 'pool_address': obj['bcl_master'],

@@ -24,10 +24,9 @@ stTON = Parser.uf2raw('EQDNhy-nxYFgUqzfUzImBEP67JqsyMIcyk2S5_RwNNEYku0k')
 tsTON = Parser.uf2raw('EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav')
 oUSDT = Parser.uf2raw('EQC_1YoM8RBixN95lz7odcF3Vrkc_N8Ne7gQi7Abtlet_Efi')
 oUSDC = Parser.uf2raw('EQC61IQRl0_la95t27xhIpjxZt32vl1QQVF2UgTNuvD18W-4')
-AquaUSD = Parser.uf2raw('EQAWDyxARSl3ol2G1RMLMwepr3v6Ter5ls3jiAlheKshgg0K')
 
 
-STABLES = [USDT, USDe, jUSDT, jUSDC, AquaUSD]
+STABLES = [USDT, USDe, jUSDT, jUSDC]
 TONS = [pTON, TON, pTONv2, WTON_Megaton, WTON_Stonfi, wTTon_TONCO]
 LSDS = [stTON, tsTON]
 ORBIT_STABLES = [oUSDT, oUSDC]
