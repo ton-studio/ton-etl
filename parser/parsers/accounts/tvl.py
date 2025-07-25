@@ -133,18 +133,18 @@ class TVLPoolStateParser(EmulatorParser):
             _, protocol_fee, _ = self._execute_method(emulator, 'get_fees_info', [], db, obj)
             j0_wallet, j1_wallet, bin_step, lp_fee = self._execute_method(emulator, 'get_pool_info', [], db, obj)
 
-            # Used for pools with native TON and jettons without master contract.
-            try:
-                j0_master = Address(db.get_wallet_master(j0_wallet.load_address()))
-            except Exception as e:
-                logger.warning(e)
+            # Null addr for pools with native TON and jettons without master contract.
+            j0_wallet_address = j0_wallet.load_address()
+            if j0_wallet_address == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
                 j0_master = Address("0:0000000000000000000000000000000000000000000000000000000000000000")
+            else:
+                j0_master = Address(db.get_wallet_master(j0_wallet.load_address()))
 
-            try:
-                j1_master = Address(db.get_wallet_master(j1_wallet.load_address()))
-            except Exception as e:
-                logger.warning(e)
+            j1_wallet_address = j1_wallet.load_address()
+            if j1_wallet_address == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
                 j1_master = Address("0:0000000000000000000000000000000000000000000000000000000000000000")
+            else:
+                j1_master = Address(db.get_wallet_master(j1_wallet.load_address()))
                 
             # total supply is not applicable for Bidask CLMM
             pool.total_supply = None
