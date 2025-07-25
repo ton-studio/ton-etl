@@ -20,6 +20,8 @@ from parsers.nft_transfer.nft_history import NftHistoryParser
 from parsers.nft_items.nft_item_metadata import NFTItemMetadataParser, TestnetNFTItemMetadataParser
 from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadataParser, TestnetNFTCollectionMetadataParser
 from parsers.message.memeslab import MemesLabTrade
+from parsers.message.blum import BlumTrade
+from parsers.message.coffee_swap import CoffeeSwap
 from model.parser import Parser
 from loguru import logger
 import os
@@ -42,6 +44,8 @@ _mainnet_parsers = [
     GasPumpTrade(),
     TONCOSwap(),
     MemesLabTrade(),
+    BlumTrade(),
+    CoffeeSwap(EMULATOR_PATH),
     JettonMintParser(),
     HipoTokensMinted(),
     BidaskClmmSwap(EMULATOR_PATH),

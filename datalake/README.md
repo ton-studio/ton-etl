@@ -24,7 +24,7 @@ AWS S3 Data Lake is suitable for batch processing but it doesn't support real-ti
 Pulic Kafka topics are introduced to address this limitation. Data updates from TON-ETL are converted using the
 same schema converters as S3 Data Lake and sent to the public Kafka topics. 
 Kafka topics endpoints:
-* Mainnet: ton-etl-kafka.tonstudio.io
+* Mainnet: ton-etl-kafka.tonstudio.io:9094
 
 Connection params:
 * Protocol: SASL_PLAINTEXT, SCRAM-SHA-512
@@ -42,6 +42,7 @@ List of topics supported:
 * indexer.streaming_messages (with raw bodies)
 * indexer.streaming_transactions
 * indexer.streaming_dex_pools
+* indexer.streaming_balances_history
 
 Public Kafka topics are available for free, but to provide better observability and performance we would like to ask you to
 contact us for connection credentials linked to your organisation using [@TONETLSupportBot](https://t.me/TONETLSupportBot) or [the following form](https://docs.google.com/forms/d/e/1FAIpQLSc4OhA1pe6OzyaG_gb8plAG8XlJpOkcAw7vo8fSeDeBBGFmCA/viewform?usp=sf_link).
@@ -228,9 +229,11 @@ Supported projects:
 | dex | [dedust.io](https://app.dedust.io/) | Only [Protocol 2.0](https://docs.dedust.io/docs/introduction) is supported | referral_address |
 | dex | [megaton.fi](https://megaton.fi/) | Decentralized exchange with AMM pools | router_address |
 | dex | [tonco](https://app.tonco.io/) | Decentralized exchange with CLMM AMM pools | router_address, query_id |
+| dex | [coffee](https://swap.coffee/dex) | Decentralized exchange with AMM pools | referral_address, query_id |
 | launchpad | [ton.fun](https://tonfun-1.gitbook.io/tonfun) | Launchpad SDK adopted by multiple projects ([Blum](https://blum.io/), [BigPump](https://docs.pocketfi.org/features/big.pump), etc) | referral_address, platform_tag |
 | launchpad | [gaspump](https://gaspump.tg/) | Bonding curve launchpad for memecoins ([docs](https://github.com/gas111-bot/gaspump-sdk)) | - |
 | launchpad | [memeslab](https://x.com/memeslabxyz) | Bonding curve launchpad for memecoins | - |
+| launchpad | [blum](https://blum.io/) | Bonding curve launchpad for memecoins | referrer_token in the referral_address field |
 
 TON Aliases and wrapped TONs used by the projects:
 * 0:0000000000000000000000000000000000000000000000000000000000000000 - native TON (dedust, ton.fun, gaspump)
