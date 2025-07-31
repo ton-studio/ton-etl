@@ -22,6 +22,7 @@ wTTon_TONCO = Parser.uf2raw('EQCUnExmdgwAKADi-j2KPKThyQqTc7U650cgM0g78UzZXn9J')
 TON = Parser.uf2raw('EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c')
 stTON = Parser.uf2raw('EQDNhy-nxYFgUqzfUzImBEP67JqsyMIcyk2S5_RwNNEYku0k')
 tsTON = Parser.uf2raw('EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav')
+tsUSDe = Parser.uf2raw('EQDQ5UUyPHrLcQJlPAczd_fjxn8SLrlNQwolBznxCdSlfQwr')
 oUSDT = Parser.uf2raw('EQC_1YoM8RBixN95lz7odcF3Vrkc_N8Ne7gQi7Abtlet_Efi')
 oUSDC = Parser.uf2raw('EQC61IQRl0_la95t27xhIpjxZt32vl1QQVF2UgTNuvD18W-4')
 
@@ -29,6 +30,7 @@ oUSDC = Parser.uf2raw('EQC61IQRl0_la95t27xhIpjxZt32vl1QQVF2UgTNuvD18W-4')
 STABLES = [USDT, USDe, jUSDT, jUSDC]
 TONS = [pTON, TON, pTONv2, WTON_Megaton, WTON_Stonfi, wTTon_TONCO]
 LSDS = [stTON, tsTON]
+USD_LSDS = [tsUSDe]
 ORBIT_STABLES = [oUSDT, oUSDC]
 STABLES_INCLUDING_ORBIT = STABLES + ORBIT_STABLES
 # Orbit bridge was hacked on 2024-01-01 (see https://blockworks.co/news/80-million-lost-orbit-bridge)
@@ -151,6 +153,14 @@ def estimate_tvl(pool: DexPool, db: DB):
             if lsd_price:
                 tvl_ton = reserves * lsd_price / 1e9
                 tvl_usd = tvl_ton * ton_price
+            else:
+                logger.warning(f"No price for {jetton} for {last_updated}")
+
+        elif jetton in USD_LSDS:
+            usd_lsd_price = db.get_core_price(jetton, last_updated)
+            if usd_lsd_price:
+                tvl_usd = reserves * usd_lsd_price / 1e6
+                tvl_ton = tvl_usd / ton_price
             else:
                 logger.warning(f"No price for {jetton} for {last_updated}")
 

@@ -150,3 +150,21 @@ class CorePricesStormTrade(CorePrices, EmulatorParser):
         
         if lp_total_supply > 0:
             self.update_price(1.0 * free_balance / lp_total_supply, obj, db)
+
+
+class CorePricesEthena(CorePrices, EmulatorParser):
+    def __init__(self, emulator_path, update_interval=3600):
+        EmulatorParser.__init__(self, emulator_path)
+        CorePrices.__init__(self, account=Parser.uf2raw('EQChGuD1u0e7KUWHH5FaYh_ygcLXhsdG2nSHPXHW8qqnpZXW'), 
+                         asset=Parser.uf2raw('EQDQ5UUyPHrLcQJlPAczd_fjxn8SLrlNQwolBznxCdSlfQwr'), 
+                         update_interval=update_interval)
+        
+    def predicate(self, obj) -> bool:
+        return EmulatorParser.predicate(self, obj) and CorePrices.predicate(self, obj)
+
+    def _do_parse(self, obj, db: DB, emulator: TvmEmulator): 
+        total_assets = self._execute_method(emulator, 'getTotalAssets', [], db, obj)
+        total_shares = self._execute_method(emulator, 'getTotalShares', [], db, obj)
+
+        if total_assets and total_shares:
+            self.update_price(1.0 * total_assets / total_shares, obj, db)
