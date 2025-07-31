@@ -163,10 +163,10 @@ class CorePricesEthena(CorePrices, EmulatorParser):
         return EmulatorParser.predicate(self, obj) and CorePrices.predicate(self, obj)
 
     def _do_parse(self, obj, db: DB, emulator: TvmEmulator): 
-        total_assets = self._execute_method(emulator, 'getTotalAssets', [], db, obj)
-        total_shares = self._execute_method(emulator, 'getTotalShares', [], db, obj)
+        total_assets, = self._execute_method(emulator, 'getTotalAssets', [], db, obj)
+        total_shares, = self._execute_method(emulator, 'getTotalShares', [], db, obj)
 
         logger.info(f"tsUSDe vault total assets: {total_assets}, total shares: {total_shares}")
 
         if total_assets and total_shares:
-            self.update_price(1.0 * total_assets / total_shares, obj, db)
+            self.update_price(total_assets / total_shares, obj, db)
