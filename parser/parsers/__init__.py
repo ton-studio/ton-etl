@@ -11,7 +11,7 @@ from parsers.accounts.tvl import TVLPoolStateParser
 from parsers.accounts.jetton_wallets_recover import JettonWalletsRecover
 from parsers.accounts.nfts_recover import NFTsRecover
 from parsers.message_contents.decode_comment import CommentsDecoder
-from parsers.accounts.core_prices import CorePricesHipoTON, CorePricesLSDstTON, CorePricesLSDtsTON, CorePricesStormTrade, CorePricesUSDT
+from parsers.accounts.core_prices import CorePricesHipoTON, CorePricesLSDstTON, CorePricesLSDtsTON, CorePricesStormTrade, CorePricesUSDT, CorePricesEthena
 from parsers.message.dedust_swap import DedustSwap, TestnetDedustSwap
 from parsers.message.stonfi_swap import StonfiSwap, TestnetStonfiSwap
 from parsers.message.jetton_mint import JettonMintParser, HipoTokensMinted, TestnetHipoTokensMinted
@@ -52,6 +52,7 @@ _mainnet_parsers = [
     CorePricesLSDstTON(),
     CorePricesLSDtsTON(),
     CorePricesHipoTON(EMULATOR_PATH),
+    CorePricesEthena(EMULATOR_PATH),
     # TON Vault
     CorePricesStormTrade(EMULATOR_PATH, Parser.uf2raw('EQDpJnZP89Jyxz3euDaXXFUhwCWtaOeRmiUJTi3jGYgF8fnj'),
                           Parser.uf2raw('EQCNY2AQ3ZDYwJAqx_nzl9i9Xhd_Ex7izKJM6JTxXRnO6n1F')),
