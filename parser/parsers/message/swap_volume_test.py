@@ -13,6 +13,9 @@ oUSDT = Address("EQC_1YoM8RBixN95lz7odcF3Vrkc_N8Ne7gQi7Abtlet_Efi")
 tsTON = Address("EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav")
 NOT = Address("EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT")
 STORM = Address("EQBsosmcZrD6FHijA7qWGLw5wo_aH8UN435hi935jJ_STORM")
+USDe = Address("EQAIb6KmdfdDR7CN1GBqVJuP25iCnLKCvBlJ07Evuu2dzP5f")
+tsUSDe = Address("EQDQ5UUyPHrLcQJlPAczd_fjxn8SLrlNQwolBznxCdSlfQwr")
+
 
 @pytest.mark.parametrize(
     "jetton_left, jetton_right, reserves_left, reserves_right, last_updated, "
@@ -74,6 +77,57 @@ def test_estimate_tvl(
     db = Mock()
     db.get_core_price.side_effect = lambda jetton, last_updated: core_price_mapping.get((jetton, last_updated), None)
     db.get_agg_price.side_effect = lambda jetton, last_updated: agg_price_mapping.get((jetton, last_updated), None)
+
+    pool = DexPool(
+        pool="some_pool_address",
+        platform="some_platform",
+        jetton_left=jetton_left,
+        jetton_right=jetton_right,
+        reserves_left=reserves_left,
+        reserves_right=reserves_right,
+        last_updated=last_updated,
+        tvl_usd=None,
+        tvl_ton=None,
+        is_liquid=True,
+    )
+
+    estimate_tvl(pool, db)
+
+    assert pool.tvl_usd == res_tvl_usd
+    assert pool.tvl_ton == res_tvl_ton
+    assert pool.is_liquid == res_is_liquid
+
+
+@pytest.mark.parametrize(
+    "jetton_left, jetton_right, reserves_left, reserves_right, last_updated, "
+    "usdt_core_price, tsusde_core_price, res_tvl_usd, res_tvl_ton, res_is_liquid",
+    [
+        # USDe-tsUSDe pool, usual case
+        (USDe, tsUSDe, 1e10, 6e10, 1738000000, 0.005, 1.2, 8.2e4, 1.64e4, True),
+    ],
+)
+def test_estimate_tvl_USDe(
+    jetton_left,
+    jetton_right,
+    reserves_left,
+    reserves_right,
+    last_updated,
+    usdt_core_price,
+    tsusde_core_price,
+    res_tvl_usd,
+    res_tvl_ton,
+    res_is_liquid,
+):
+    import parser.parsers.message.swap_volume
+
+    importlib.reload(parser.parsers.message.swap_volume)
+
+    core_price_mapping = {
+        (USDT.to_str(False).upper(), last_updated): usdt_core_price,
+        (tsUSDe.to_str(False).upper(), last_updated): tsusde_core_price,
+    }
+    db = Mock()
+    db.get_core_price.side_effect = lambda jetton, last_updated: core_price_mapping.get((jetton, last_updated), None)
 
     pool = DexPool(
         pool="some_pool_address",
