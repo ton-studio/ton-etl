@@ -10,13 +10,16 @@ Currently two main destinations are supported:
 ## AWS S3 Data Lake
 
 Datalake endpoints:
-* Mainnet: s3://ton-blockchain-public-datalake/v1/ (eu-central-1 region)
+* s3://ton-blockchain-public-datalake/v1/ (eu-central-1 region) - AVRO format
+* s3://aws-public-blockchain/v1.1/ton/ (us-east-2) - Parquet format
 
 All data tables are stored in separate folders and named by data type. Data is partitioned by block date. Block date
-is extracted from specific field for each data type and converted into string in __YYYYMMDD__ format.
-Initially data is partitioned by adding date, but at the end of the day it is re-partitioned using [Airflow DAG](./airflow/dags/datalake_daily_sync.py) (see below).
+is extracted from specific field for each data type and converted into string in __YYYYMMDD__ format for AVRO version
+and __YYYY-MM-DD__ for Parquet version. Parquet version is recommended for most tasks since it provides more optimal bandwidth usage.
+Parquet version is a part of [the AWS Public Blockchain Data](https://registry.opendata.aws/aws-public-blockchain/) registry and provides better integration with AWS stack. See [the article](https://registry.opendata.aws/aws-public-blockchain/) 
+for usage examples.
 
-SNS notifications are enabled for the bucket, SNS ARN is ``arn:aws:sns:eu-central-1:180088995794:TONPublicDataLakeNotifications``.
+Initially data is partitioned by adding date, but at the end of the day it is re-partitioned using [Airflow DAG](./airflow/dags/datalake_daily_sync.py) (see below).
 
 ## Near real-time  data streaming via pulic Kafka topics
 
