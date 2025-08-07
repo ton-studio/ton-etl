@@ -1467,7 +1467,7 @@ def datalake_daily_sync():
                 convert_table_task("nft_transfers"),
                 convert_table_task("nft_events"),
                 convert_table_task("transactions"),
-            ] if Variable.get("DATALAKE_CONVERT_TO_PARQUET") == 'True' else [],
+            ] if Variable.get("DATALAKE_CONVERT_TO_PARQUET") == 'True' else None,
             check_blum_code_hashes_task, check_memeslab_code_hashes_task, check_tonfun_code_hashes_task]
 
 datalake_daily_sync_dag = datalake_daily_sync()
