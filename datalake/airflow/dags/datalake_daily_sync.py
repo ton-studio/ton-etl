@@ -1437,7 +1437,27 @@ def datalake_daily_sync():
                 'partition_field': partition_field
             }
         )
+    
 
+    extra_tasks = [check_blum_code_hashes_task, check_memeslab_code_hashes_task, check_tonfun_code_hashes_task]
+    if str(Variable.get("DATALAKE_CONVERT_TO_PARQUET")) == 'True':
+        extra_tasks.extend([
+                    convert_table_task("account_states"),
+                    convert_table_task("balances_history"),
+                    convert_table_task("blocks"),
+                    convert_table_task("dex_trades"), 
+                    convert_table_task("dex_pools"),
+                    convert_table_task("jetton_events"),
+                    convert_table_task("jetton_metadata", partition_field='adding_date'),
+                    convert_table_task("messages_with_data"),
+                    
+                    convert_table_task("nft_metadata", partition_field='adding_date'),
+                    convert_table_task("nft_items"),
+                    convert_table_task("nft_sales"),
+                    convert_table_task("nft_transfers"),
+                    convert_table_task("nft_events"),
+                    convert_table_task("transactions")
+                    ])
 
     perform_last_block_check_task >> [
         convert_blocks_task,
@@ -1450,24 +1470,6 @@ def datalake_daily_sync():
         (perform_last_block_check_task >> check_main_parser_offset_task >> check_megatons_offset_task >> check_core_prices_offset_task >> check_tvl_parser_offset_task >> convert_dex_tvl_task),
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
     ] >> check_nft_parser_offset_task >> convert_nft_items_task >> convert_nft_transfers_task >> convert_nft_sales_task >> \
-        refresh_nft_metadata_partitions_task >> nft_events_task >> [
-            [   
-                convert_table_task("account_states"),
-                convert_table_task("balances_history"),
-                convert_table_task("blocks"),
-                convert_table_task("dex_trades"), 
-                convert_table_task("dex_pools"),
-                convert_table_task("jetton_events"),
-                convert_table_task("jetton_metadata", partition_field='adding_date'),
-                convert_table_task("messages_with_data"),
-                
-                convert_table_task("nft_metadata", partition_field='adding_date'),
-                convert_table_task("nft_items"),
-                convert_table_task("nft_sales"),
-                convert_table_task("nft_transfers"),
-                convert_table_task("nft_events"),
-                convert_table_task("transactions"),
-            ] if Variable.get("DATALAKE_CONVERT_TO_PARQUET") == 'True' else None,
-            check_blum_code_hashes_task, check_memeslab_code_hashes_task, check_tonfun_code_hashes_task]
+        refresh_nft_metadata_partitions_task >> nft_events_task >> extra_tasks
 
 datalake_daily_sync_dag = datalake_daily_sync()
