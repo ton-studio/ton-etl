@@ -16,7 +16,7 @@ Datalake endpoints:
 All data tables are stored in separate folders and named by data type. Data is partitioned by block date. Block date
 is extracted from specific field for each data type and converted into string in __YYYYMMDD__ format for AVRO version
 and __YYYY-MM-DD__ for Parquet version. Parquet version is recommended for most tasks since it provides more optimal bandwidth usage.
-Parquet version is a part of [the AWS Public Blockchain Data](https://registry.opendata.aws/aws-public-blockchain/) registry and provides better integration with AWS stack. See [the article](https://registry.opendata.aws/aws-public-blockchain/) 
+Parquet version is a part of [the AWS Public Blockchain Data](https://registry.opendata.aws/aws-public-blockchain/) registry and provides better integration with AWS stack. See [the article](https://repost.aws/articles/AR3ABC81yvTPW2ktfHiHPWIA/new-dataset-added-to-the-aws-public-blockchain-data-ton-the-open-network) 
 for usage examples.
 
 Initially data is partitioned by adding date, but at the end of the day it is re-partitioned using [Airflow DAG](./airflow/dags/datalake_daily_sync.py) (see below).
