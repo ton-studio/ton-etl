@@ -30,8 +30,7 @@ class BidaskClmmSwap(EmulatorParser):
         try:
             code_boc_str = pool_state["code_boc"]
             code_cell_hash = Cell.one_from_boc(code_boc_str)._hash.hex()
-            if code_cell_hash in self.BIDASK_POOLS_CODE_HASHES:
-                return True
+            return code_cell_hash in self.BIDASK_POOLS_CODE_HASHES
         except Exception as e:
             logger.info("bidask pool state not found", e)
 
