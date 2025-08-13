@@ -11,7 +11,7 @@ from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 
 class BidaskClmmSwap(EmulatorParser):
     BIDASK_POOLS_CODE_HASHES = [
-        "bff2aa0e9e34825cd01d081468Я44dac8f4aaec41272cfc12e42ca4c1481285c1"
+        "bff2aa0e9e34825cd01d08146844dac8f4aaec41272cfc12e42ca4c1481285c1"
         ]
 
     def __init__(self, emulator_path):
