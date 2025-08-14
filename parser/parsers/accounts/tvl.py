@@ -130,7 +130,8 @@ class TVLPoolStateParser(EmulatorParser):
                 current_jetton_right = read_coffee_asset(asset_2)
         elif pool.platform == DEX_BIDASK_CLMM:
             pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
-            _, protocol_fee, _ = self._execute_method(emulator, 'get_fees_info', [], db, obj)
+            pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
+            ref_fee, protocol_fee = pool_fees[0], pool_fees[1]
             j0_wallet, j1_wallet, bin_step, lp_fee = self._execute_method(emulator, 'get_pool_info', [], db, obj)
 
             # Null addr for pools with native TON and jettons without master contract.
@@ -150,9 +151,10 @@ class TVLPoolStateParser(EmulatorParser):
             pool.total_supply = None
             current_jetton_left = j0_master
             current_jetton_right = j1_master
-            if lp_fee is not None and protocol_fee is not None:
-                pool.lp_fee = lp_fee / 1e4
-                pool.protocol_fee = protocol_fee / 1e4
+            
+            pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
+            pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
+            pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
         else:
             raise Exception(f"DEX is not supported: {pool.platform}")
         
