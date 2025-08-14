@@ -138,13 +138,13 @@ class TVLPoolStateParser(EmulatorParser):
             if j0_wallet_address == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
                 j0_master = Address("0:0000000000000000000000000000000000000000000000000000000000000000")
             else:
-                j0_master = Address(db.get_wallet_master(j0_wallet.load_address()))
+                j0_master = Address(db.get_wallet_master(j0_wallet_address))
 
             j1_wallet_address = j1_wallet.load_address()
             if j1_wallet_address == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
                 j1_master = Address("0:0000000000000000000000000000000000000000000000000000000000000000")
             else:
-                j1_master = Address(db.get_wallet_master(j1_wallet.load_address()))
+                j1_master = Address(db.get_wallet_master(j1_wallet_address))
                 
             # total supply is not applicable for Bidask CLMM
             pool.total_supply = None

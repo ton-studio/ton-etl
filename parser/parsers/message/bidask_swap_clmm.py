@@ -7,11 +7,11 @@ from model.dexswap import DEX_BIDASK_CLMM, DexSwapParsed
 from model.dedust import read_dedust_asset, write_dedust_asset
 from parsers.message.swap_volume import estimate_volume
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
-
+import base64
 
 class BidaskClmmSwap(EmulatorParser):
     BIDASK_POOLS_CODE_HASHES = [
-        "bff2aa0e9e34825cd01d08146844dac8f4aaec41272cfc12e42ca4c1481285c1"
+        "v/KqDp40glzQHQgUaETayPSq7EEnLPwS5CykwUgShcE="
         ]
 
     def __init__(self, emulator_path):
@@ -29,7 +29,7 @@ class BidaskClmmSwap(EmulatorParser):
     def validate_pool(self, db: DB, pool_state): 
         try:
             code_boc_str = pool_state["code_boc"]
-            code_cell_hash = Cell.one_from_boc(code_boc_str)._hash.hex()
+            code_cell_hash = base64.b64encode(Cell.one_from_boc(code_boc_str)._hash).decode('utf-8')
             return code_cell_hash in self.BIDASK_POOLS_CODE_HASHES
         except Exception as e:
             logger.info("bidask pool state not found", e)
@@ -47,10 +47,10 @@ class BidaskClmmSwap(EmulatorParser):
             logger.info(f"Skipping failed tx for {tx_hash}")
             return
         
-        pool_state = Parser.get_account_state_safe(obj.get("destination"), db)
+        pool_state = Parser.get_account_state_safe(Address(obj.get("destination")), db)
 
         if not self.validate_pool(db, pool_state):
-            logger.warning(f"Skipping invalid pool {obj.get('source', None)}")
+            logger.warning(f"Skipping invalid pool {obj.get('destination', None)}")
             return
 
         pool_emulator = self._prepare_emulator(pool_state)
@@ -68,6 +68,7 @@ class BidaskClmmSwap(EmulatorParser):
             is_x = cell.load_bit()
             receiver_address = cell.load_address()
             additional_data_cell = cell.load_maybe_ref()
+            from_address = None
             ref_addr = None
             if additional_data_cell is not None:
                 data_slice = additional_data_cell.begin_parse()
