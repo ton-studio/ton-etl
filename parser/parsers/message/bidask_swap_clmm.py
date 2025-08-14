@@ -111,6 +111,13 @@ class BidaskClmmSwap(EmulatorParser):
             src_token = [token_y_address, token_x_address][is_x]
             dst_token = [token_x_address, token_y_address][is_x]
             output_amount = [amount_y, amount_x][is_x]
+            refund_amount = [amount_x, amount_y][is_x]
+
+            input_amount -= refund_amount
+
+            if input_amount == 0 or output_amount == 0:
+                logger.info(f"Skipping zero amount swap for {obj}")
+                return
 
             src_token_master = None
             dst_token_master = None
@@ -189,12 +196,29 @@ class BidaskClmmSwap(EmulatorParser):
             token_x_address = token_x.load_address()
             token_y_address = token_y.load_address()
 
-            src_token = [token_x_address, token_y_address][is_x]
-            dst_token = [token_y_address, token_x_address][is_x]
-            output_amount = [amount_x, amount_y][is_x]
+            src_token = [token_y_address, token_x_address][is_x]
+            dst_token = [token_x_address, token_y_address][is_x]
+            output_amount = [amount_y, amount_x][is_x]
+            refund_amount = [amount_x, amount_y][is_x]
 
-            src_token_master = db.get_wallet_master(src_token)
-            dst_token_master = db.get_wallet_master(dst_token)
+            input_amount -= refund_amount
+
+            if input_amount == 0 or output_amount == 0:
+                logger.info(f"Skipping zero amount swap for {obj}")
+                return
+
+            src_token_master = None
+            dst_token_master = None
+
+            if src_token == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
+                src_token_master = "0:0000000000000000000000000000000000000000000000000000000000000000"
+            else:
+                src_token_master = db.get_wallet_master(src_token)
+
+            if dst_token == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
+                dst_token_master = "0:0000000000000000000000000000000000000000000000000000000000000000"
+            else:
+                dst_token_master = db.get_wallet_master(dst_token)
 
             swap = DexSwapParsed(
                 tx_hash=Parser.require(obj.get('tx_hash', None)),
