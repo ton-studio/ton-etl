@@ -61,7 +61,7 @@ class BidaskClmmSwap(EmulatorParser):
         if op == 0x520e4831: # pool:swap_success_callback
             query_id = cell.load_uint(64)
             new_current_bin_number = cell.load_uint(32)
-            new_sqrt_p = cell.load_uint(32)
+            new_sqrt_p = cell.load_uint(256)
             from_account = cell.load_bit()
             amount_x = cell.load_coins()
             amount_y = cell.load_coins()
@@ -110,8 +110,8 @@ class BidaskClmmSwap(EmulatorParser):
 
             src_token = [token_y_address, token_x_address][is_x]
             dst_token = [token_x_address, token_y_address][is_x]
-            output_amount = [amount_y, amount_x][is_x]
-            refund_amount = [amount_x, amount_y][is_x]
+            output_amount = [amount_x, amount_y][is_x]
+            refund_amount = [amount_y, amount_x][is_x]
 
             input_amount -= refund_amount
 
@@ -154,7 +154,7 @@ class BidaskClmmSwap(EmulatorParser):
         elif op == 0xd3a25890: # pool:swap_success_callback_v2
             query_id = cell.load_uint(64)
             new_current_bin_number = cell.load_uint(32)
-            new_sqrt_p = cell.load_uint(32)
+            new_sqrt_p = cell.load_uint(256)
             from_account = cell.load_bit()
             amount_x = cell.load_coins()
             amount_y = cell.load_coins()
@@ -198,8 +198,8 @@ class BidaskClmmSwap(EmulatorParser):
 
             src_token = [token_y_address, token_x_address][is_x]
             dst_token = [token_x_address, token_y_address][is_x]
-            output_amount = [amount_y, amount_x][is_x]
-            refund_amount = [amount_x, amount_y][is_x]
+            output_amount = [amount_x, amount_y][is_x]
+            refund_amount = [amount_y, amount_x][is_x]
 
             input_amount -= refund_amount
 
