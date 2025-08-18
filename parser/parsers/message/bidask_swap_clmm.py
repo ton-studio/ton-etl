@@ -61,7 +61,7 @@ class BidaskClmmSwap(EmulatorParser):
         input_query_id = None
 
         cell = Parser.message_body(obj, db).begin_parse()
-        op = cell.load_uint(32) # 0x520e4831 pool:swap_success_callback
+        op = cell.load_uint(32)
 
         if op == 0x520e4831: # pool:swap_success_callback
             query_id = cell.load_uint(64)
@@ -121,9 +121,6 @@ class BidaskClmmSwap(EmulatorParser):
             if input_amount == 0 or output_amount == 0:
                 logger.info(f"Skipping zero amount swap for {obj}")
                 return
-
-            src_token_master = None
-            dst_token_master = None
 
             if src_token == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
                 src_token_master = "0:0000000000000000000000000000000000000000000000000000000000000000"
@@ -200,9 +197,6 @@ class BidaskClmmSwap(EmulatorParser):
             if input_amount == 0 or output_amount == 0:
                 logger.info(f"Skipping zero amount swap for {obj}")
                 return
-
-            src_token_master = None
-            dst_token_master = None
 
             if src_token == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
                 src_token_master = "0:0000000000000000000000000000000000000000000000000000000000000000"
