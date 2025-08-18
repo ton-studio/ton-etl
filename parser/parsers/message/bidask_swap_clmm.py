@@ -4,9 +4,7 @@ from db import DB
 from parsers.accounts.emulator import EmulatorParser
 from pytoniq_core import Cell, Address
 from model.dexswap import DEX_BIDASK_CLMM, DexSwapParsed
-from model.dedust import read_dedust_asset, write_dedust_asset
 from parsers.message.swap_volume import estimate_volume
-from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 import base64
 
 class BidaskClmmSwap(EmulatorParser):
@@ -54,6 +52,13 @@ class BidaskClmmSwap(EmulatorParser):
             return
 
         pool_emulator = self._prepare_emulator(pool_state)
+        input_user_address = None
+        src_token_master = None
+        dst_token_master = None
+        input_amount = None
+        output_amount = None
+        ref_addr = None
+        input_query_id = None
 
         cell = Parser.message_body(obj, db).begin_parse()
         op = cell.load_uint(32) # 0x520e4831 pool:swap_success_callback
@@ -75,7 +80,11 @@ class BidaskClmmSwap(EmulatorParser):
             logger.info(f"query_id: {query_id}, from_account: {from_account}, amount_x: {amount_x}, amount_y: {amount_y}, is_x: {is_x}, receiver_address: {receiver_address}, from_address: {from_address}")
 
             range_tx = obj
-            for i in range(5): # max 5 reentrancies for swap
+            for i in range(6): # max 5 reentrancies for swap
+                if i == 5:
+                    logger.warning(f"range_swap not found for bidask_clmm_swap_callback_v1")
+                    return
+
                 try:
                     range_swap = Cell.one_from_boc(db.get_parent_message_body(range_tx.get('msg_hash'))).begin_parse()
                 except Exception as e:
@@ -126,25 +135,6 @@ class BidaskClmmSwap(EmulatorParser):
             else:
                 dst_token_master = db.get_wallet_master(dst_token)
 
-            swap = DexSwapParsed(
-                tx_hash=Parser.require(obj.get('tx_hash', None)),
-                msg_hash=Parser.require(obj.get('msg_hash', None)),
-                trace_id=Parser.require(obj.get('trace_id', None)),
-                platform=DEX_BIDASK_CLMM,
-                swap_utime=Parser.require(obj.get('created_at', None)),
-                swap_user=input_user_address,
-                swap_pool=Parser.require(obj.get('destination', None)),
-                swap_src_token=src_token_master,
-                swap_dst_token=dst_token_master,
-                swap_src_amount=input_amount,
-                swap_dst_amount=output_amount,
-                referral_address=ref_addr,
-                query_id=input_query_id
-            )
-
-            estimate_volume(swap, db)
-            db.serialize(swap)
-            db.discover_dex_pool(swap)
         elif op == 0xd3a25890: # pool:swap_success_callback_v2
             query_id = cell.load_uint(64)
             new_current_bin_number = cell.load_uint(32)
@@ -169,7 +159,11 @@ class BidaskClmmSwap(EmulatorParser):
             logger.info(f"query_id: {query_id}, from_account: {from_account}, amount_x: {amount_x}, amount_y: {amount_y}, is_x: {is_x}, receiver_address: {receiver_address}, from_address: {from_address}")
 
             range_tx = obj
-            for i in range(5): # max 5 reentrancies for swap
+            for i in range(6): # max 5 reentrancies for swap
+                if i == 5:
+                    logger.warning(f"range_swap not found for bidask_clmm_swap_callback_v2")
+                    return
+                
                 try:
                     range_swap = Cell.one_from_boc(db.get_parent_message_body(range_tx.get('msg_hash'))).begin_parse()
                 except Exception as e:
@@ -219,8 +213,10 @@ class BidaskClmmSwap(EmulatorParser):
                 dst_token_master = "0:0000000000000000000000000000000000000000000000000000000000000000"
             else:
                 dst_token_master = db.get_wallet_master(dst_token)
-
-            swap = DexSwapParsed(
+        else:
+            return
+        
+        swap = DexSwapParsed(
                 tx_hash=Parser.require(obj.get('tx_hash', None)),
                 msg_hash=Parser.require(obj.get('msg_hash', None)),
                 trace_id=Parser.require(obj.get('trace_id', None)),
@@ -233,11 +229,10 @@ class BidaskClmmSwap(EmulatorParser):
                 swap_src_amount=input_amount,
                 swap_dst_amount=output_amount,
                 referral_address=ref_addr,
-                query_id=input_query_id  
+                query_id=input_query_id
             )
 
-            estimate_volume(swap, db)
-            db.serialize(swap)
-            db.discover_dex_pool(swap)
-        
+        estimate_volume(swap, db)
+        db.serialize(swap)
+        db.discover_dex_pool(swap)
 
