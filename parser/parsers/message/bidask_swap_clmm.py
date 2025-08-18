@@ -67,16 +67,10 @@ class BidaskClmmSwap(EmulatorParser):
             amount_y = cell.load_coins()
             is_x = cell.load_bit()
             receiver_address = cell.load_address()
-            additional_data_cell = cell.load_maybe_ref()
-            from_address = None
+            ref_cell = cell.load_maybe_ref()
             ref_addr = None
-            if additional_data_cell is not None:
-                data_slice = additional_data_cell.begin_parse()
-                from_address = data_slice.load_address()
-                try:
-                    ref_addr = data_slice.load_address()
-                except Exception as e:
-                    pass
+            if ref_cell is not None:
+                ref_addr = ref_addr.begin_parse().load_address()
 
             logger.info(f"query_id: {query_id}, from_account: {from_account}, amount_x: {amount_x}, amount_y: {amount_y}, is_x: {is_x}, receiver_address: {receiver_address}, from_address: {from_address}")
 
@@ -160,11 +154,17 @@ class BidaskClmmSwap(EmulatorParser):
             amount_y = cell.load_coins()
             is_x = cell.load_bit()
             receiver_address = cell.load_address()
-            ref_cell = cell.load_maybe_ref()
+            lp_fee = cell.load_uint(16)
+            additional_data_cell = cell.load_maybe_ref()
+            from_address = None
             ref_addr = None
-            if ref_cell is not None:
-                ref_addr = ref_addr.begin_parse().load_address()
-
+            if additional_data_cell is not None:
+                data_slice = additional_data_cell.begin_parse()
+                from_address = data_slice.load_address()
+                try:
+                    ref_addr = data_slice.load_address()
+                except Exception as e:
+                    pass
 
             logger.info(f"query_id: {query_id}, from_account: {from_account}, amount_x: {amount_x}, amount_y: {amount_y}, is_x: {is_x}, receiver_address: {receiver_address}, from_address: {from_address}")
 
