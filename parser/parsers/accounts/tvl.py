@@ -1,12 +1,11 @@
 import copy
 import time
 from typing import Dict
-from model.parser import Parser, TOPIC_ACCOUNT_STATES
 from loguru import logger
 from db import DB
-from pytoniq_core import Cell, Address, begin_cell
+from pytoniq_core import Address
 from model.dexpool import DexPool
-from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE
+from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE, DEX_BIDASK_CLMM
 from model.dedust import read_dedust_asset
 from model.coffee import read_coffee_asset
 from parsers.message.swap_volume import estimate_tvl
@@ -42,7 +41,7 @@ class TVLPoolStateParser(EmulatorParser):
         pool.last_updated = obj['timestamp']
 
         # total supply is required for all cases except TONCO
-        if pool.platform != DEX_TONCO:
+        if pool.platform not in [DEX_TONCO, DEX_BIDASK_CLMM]:
             try:
                 pool.total_supply, _, _, _, _= self._execute_method(emulator, 'get_jetton_data', [], db, obj)
             except EmulatorException as e:
@@ -128,6 +127,33 @@ class TVLPoolStateParser(EmulatorParser):
             if not pool.is_inited():
                 current_jetton_left = read_coffee_asset(asset_1)
                 current_jetton_right = read_coffee_asset(asset_2)
+        elif pool.platform == DEX_BIDASK_CLMM:
+            pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
+            pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
+            ref_fee, protocol_fee = pool_fees[0], pool_fees[1]
+            j0_wallet, j1_wallet, bin_step, lp_fee = self._execute_method(emulator, 'get_pool_info', [], db, obj)
+
+            # Null addr for pools with native TON and jettons without master contract.
+            j0_wallet_address = j0_wallet.load_address()
+            if j0_wallet_address == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
+                j0_master = Address("0:0000000000000000000000000000000000000000000000000000000000000000")
+            else:
+                j0_master = Address(db.get_wallet_master(j0_wallet_address))
+
+            j1_wallet_address = j1_wallet.load_address()
+            if j1_wallet_address == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
+                j1_master = Address("0:0000000000000000000000000000000000000000000000000000000000000000")
+            else:
+                j1_master = Address(db.get_wallet_master(j1_wallet_address))
+                
+            # total supply is not applicable for Bidask CLMM
+            pool.total_supply = None
+            current_jetton_left = j0_master
+            current_jetton_right = j1_master
+            
+            pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
+            pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
+            pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
         else:
             raise Exception(f"DEX is not supported: {pool.platform}")
         
