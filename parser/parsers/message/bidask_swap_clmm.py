@@ -75,7 +75,7 @@ class BidaskClmmSwap(EmulatorParser):
             ref_cell = cell.load_maybe_ref()
             ref_addr = None
             if ref_cell is not None:
-                ref_addr = ref_addr.begin_parse().load_address()
+                ref_addr = ref_cell.begin_parse().load_address()
 
             logger.info(f"query_id: {query_id}, from_account: {from_account}, amount_x: {amount_x}, amount_y: {amount_y}, is_x: {is_x}, receiver_address: {receiver_address}, from_address: {from_address}")
 
