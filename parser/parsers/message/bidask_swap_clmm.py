@@ -59,6 +59,7 @@ class BidaskClmmSwap(EmulatorParser):
         output_amount = None
         ref_addr = None
         input_query_id = None
+        from_address = None
 
         cell = Parser.message_body(obj, db).begin_parse()
         op = cell.load_uint(32)
@@ -143,7 +144,6 @@ class BidaskClmmSwap(EmulatorParser):
             receiver_address = cell.load_address()
             lp_fee = cell.load_uint(16)
             additional_data_cell = cell.load_maybe_ref()
-            from_address = None
             ref_addr = None
             if additional_data_cell is not None:
                 data_slice = additional_data_cell.begin_parse()
