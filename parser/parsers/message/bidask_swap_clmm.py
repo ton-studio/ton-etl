@@ -89,7 +89,7 @@ class BidaskClmmSwap(EmulatorParser):
                 try:
                     range_swap = Cell.one_from_boc(db.get_parent_message_body(range_tx.get('msg_hash'))).begin_parse()
                 except Exception as e:
-                    logger.info("parrent range swap not found", e)
+                    logger.info("Parent range swap not found", e)
 
                 swap_op = range_swap.load_uint(32)
                 if swap_op != 0x66210c65: # range:swap

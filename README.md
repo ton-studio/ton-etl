@@ -249,3 +249,63 @@ tool from ``ton-index-worker`` to populate all accounts states first. Since this
 tool doesn't update jetton wallets and NFT items you can use special parsers to recover all jettton wallets and NFT items:
 * [NFTsRecover](./parser/parsers/accounts/nfts_recover.py) - recovers NFTs from the latest_accounts_states table without metadata support (deprecated)
 * [NFTItemsParser](./parser/parsers/accounts/nfts_parser.py) - more sophisticated NFTs parser with full metadata support
+
+## Backfill
+
+When adding a new parser, it is essential to have backfill capability to ensure data consistency and completeness. A special tool has been developed to perform backfills for DEX parsers. To perform a backfill, you need to prepare 4 datasets:
+1. All messages related to swaps (not only those matched by predicates, but also all messages in the transaction chain)
+2. All transaction statuses (to determine failed transactions)
+3. Jetton wallet to master mapping
+4. TON/USDT prices
+
+The following Dune SQL snippets are provided to prepare these datasets:
+```sql
+-- prepare messages
+with trace_ids as (
+select  distinct trace_id from ton.messages where 
+block_date >= timestamp '2025-05-07' -- it is better to put the start date
+and opcode in (123456) -- put your opcode predicate here
+)
+select * from ton.messages 
+join trace_ids using(trace_id)
+where block_date >= timestamp '2025-05-07' -- the same date should be used
+
+-- prepare transactions 
+with trace_ids as (
+select  distinct trace_id from ton.messages where 
+block_date >= timestamp '2025-05-07' -- the same as in messages query
+and opcode in (123456) -- put your opcode predicate here
+)
+select hash, compute_exit_code, action_result_code from ton.transactions 
+join trace_ids using(trace_id)
+where block_date >= timestamp '2025-05-07' -- the same date
+
+-- prepare jetton wallets
+with trace_ids as (
+select  distinct trace_id from ton.messages where 
+block_date >= timestamp '2025-05-07'
+and opcode in (123456) -- put your opcode predicate here
+)
+select distinct jetton_wallet, jetton_master from ton.jetton_events 
+join trace_ids using(trace_id)
+where block_date >= timestamp '2025-05-07'
+
+-- prepare prices
+select timestamp, price_usd * 1e9  as price from ton.prices_daily
+where token_address = '0:0000000000000000000000000000000000000000000000000000000000000000'
+and timestamp >= timestamp '2025-05-07' -- the same start date
+```
+
+After prepareing the dataset you can run ``backfill.py`` script locally to get output file:
+```sh
+cd parser
+LITECLIENT_CONFIG_OVERRIDE=./global.config.json EMULATOR_LIBRARY=./libemulator-mac-arm64.dylib python3 backfill.py ParserName \
+messages.csv transactions.csv wallets.csv prices.csv output.csv
+```
+
+ParserName is the name of the parser you are going to use for backfill.
+
+Note that you need to provide the ``EMULATOR_LIBRARY`` path (unless your pytvm version comes with a precompiled binary) and
+``LITECLIENT_CONFIG_OVERRIDE`` to fetch masterchain libraries. Results of the backfill script will be available in ``output.csv``
+and can be imported into the database.
+
