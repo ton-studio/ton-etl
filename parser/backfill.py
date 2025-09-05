@@ -2,12 +2,13 @@ from datetime import datetime
 import pandas as pd
 import sys
 import os
+from dataclasses import fields
 from tqdm import tqdm
 from loguru import logger
+from pytoniq_core import Address
 
 from parsers import generate_parsers
 from parsers.message.swap_volume import USDT
-from parsers.message.bidask_swap_clmm import BidaskClmmSwap
 
 
 if __name__ == "__main__":
@@ -80,10 +81,13 @@ if __name__ == "__main__":
             if date not in self.ton_prices:
                 return None
             assert date in self.ton_prices, f"Ton price not found for {date}"
-            return self.ton_prices[date]
+            return self.ton_prices[date] / 1e3
 
         def serialize(self, event):
             # Store event for later processing and analysis
+            for field in fields(event.__class__):
+                if type(getattr(event, field.name)) == Address:
+                    setattr(event, field.name, getattr(event, field.name).to_str(is_user_friendly=False).upper())
             self.output.append(event)
 
         def discover_dex_pool(self, event):
