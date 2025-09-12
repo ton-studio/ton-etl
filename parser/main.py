@@ -31,6 +31,7 @@ if __name__ == "__main__":
             auto_offset_reset=os.environ.get("KAFKA_OFFSET_RESET", 'earliest'),
             enable_auto_commit=False,
             max_poll_records=int(os.environ.get("KAFKA_MAX_POLL_RECORDS", '50')),
+            max_poll_interval_ms=int(os.environ.get("KAFKA_MAX_POLL_INTERVAL_MS", '300000')),
             )
     for topic in topics.split(","):
         logger.info(f"Subscribing to {topic}")
