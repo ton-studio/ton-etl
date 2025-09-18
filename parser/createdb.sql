@@ -245,9 +245,9 @@ CREATE TABLE IF NOT EXISTS prices.dex_pool_link (
     pool varchar null references prices.dex_pool(pool)
 );
 
--- Bidask DEX support
+-- Bidask CLMM DEX support
 DO $$ BEGIN
-    ALTER TYPE public.dex_name ADD VALUE 'bidask' AFTER 'tonco';
+    ALTER TYPE public.dex_name ADD VALUE 'bidask_clmm' AFTER 'tonco';
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

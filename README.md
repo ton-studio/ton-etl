@@ -156,7 +156,7 @@ Supported DEXs:
 * Megaton: [MegatonSwap](./parser/parsers/jetton_transfer/megaton.py)
 * TONCO: [TONCO](./parser/parsers/message/tonco.py)
 * Coffee: [CoffeeSwap](./parser/parsers/message/coffee_swap.py)
-* Bidask: [Bidask](./parser/parsers/message/bidask_swap.py)
+* Bidask CLMM: [BidaskClmm](./parser/parsers/message/bidask_swap_clmm.py)
 
 Each parser estimates deal volume in TON and USD using core prices (see below). So for swaps with core assets like
 TON, stablecoins or LSDs volume will be estimated based on the core asset price at the moment of the swap. Otherwise
