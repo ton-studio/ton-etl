@@ -3,13 +3,14 @@ from loguru import logger
 from db import DB
 from parsers.accounts.emulator import EmulatorParser
 from pytoniq_core import Cell, Address
-from model.dexswap import DEX_BIDASK_CLMM, DexSwapParsed
+from model.dexswap import DEX_BIDASK, DexSwapParsed
 from parsers.message.swap_volume import estimate_volume
 import base64
 
-class BidaskClmmSwap(EmulatorParser):
+class BidaskSwap(EmulatorParser):
     BIDASK_POOLS_CODE_HASHES = [
-        "v/KqDp40glzQHQgUaETayPSq7EEnLPwS5CykwUgShcE="
+        "v/KqDp40glzQHQgUaETayPSq7EEnLPwS5CykwUgShcE=",
+        "PhUUUnEa/dETOqXfL7qqTevqBvOLBLj8R94tthKI4Zs="
         ]
 
     def __init__(self, emulator_path):
@@ -83,7 +84,7 @@ class BidaskClmmSwap(EmulatorParser):
             range_tx = obj
             for i in range(6): # max 5 reentrancies for swap
                 if i == 5:
-                    logger.warning(f"range_swap not found for bidask_clmm_swap_callback_v1")
+                    logger.warning(f"range_swap not found for bidask_swap_callback_v1")
                     return
 
                 try:
@@ -158,7 +159,7 @@ class BidaskClmmSwap(EmulatorParser):
             range_tx = obj
             for i in range(6): # max 5 reentrancies for swap
                 if i == 5:
-                    logger.warning(f"range_swap not found for bidask_clmm_swap_callback_v2")
+                    logger.warning(f"range_swap not found for bidask_swap_callback_v2")
                     return
                 
                 try:
@@ -214,7 +215,7 @@ class BidaskClmmSwap(EmulatorParser):
                 tx_hash=Parser.require(obj.get('tx_hash', None)),
                 msg_hash=Parser.require(obj.get('msg_hash', None)),
                 trace_id=Parser.require(obj.get('trace_id', None)),
-                platform=DEX_BIDASK_CLMM,
+                platform=DEX_BIDASK,
                 swap_utime=Parser.require(obj.get('created_at', None)),
                 swap_user=input_user_address,
                 swap_pool=Parser.require(obj.get('destination', None)),
