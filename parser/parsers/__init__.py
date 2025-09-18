@@ -22,6 +22,7 @@ from parsers.nft_collections.nft_collection_metadata import NFTCollectionMetadat
 from parsers.message.memeslab import MemesLabTrade
 from parsers.message.blum import BlumTrade
 from parsers.message.coffee_swap import CoffeeSwap
+from parsers.accounts.nft_sales import NFTSalesParser
 from model.parser import Parser
 from loguru import logger
 import os
@@ -76,7 +77,9 @@ _mainnet_parsers = [
     JettonMastersMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS),
 
     NFTItemMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
-    NFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE)
+    NFTCollectionMetadataParser(METADATA_FETCH_TIMEOUT, METADATA_FETCH_MAX_ATTEMPTS, TONAPI_ONLY_MODE),
+
+    NFTSalesParser(EMULATOR_PATH),
 ]
 
 _testnet_parsers = [

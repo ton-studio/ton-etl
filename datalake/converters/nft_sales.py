@@ -1,7 +1,7 @@
 import base64
 import decimal
 from typing import List
-from topics import TOPIC_NFT_SALES, TOPIC_NFT_AUCTIONS
+from topics import TOPIC_NFT_SALES, TOPIC_NFT_AUCTIONS, TOPIC_EXTRA_NFT_SALES
 from loguru import logger
 from pytoniq_core import Cell
 from converters.converter import Converter
@@ -17,7 +17,7 @@ class NFTSalesConverter(Converter):
         return obj['last_tx_now']
     
     def topics(self) -> List[str]:
-        return [TOPIC_NFT_SALES, TOPIC_NFT_AUCTIONS]
+        return [TOPIC_NFT_SALES, TOPIC_NFT_AUCTIONS, TOPIC_EXTRA_NFT_SALES]
     
     def convert(self, obj, table_name=None):
         if table_name == "getgems_nft_sales":
@@ -41,7 +41,7 @@ class NFTSalesConverter(Converter):
                 "timestamp": obj['last_tx_now'],
                 "lt": obj['last_transaction_lt']
             }
-        else: # getgems_nft_auctions
+        elif table_name == "getgems_nft_auctions":
             price = self.decode_numeric(obj['last_bid'])
             return {
                 "address": obj['address'],
@@ -64,6 +64,27 @@ class NFTSalesConverter(Converter):
                 "min_step": decimal.Decimal(obj['min_step']),
                 "last_bid_at": obj['last_bid_at'],
                 "last_member": obj['last_member'],
+                "timestamp": obj['last_tx_now'],
+                "lt": obj['last_transaction_lt']
+            }
+        elif table_name == "extra_nft_sales":
+            price = self.decode_numeric(obj['full_price'])
+            return {
+                "address": obj['address'],
+                "type": "sale",
+                "nft_address": obj['nft_address'],
+                "nft_owner_address": obj['nft_owner_address'],
+                "created_at": obj['created_at'],
+                "is_complete": obj['is_complete'],
+                "is_canceled": False,
+                "end_time": None,
+                "marketplace_address": obj['marketplace_address'],
+                "marketplace_fee_address": obj['marketplace_fee_address'],
+                "marketplace_fee": self.decode_numeric(obj['marketplace_fee']),
+                "price": price, # full price
+                "asset": obj['asset'],
+                "royalty_address": obj['royalty_address'],
+                "royalty_amount": self.decode_numeric(obj['royalty_amount']),
                 "timestamp": obj['last_tx_now'],
                 "lt": obj['last_transaction_lt']
             }

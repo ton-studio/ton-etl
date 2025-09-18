@@ -315,3 +315,28 @@ CREATE TABLE IF NOT EXISTS parsed.nft_collection_metadata (
 	sources varchar NULL,
 	tonapi_image_url varchar NULL
 );
+
+-- NFT sales that are not supported by TON indexer
+
+CREATE TABLE IF NOT EXISTS parsed.extra_nft_sales
+(
+    id serial PRIMARY KEY,
+    address varchar NULL,
+    is_complete boolean NULL,
+    created_at bigint NULL,
+    marketplace_address varchar NULL,
+    nft_address varchar NULL,
+    nft_owner_address varchar NULL,
+    full_price numeric NULL,
+    asset varchar NULL,
+    marketplace_fee_address varchar NULL,
+    marketplace_fee numeric NULL,
+    royalty_address varchar NULL,
+    royalty_amount numeric NULL,
+    last_transaction_lt bigint NULL,
+    last_tx_now integer NULL,
+    code_hash varchar NULL,
+    data_hash varchar NULL,
+    created timestamp NULL,
+    updated timestamp NULL
+);
