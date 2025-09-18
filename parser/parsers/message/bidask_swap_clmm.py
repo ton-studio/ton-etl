@@ -168,8 +168,8 @@ class BidaskClmmSwap(EmulatorParser):
                     logger.info("parrent range swap not found", e)
 
                 swap_op = range_swap.load_uint(32)
-                if swap_op != 0x87d36990: # range:swap_v2
-                    logger.warning(f"Parent message for bidask clmm swap is {swap_op}, expected 0x66210c65 {tx_hash}")
+                if swap_op not in [0x87d36990, 0x66210c65] : # range:swap | range:swap_v2 
+                    logger.warning(f"Parent message for bidask clmm swap is {swap_op}, expected 0x66210c65 or 0x87d36990 {tx_hash}")
                     range_tx = db.get_parent_message_with_body(range_tx.get('msg_hash'))
                     continue
                 else:
