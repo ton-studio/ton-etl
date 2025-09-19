@@ -40,7 +40,7 @@ class NFTSalesParser(EmulatorParser):
                 ) = self._execute_method(emulator, "get_fix_price_data_v4", [], db, obj)
 
                 if jetton_price_dict and not full_price:
-                    for value in jetton_price_dict.load_hashmap(256).values():
+                    for value in jetton_price_dict.begin_parse().load_hashmap(256).values():
                         full_price = value.load_coins()
                         asset = value.load_address()
                         break
@@ -68,5 +68,5 @@ class NFTSalesParser(EmulatorParser):
             data_hash=obj["data_hash"],
         )
 
-        logger.info(f"New NFT sale contract discovered: {obj['account']}")
+        logger.info(f"New NFT sale contract discovered: {obj['account']} {sale}")
         db.serialize(sale)
