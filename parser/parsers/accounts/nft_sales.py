@@ -1,6 +1,7 @@
 from loguru import logger
 from db import DB
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
+from pytoniq_core import Address
 from parsers.accounts.emulator import EmulatorParser
 from model.extra_nft_sale import ExtraNFTSale
 
@@ -50,17 +51,17 @@ class NFTSalesParser(EmulatorParser):
             return
 
         sale = ExtraNFTSale(
-            address=obj["account"],
+            address=Address(obj["account"]),
             is_complete=is_complete,
             created_at=created_at,
-            marketplace_address=marketplace_address,
-            nft_address=nft_address,
-            nft_owner_address=nft_owner_address,
+            marketplace_address=marketplace_address.load_address(),
+            nft_address=nft_address.load_address(),
+            nft_owner_address=nft_owner_address.load_address(),
             full_price=full_price,
             asset=asset,
-            marketplace_fee_address=fee_address,
+            marketplace_fee_address=fee_address.load_address(),
             marketplace_fee=int(full_price * fee_percent / 100000),
-            royalty_address=royalty_address,
+            royalty_address=royalty_address.load_address(),
             royalty_amount=int(full_price * royalty_percent / 100000),
             last_transaction_lt=obj["last_trans_lt"],
             last_tx_now=obj["timestamp"],
