@@ -52,7 +52,7 @@ class NFTSalesParser(EmulatorParser):
 
         sale = ExtraNFTSale(
             address=Address(obj["account"]),
-            is_complete=is_complete,
+            is_complete=bool(is_complete),
             created_at=created_at,
             marketplace_address=marketplace_address.load_address(),
             nft_address=nft_address.load_address(),
