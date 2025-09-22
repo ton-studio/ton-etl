@@ -50,24 +50,29 @@ class NFTSalesParser(EmulatorParser):
             logger.warning(f"Failed to parse NFT sale contract {obj['account']}: {e}")
             return
 
-        sale = ExtraNFTSale(
-            address=Address(obj["account"]),
-            is_complete=bool(is_complete),
-            created_at=created_at,
-            marketplace_address=marketplace_address.load_address(),
-            nft_address=nft_address.load_address(),
-            nft_owner_address=nft_owner_address.load_address(),
-            full_price=full_price,
-            asset=asset,
-            marketplace_fee_address=fee_address.load_address(),
-            marketplace_fee=int(full_price * fee_percent / 100000),
-            royalty_address=royalty_address.load_address(),
-            royalty_amount=int(full_price * royalty_percent / 100000),
-            last_transaction_lt=obj["last_trans_lt"],
-            last_tx_now=obj["timestamp"],
-            code_hash=obj["code_hash"],
-            data_hash=obj["data_hash"],
-        )
+        try:
+            sale = ExtraNFTSale(
+                address=Address(obj["account"]),
+                is_complete=bool(is_complete),
+                created_at=created_at,
+                marketplace_address=marketplace_address.load_address(),
+                nft_address=nft_address.load_address(),
+                nft_owner_address=nft_owner_address.load_address(),
+                full_price=full_price,
+                asset=asset,
+                marketplace_fee_address=fee_address.load_address(),
+                marketplace_fee=int(full_price * fee_percent / 100000),
+                royalty_address=royalty_address.load_address(),
+                royalty_amount=int(full_price * royalty_percent / 100000),
+                last_transaction_lt=obj["last_trans_lt"],
+                last_tx_now=obj["timestamp"],
+                code_hash=obj["code_hash"],
+                data_hash=obj["data_hash"],
+            )
 
-        logger.info(f"New NFT sale contract discovered: {obj['account']} {sale}")
-        db.serialize(sale)
+            logger.info(f"New NFT sale contract discovered: {obj['account']} {sale}")
+            db.serialize(sale)
+
+        except Exception as e:
+            logger.warning(f"Failed to insert NFT sale contract {obj['account']}: {e}")
+            return
