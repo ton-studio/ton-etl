@@ -249,7 +249,7 @@ services:
       replicas: 1
     environment:
       - KAFKA_GROUP_ID=exporter_nft_sales
-      - KAFKA_TOPICS=ton.public.getgems_nft_sales,ton.public.getgems_nft_auctions
+      - KAFKA_TOPICS=ton.public.getgems_nft_sales,ton.public.getgems_nft_auctions,ton.parsed.extra_nft_sales
       - CONVERTER=nft_sales
       - PARTITION_MODE=adding_date
     env_file:
