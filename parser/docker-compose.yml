@@ -181,6 +181,21 @@ services:
       options:
         max-size: 10M
 
+  parser-nft-sales:
+    build: ./
+    restart: always
+    environment:
+      KAFKA_GROUP_ID=nft_sales_parser
+      SUPPORTED_PARSERS=NFTSalesParser
+      KAFKA_TOPICS=ton.public.latest_account_states
+      COMMIT_BATCH_SIZE=1
+    env_file:
+      - parser.env
+    logging:
+      driver: local
+      options:
+        max-size: 10M
+
 
 networks:
   default:

@@ -20,4 +20,4 @@ TOPIC_TONFUN = "ton.parsed.tonfun_bcl_trade"
 TOPIC_MEMESLAB = "ton.parsed.memeslab_trade_event"
 
 TOPIC_DEX_POOLS = "ton.prices.dex_pool"
-
+TOPIC_EXTRA_NFT_SALES = "ton.parsed.extra_nft_sales"
