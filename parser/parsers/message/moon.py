@@ -73,6 +73,8 @@ class Moon(Parser):
                 min_out=min_out
             )
             estimate_volume(swap, db)
+
+            logger.info(f"Moon swap parsed: {swap}")
             db.serialize(swap)
             db.discover_dex_pool(swap)
 
