@@ -33,6 +33,7 @@ DEX_MEGATON = "megaton"
 DEX_TONCO = "tonco"
 DEX_COFFEE = "coffee"
 DEX_BIDASK_CLMM = "bidask_clmm"
+DEX_MOON = "moon"
 
 @dataclass
 class DexSwapParsed:

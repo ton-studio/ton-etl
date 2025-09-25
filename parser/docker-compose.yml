@@ -53,7 +53,7 @@ services:
     restart: always
     environment:
       - KAFKA_GROUP_ID=messages_parsers
-      - SUPPORTED_PARSERS=StonfiSwap,StonfiSwapV2,DedustSwap,GasPumpTrade,JettonMintParser,HipoTokensMinted,TonFunTrade,TONCOSwap,MemesLabTrade,BlumTrade,CoffeeSwap,BidaskClmmSwap
+      - SUPPORTED_PARSERS=StonfiSwap,StonfiSwapV2,DedustSwap,GasPumpTrade,JettonMintParser,HipoTokensMinted,TonFunTrade,TONCOSwap,MemesLabTrade,BlumTrade,CoffeeSwap,BidaskClmmSwap,Moon
       - KAFKA_TOPICS=ton.public.messages
       - MIN_MATURITY_SECONDS=300
       - RUN_MIGRATIONS=1

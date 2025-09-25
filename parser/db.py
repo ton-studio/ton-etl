@@ -715,3 +715,19 @@ class DB():
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute("select * from jetton_masters jm where address = %s", (serialize_addr(address),))
             return cursor.fetchone()
+
+    def get_parent_jetton_transfer(self, trace_id=str, tx_hash=str) -> dict:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                with edges as (
+                    select * from trace_edges where trace_id = %s
+                )
+                select jt.* from edges e0
+                join edges e1 on e1.right_tx = e0.left_tx
+                join jetton_transfers jt on jt.tx_hash = e1.left_tx
+                where e0.right_tx = %s
+                """, (trace_id, tx_hash)
+            )
+            return cursor.fetchone()

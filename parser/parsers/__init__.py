@@ -23,6 +23,7 @@ from parsers.message.memeslab import MemesLabTrade
 from parsers.message.blum import BlumTrade
 from parsers.message.coffee_swap import CoffeeSwap
 from parsers.accounts.nft_sales import NFTSalesParser
+from parsers.message.moon import Moon
 from model.parser import Parser
 from loguru import logger
 import os
@@ -50,6 +51,7 @@ _mainnet_parsers = [
     JettonMintParser(),
     HipoTokensMinted(),
     BidaskClmmSwap(EMULATOR_PATH),
+    Moon(),
 
     CorePricesUSDT(),
     CorePricesLSDstTON(),
