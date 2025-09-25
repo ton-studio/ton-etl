@@ -155,7 +155,7 @@ class TVLPoolStateParser(EmulatorParser):
             pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
             pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
         elif pool.platform == DEX_MOON:
-            pass
+            return
         else:
             raise Exception(f"DEX is not supported: {pool.platform}")
         
