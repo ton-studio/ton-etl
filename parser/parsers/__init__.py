@@ -23,8 +23,8 @@ from parsers.message.memeslab import MemesLabTrade
 from parsers.message.blum import BlumTrade
 from parsers.message.coffee_swap import CoffeeSwap
 from parsers.accounts.nft_sales import NFTSalesParser
-from parser.parsers.message.moon_swap_ton import MoonSwapTON
-from parser.parsers.jetton_transfer.moon_swap_jetton import MoonSwapJetton
+from parsers.message.moon_swap_ton import MoonSwapTON
+from parsers.jetton_transfer.moon_swap_jetton import MoonSwapJetton
 from model.parser import Parser
 from loguru import logger
 import os
