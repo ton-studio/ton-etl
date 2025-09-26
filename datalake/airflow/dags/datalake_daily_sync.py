@@ -309,7 +309,7 @@ def datalake_daily_sync():
         date_format(from_unixtime({repartition_field}), '%Y%m%d') as block_date
         from "{source_database}".{source_table}
         where adding_date >= '{source_table_since_partition}' and date_format(from_unixtime({repartition_field}), '%Y%m%d') <= '{current_date}'
-        and block_date >= '{current_table_check_partition}'
+        and date_format(from_unixtime({repartition_field}), '%Y%m%d') >= '{current_table_check_partition}'
         """
         if primary_key is not None:
             sql = f"""
