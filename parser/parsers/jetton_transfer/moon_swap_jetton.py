@@ -30,7 +30,7 @@ class MoonSwapJetton(MoonSwapTON):
                 logger.warning(f"Skipping invalid Moon pool {obj.get('source')}")
                 return
 
-            tx = db.get_parent_transaction(obj.get('tx_hash'))
+            tx = db.get_parent_transaction(obj.get('trace_id'), obj.get('tx_hash'))
             msg_hash = db.get_out_msg_hashes(tx.get('trace_id'), tx.get('hash'))[0]
 
             in_jetton_transfer = db.get_parent_jetton_transfer(Parser.require(obj.get('trace_id')), tx.get('hash'))
