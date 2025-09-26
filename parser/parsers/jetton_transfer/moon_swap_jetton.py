@@ -85,7 +85,7 @@ class MoonSwapJetton(MoonSwapTON):
                 platform=DEX_MOON,
                 swap_utime=Parser.require(tx.get('now')),
                 swap_user=recipient,
-                swap_pool=Parser.require(tx.get('acoount')),
+                swap_pool=Parser.require(tx.get('account')),
                 swap_src_token=swap_src_token,
                 swap_dst_token=Parser.require(obj.get('jetton_master_address')),
                 swap_src_amount=swap_src_amount,
