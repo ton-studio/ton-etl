@@ -13,6 +13,8 @@ from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 from parsers.accounts.emulator import EmulatorException, EmulatorParser
 
 
+TON = Address("EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c")
+
 """
 Listens to updates on DEX pools, exrtacts reserves and total_supply
 and estimates TVL.
@@ -135,14 +137,14 @@ class TVLPoolStateParser(EmulatorParser):
 
             # Null addr for pools with native TON and jettons without master contract.
             j0_wallet_address = j0_wallet.load_address()
-            if j0_wallet_address == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
-                j0_master = Address("0:0000000000000000000000000000000000000000000000000000000000000000")
+            if j0_wallet_address == TON:
+                j0_master = TON
             else:
                 j0_master = Address(db.get_wallet_master(j0_wallet_address))
 
             j1_wallet_address = j1_wallet.load_address()
-            if j1_wallet_address == Address("0:0000000000000000000000000000000000000000000000000000000000000000"):
-                j1_master = Address("0:0000000000000000000000000000000000000000000000000000000000000000")
+            if j1_wallet_address == TON:
+                j1_master = TON
             else:
                 j1_master = Address(db.get_wallet_master(j1_wallet_address))
                 
@@ -155,7 +157,13 @@ class TVLPoolStateParser(EmulatorParser):
             pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
             pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
         elif pool.platform == DEX_MOON:
-            return
+            asset_id1, pool.reserves_left, asset_id2, pool.reserves_right = self._execute_method(emulator, 'get_lp_swap_data', [], db, obj)
+            current_jetton_left = asset_id1.load_address()
+            if not current_jetton_left:
+                current_jetton_left = TON
+            current_jetton_right = asset_id2.load_address()
+            if not current_jetton_right:
+                current_jetton_right = TON
         else:
             raise Exception(f"DEX is not supported: {pool.platform}")
         

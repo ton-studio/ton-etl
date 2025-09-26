@@ -731,3 +731,26 @@ class DB():
                 """, (trace_id, tx_hash)
             )
             return cursor.fetchone()
+
+    def get_parent_transaction(self, trace_id=str, tx_hash=str) -> dict:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                select t.* from trace_edges te
+                join transactions t on t.hash = te.left_tx
+                where te.trace_id = %s and te.right_tx = %s
+                """, (trace_id, tx_hash)
+            )
+            return cursor.fetchone()
+
+    def get_out_msg_hashes(self, trace_id=str, tx_hash=str) -> List[str]:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                "select msg_hash from trace_edges where trace_id = %s and left_tx = %s", (trace_id, tx_hash)
+            )
+            res = cursor.fetchall()
+            if not res:
+                return None
+            return [row['msg_hash'] for row in res]
