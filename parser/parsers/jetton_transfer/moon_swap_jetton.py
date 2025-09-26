@@ -60,12 +60,12 @@ class MoonSwapJetton(MoonSwapTON):
                 op_id = body.load_uint(32)
                 query_id = body.load_uint(64)
                 swap_src_amount = body.load_coins()
-                min_out = fp.load_coins()
-                deadline = fp.load_uint(64)
-                excess = fp.load_address()
-                referral = fp.load_address()
+                min_out = body.load_coins()
+                deadline = body.load_uint(64)
+                excess = body.load_address()
+                referral = body.load_address()
 
-                next_fulfill_cell = fp.load_maybe_ref()
+                next_fulfill_cell = body.load_maybe_ref()
                 if next_fulfill_cell:
                     nf = next_fulfill_cell.begin_parse()
                     recipient = nf.load_address()
