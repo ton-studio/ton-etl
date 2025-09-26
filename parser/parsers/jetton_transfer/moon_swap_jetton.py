@@ -6,6 +6,7 @@ from pytoniq_core import Cell, Address
 from model.dexswap import DEX_MOON, DexSwapParsed
 from parsers.message.moon_swap_ton import MoonSwapTON
 from parsers.message.swap_volume import estimate_volume
+from parsers.utils import decode_decimal
 
 
 class MoonSwapJetton(MoonSwapTON):
@@ -72,8 +73,7 @@ class MoonSwapJetton(MoonSwapTON):
 
                 swap_src_token = self.TON
 
-
-            swap_dst_amount = int(Parser.require(obj.get('amount')))
+            swap_dst_amount = decode_decimal(obj.get('amount', 0))
             if swap_src_amount == 0 or swap_dst_amount == 0:
                 logger.warning(f"Skipping zero amount swap for Moon DEX {obj}")
                 return
