@@ -157,7 +157,7 @@ class TVLPoolStateParser(EmulatorParser):
             pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
             pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
         elif pool.platform == DEX_MOON:
-            asset_id1, pool.reserves_left, asset_id2, pool.reserves_right = self._execute_method(emulator, 'get_lp_swap_data', [], db, obj)
+            asset_id1, pool.reserves_left, asset_id2, pool.reserves_right = self._execute_method(emulator, 'get_reserves', [], db, obj)
             current_jetton_left = asset_id1.load_address()
             if not current_jetton_left:
                 current_jetton_left = TON
