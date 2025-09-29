@@ -1427,6 +1427,66 @@ def datalake_daily_sync():
         logging.info(f"Running SQL code to convert data into single file dataset {sql}")
         execute_athena_query(sql)
 
+    """
+    Creates daily snapshot of jetton metadata
+
+    create table datalake_parquet.jetton_metadata_snapshots
+    with (
+            format = 'parquet', 
+            external_location = 's3://ton-blockchain-private-datalake-us-east-1-parquet/v1.1/ton/jetton_metadata_snapshots',
+            partitioned_by = ARRAY['date']
+        )
+    as
+    with ranks as (
+    SELECT address, update_time_onchain,
+    update_time_metadata, mintable, admin_address, jetton_content_onchain,
+    jetton_wallet_code_hash, code_hash, metadata_status, symbol,
+    name, description, image, image_data, decimals, sources, tonapi_image_url,
+    row_number() over (partition by address order by update_time_metadata desc, update_time_onchain desc) as rank FROM "datalake_parquet".jetton_metadata
+    )
+    select address, update_time_onchain, update_time_metadata, mintable, admin_address, 
+    jetton_content_onchain, jetton_wallet_code_hash, code_hash, metadata_status, symbol, 
+    name, description, image, image_data, decimals, sources, tonapi_image_url, 
+    date_format(current_date, '%Y-%m-%d') as date from ranks
+    where rank = 1
+    """
+    def create_jetton_metadata_snapshot(kwargs):
+        workgroup = Variable.get("DATALAKE_ATHENA_WORKGROUP")
+        athena = AthenaHook('s3_conn', region_name='us-east-1')
+
+        query = f"""
+        insert into datalake_parquet.jetton_metadata_snapshots
+        with ranks as (
+            SELECT address, update_time_onchain,
+            update_time_metadata, mintable, admin_address, jetton_content_onchain,
+            jetton_wallet_code_hash, code_hash, metadata_status, symbol,
+            name, description, image, image_data, decimals, sources, tonapi_image_url,
+            row_number() over (partition by address order by update_time_metadata desc, update_time_onchain desc) as rank
+            FROM "datalake_parquet".jetton_metadata
+        )
+        select address, update_time_onchain, update_time_metadata, mintable, admin_address, 
+        jetton_content_onchain, jetton_wallet_code_hash, code_hash, metadata_status, symbol, 
+        name, description, image, image_data, decimals, sources, tonapi_image_url, 
+        date_format(current_date, '%Y-%m-%d') as date from ranks
+        where rank = 1
+        except
+        select * from datalake_parquet.jetton_metadata_snapshots where date = date_format(current_date, '%Y-%m-%d')
+        """
+        logging.info(f"Running SQL code to convert data into single file dataset {query}")
+
+        query_id = athena.run_query(query,
+                                    query_context={"Database": "datalake_parquet"},
+                                    result_configuration={'OutputLocation': f's3://tf-analytcs-athena-output/'},
+                                    workgroup=workgroup)
+        final_state = athena.poll_query_status(query_id)
+        if final_state == 'FAILED' or final_state == 'CANCELLED':
+            raise Exception(f"Unable to get data from Athena: {query_id}")
+
+    create_jetton_metadata_snapshot_task = PythonOperator(
+        task_id='to_parquet_create_jetton_metadata_snapshot',
+        python_callable=lambda **kwargs: safe_python_callable(create_jetton_metadata_snapshot, kwargs, "create_jetton_metadata_snapshot")
+    )
+
     def convert_table_task(table_name, target_table_name=None, partition_field='block_date'):
         return PythonOperator(
             task_id="to_parquet_" + table_name,
@@ -1442,6 +1502,7 @@ def datalake_daily_sync():
 
     extra_tasks = [check_blum_code_hashes_task, check_memeslab_code_hashes_task, check_tonfun_code_hashes_task]
     if str(Variable.get("DATALAKE_CONVERT_TO_PARQUET")) == 'True':
+        jetton_metadata_task = convert_table_task("jetton_metadata", partition_field='adding_date')
         extra_tasks.extend([
                     convert_table_task("account_states"),
                     convert_table_task("balances_history"),
@@ -1449,9 +1510,8 @@ def datalake_daily_sync():
                     convert_table_task("dex_trades"), 
                     convert_table_task("dex_pools"),
                     convert_table_task("jetton_events"),
-                    convert_table_task("jetton_metadata", partition_field='adding_date'),
+                    jetton_metadata_task,
                     convert_table_task("messages_with_data"),
-                    
                     convert_table_task("nft_metadata", partition_field='adding_date'),
                     convert_table_task("nft_items"),
                     convert_table_task("nft_sales"),
@@ -1459,6 +1519,7 @@ def datalake_daily_sync():
                     convert_table_task("nft_events"),
                     convert_table_task("transactions")
                     ])
+        jetton_metadata_task >> create_jetton_metadata_snapshot_task
 
     perform_last_block_check_task >> [
         convert_blocks_task,
