@@ -10,8 +10,8 @@ Currently two main destinations are supported:
 ## AWS S3 Data Lake
 
 Datalake endpoints:
-* s3://ton-blockchain-public-datalake/v1/ (eu-central-1 region) - AVRO format
 * s3://aws-public-blockchain/v1.1/ton/ (us-east-2) - Parquet format
+* s3://ton-blockchain-public-datalake/v1/ (eu-central-1 region) - AVRO format (Deprecated)
 
 All data tables are stored in separate folders and named by data type. Data is partitioned by block date. Block date
 is extracted from specific field for each data type and converted into string in __YYYYMMDD__ format for AVRO version
@@ -68,7 +68,7 @@ the data model for supported data types.
 [AVRO schema](./schemas/blocks_export.avsc)
 
 Partition field: __gen_utime__
-URL: **s3://ton-blockchain-public-datalake/v1/blocks/**
+URL: **s3://aws-public-blockchain/v1.1/ton/blocks/**
 
 Contains information about blocks (masterchain and workchains).
 
@@ -77,7 +77,7 @@ Contains information about blocks (masterchain and workchains).
 [AVRO schema](./schemas/transactions_export.avsc).
 
 Partition field: __now__
-URL: **s3://ton-blockchain-public-datalake/v1/transactions/**
+URL: **s3://aws-public-blockchain/v1.1/ton/transactions/**
 
 Additionaly we are adding account_state_code_hash_after and account_state_balance_after fields.
 
@@ -86,30 +86,19 @@ Additionaly we are adding account_state_code_hash_after and account_state_balanc
 [AVRO schema](./schemas/messages_export.avsc)
 
 Partition field: __tx_now__
-URL: **s3://ton-blockchain-public-datalake/v1/messages/**
+URL: **s3://aws-public-blockchain/v1.1/ton/messages/**
 
 Contains messages from transactions. Internal messages are included twice with different direction:
 * in - message that initiated transaction
 * out - message that was result of transaction
-
-
-## Messages with raw bodies
-
-[AVRO schema](./schemas/messages_with_data_export.avsc)
-
-Partition field: __tx_now__
-URL: **s3://ton-blockchain-public-datalake/v1/messages_with_body/**
-
-Contains the same data as ``messages`` table with two more fields:
-* body_boc - raw body of the message body
-* init_state_boc - raw init state (if present) from the message
+Includes body_boc and init_state_boc (formerly messages_with_body)
 
 ## Account states
 
 [AVRO schema](./schemas/account_states.avsc)
 
 Partition field: __timestamp__
-URL: **s3://ton-blockchain-public-datalake/v1/account_states/**
+URL: **s3://aws-public-blockchain/v1.1/ton/account_states/**
 
 Contains raw account states with raw data and code.
 
@@ -119,7 +108,7 @@ Contains raw account states with raw data and code.
 [AVRO schema](./schemas/jetton_events_export.avsc)
 
 Partition field: __utime__
-URL: **s3://ton-blockchain-public-datalake/v1/jetton_events/**
+URL: **s3://aws-public-blockchain/v1.1/ton/jetton_events/**
 
 Contains jetton events, event type is defined in ``type`` field:
 * transfer - TEP-74 transfer event
@@ -141,7 +130,7 @@ doesn't support off-chain metadata and stores only raw data the amount is stored
 [AVRO schema](./schemas/jetton_metadata.avsc)
 
 Partition field: __adding_at__
-URL: **s3://ton-blockchain-public-datalake/v1/jetton_metadata/**
+URL: **s3://aws-public-blockchain/v1.1/ton/**
 
 According to [TEP-64](https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md)
 standard Jetton metadata could be stored off-chain or on-chain (or even both). Having in mind that the data could be
@@ -183,8 +172,8 @@ Fields description:
 ``jetton_metadata`` table allows to get the full history of jetton metadata changes but for most cases it is more suitable to have
 the latest snapshot of jetton metadata. To simplify usage in this case daily snapshots with the latest metadata are created.
 
-Partition field: __snapshot_date__
-URL: **s3://ton-blockchain-public-datalake/v1/jetton_metadata_snapshots/**
+Partition field: __date__ (snapshot creation date)
+URL: **s3://aws-public-blockchain/v1.1/ton/jetton_metadata_snapshots/**
 
 This table contains the same data as ``jetton_metadata`` table but only for the latest snapshot for each jetton.
 
@@ -198,7 +187,7 @@ It is recommended to use ``jetton_metadata_latest`` view to get the latest snaps
 [AVRO schema](./schemas/dex_trades.avsc)
 
 Partition field: __event_time__
-URL: **s3://ton-blockchain-public-datalake/v1/dex_trades/**
+URL: **s3://aws-public-blockchain/v1.1/ton/dex_trades/**
 
 Contains dex and launchpad trades data. 
 
@@ -251,7 +240,7 @@ TON Aliases and wrapped TONs used by the projects:
 [AVRO schema](./schemas/dex_pools.avsc)
 
 Partition field: __last_updated__
-URL: **s3://ton-blockchain-public-datalake/v1/dex_pools/**
+URL: **s3://aws-public-blockchain/v1.1/ton/dex_pools/**
 
 Contains history of DEX pools states. Each state includes static information (jettons in the pools), slowly changing fields (fees), reserves and TVL estimated in USD and TON.
 
@@ -276,7 +265,7 @@ parsed just right now.
 [AVRO schema](./schemas/balances_history.avsc)
 
 Partition field: __timestamp__
-URL: **s3://ton-blockchain-public-datalake/v1/balances_history/**
+URL: **s3://aws-public-blockchain/v1.1/ton/balances_history/**
 
 Contains balances history for native TON balances and Jetton balances. Fields:
 * address - address of the asset owner
@@ -286,32 +275,12 @@ Contains balances history for native TON balances and Jetton balances. Fields:
 * timestamp - timestamp of the balance update
 * lt - logical time of the balance update
 
-### Balances history snapshots
-
-For convenience daily snapshots of the balances history are created. It allows to get the latest balance for each address and asset without
-full scan of the ``balances_history`` table. Partitioned by ``block_date`` field (i.e. date of the latest block in the snapshot). 
-
-URL: **s3://ton-blockchain-public-datalake/v1/balances_snapshot/**
-
-Contains the same fields as ``balances_history`` table. Note that in future old snapshots will be removed.
-To get the latest snapshot one can use the following query (to get top-100 TON holders):
-
-```sql
-with latest_balances as (
-select * from "balances_snapshot"
-where block_date = (SELECT max(block_date) FROM "balances_snapshot$partitions")
-)
-select * from latest_balances
-where asset = 'TON' order by amount desc
-limit 100
-```
-
 ## NFT items
 
 [AVRO schema](./schemas/nft_items.avsc)
 
 Partition field: __timestamp__
-URL: **s3://ton-blockchain-public-datalake/v1/nft_items/**
+URL: **s3://aws-public-blockchain/v1.1/ton/nft_items/**
 
 Contains [TEP-62](https://github.com/ton-blockchain/TEPs/blob/master/text/0062-nft-standard.md) NFT full history of NFT items states. Includes on-chain metadata.
 
@@ -330,7 +299,7 @@ Fields:
 [AVRO schema](./schemas/nft_transfers.avsc)
 
 Partition field: __tx_now__
-URL: **s3://ton-blockchain-public-datalake/v1/nft_transfers/**
+URL: **s3://aws-public-blockchain/v1.1/ton/nft_transfers/**
 
 Contains history of NFT transfers. Includes the following fields:
 * tx_hash - transaction hash
@@ -353,7 +322,7 @@ Contains history of NFT transfers. Includes the following fields:
 [AVRO schema](./schemas/nft_sales.avsc)
 
 Partition field: __timestamp__
-URL: **s3://ton-blockchain-public-datalake/v1/nft_sales/**
+URL: **s3://aws-public-blockchain/v1.1/ton/nft_sales/**
 
 Contains history of NFT sales contracts. Includes the following fields:
 * address - NFT sales contract address
@@ -380,7 +349,7 @@ Contains history of NFT sales contracts. Includes the following fields:
 [AVRO schema](./schemas/nft_metadata.avsc)
 
 Partition field: __adding_at__
-URL: **s3://ton-blockchain-public-datalake/v1/nft_metadata/**
+URL: **s3://aws-public-blockchain/v1.1/ton/nft_metadata/**
 
 This data source is quite similar to [jetton_metadata](#jetton-metadata). It contains NFT metadata for both items and collections.
 
@@ -412,7 +381,7 @@ In most cases we don't need to use the full history of NFT metadata, so we recom
 [AVRO schema](./schemas/nft_events.avsc)
 
 Partition field: __timestamp__
-URL: **s3://ton-blockchain-public-datalake/v1/nft_events/**
+URL: **s3://aws-public-blockchain/v1.1/ton/nft_events/**
 
 Comprehensive data mart build on top of ``nft_items``, ``nft_transfers``, ``messages`` and ``nft_sales`` tables. Includes
 all NFT related events including mint, transfer, sales, auctions, etc.
