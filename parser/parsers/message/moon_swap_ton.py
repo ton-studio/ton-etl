@@ -57,7 +57,9 @@ class MoonSwapTON(Parser):
             tx = db.get_transaction(obj.get('tx_hash'))
 
             swap_src_amount = int(Parser.require(in_jetton_transfer.get('amount')))
-            swap_dst_amount = int(obj.get('value') - parent_message.get('value') + obj.get('fwd_fee') + tx.get('total_fees'))
+            swap_dst_amount = int(
+                obj.get('value') - parent_message.get('value') + obj.get('fwd_fee') + tx.get('action_total_action_fees') + 7000000
+            )
             if swap_src_amount == 0 or swap_dst_amount <= 0:
                 logger.warning(f"Skipping zero/negative amount swap for Moon DEX {obj}")
                 return
