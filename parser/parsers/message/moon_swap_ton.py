@@ -17,22 +17,19 @@ class MoonSwapTON(Parser):
         'KAgWUlMoah5P5j76ubo1SBE3qsCxoPntzLj2RC3eRsQ=',
     ]
 
-    SWAP_SUCCEED_OPCODE = Parser.opcode_signed(0xcb7f38d6)  # moon_swap_succeed#cb7f38d6
-    SWAP_OPCODE = Parser.opcode_signed(0xb37a900b)  # moon_swap#b37a900b
-    NON_SWAP_OPCODES = map(
-        Parser.opcode_signed,
-        [
-            0xc47c1f57,  # swap_failed#c47c1f57
-            0x90d3b4ad,  # withdraw_liquidity_payout#90d3b4ad
-            0xff86f067,  # withdraw_liquidity_notify#ff86f067
-            0x16b463b4,  # cancel_deposit_payout#16b463b4
-            0xd53276db,  # excess#d53276db
-            0xbaaa2c1b,  # deposit_record#baaa2c1b
-            0x040beadd,  # collect_fees#040beadd
-            0x737b4eb6,  # provide_liquidity_succeed#737b4eb6
-            0x7daf7060,  # provide_liquidity_failed#7daf7060
-        ],
-    )
+    SWAP_SUCCEED_OPCODE = 0xcb7f38d6  # moon_swap_succeed#cb7f38d6
+    SWAP_OPCODE = 0xb37a900b  # moon_swap#b37a900b
+    NON_SWAP_OPCODES = [
+        0xc47c1f57,  # swap_failed#c47c1f57
+        0x90d3b4ad,  # withdraw_liquidity_payout#90d3b4ad
+        0xff86f067,  # withdraw_liquidity_notify#ff86f067
+        0x16b463b4,  # cancel_deposit_payout#16b463b4
+        0xd53276db,  # excess#d53276db
+        0xbaaa2c1b,  # deposit_record#baaa2c1b
+        0x040beadd,  # collect_fees#040beadd
+        0x737b4eb6,  # provide_liquidity_succeed#737b4eb6
+        0x7daf7060,  # provide_liquidity_failed#7daf7060
+    ]
 
     def __init__(self, update_interval=3600):
         super().__init__()
@@ -49,9 +46,9 @@ class MoonSwapTON(Parser):
 
     def predicate(self, obj) -> bool:
         return obj.get('direction') == "out" and (
-            obj.get('opcode') == self.SWAP_SUCCEED_OPCODE
+            obj.get('opcode') == Parser.opcode_signed(self.SWAP_SUCCEED_OPCODE)
             or obj.get('source') in self.pools
-            and obj.get('opcode') not in self.NON_SWAP_OPCODES
+            and obj.get('opcode') not in map(Parser.opcode_signed, self.NON_SWAP_OPCODES)
         )
 
     def validate_pool(self, db: DB, pool_state):
