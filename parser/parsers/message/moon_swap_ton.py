@@ -34,8 +34,8 @@ class MoonSwapTON(Parser):
         ],
     )
 
-    def __init__(self, emulator_path, update_interval=3600):
-        super().__init__(emulator_path)
+    def __init__(self, update_interval=3600):
+        super().__init__()
         self.last_updated = int(time.time())
         self.update_interval = update_interval
         self.pools: List[str] = []
