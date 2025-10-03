@@ -48,7 +48,6 @@ class MoonSwapTON(Parser):
         return [TOPIC_MESSAGES]
 
     def predicate(self, obj) -> bool:
-        self.update_pools()
         return obj.get('direction') == "out" and (
             obj.get('opcode') == self.SWAP_SUCCEED_OPCODE
             or obj.get('source') in self.pools
@@ -139,6 +138,8 @@ class MoonSwapTON(Parser):
             logger.info(f"Moon.cx swap parsed: {swap}")
             db.serialize(swap)
             db.discover_dex_pool(swap)
+
+            self.update_pools(db)
 
         except Exception as e:
             logger.warning(f"Failed to parse Moon.cx swap (tx_hash = {obj.get('tx_hash')}): {e} {traceback.format_exc()}")

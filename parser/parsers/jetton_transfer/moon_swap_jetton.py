@@ -14,7 +14,6 @@ class MoonSwapJetton(MoonSwapTON):
         return [TOPIC_JETTON_TRANSFERS]
 
     def predicate(self, obj) -> bool:
-        self.update_pools()
         return not obj.get('tx_aborted', True)
 
     def handle_internal(self, obj: dict, db: DB):
@@ -113,6 +112,8 @@ class MoonSwapJetton(MoonSwapTON):
             logger.info(f"Moon.cx swap parsed: {swap}")
             db.serialize(swap)
             db.discover_dex_pool(swap)
+
+            self.update_pools(db)
 
         except Exception as e:
             logger.warning(f"Failed to parse Moon.cx swap (tx_hash = {obj.get('tx_hash')}): {e} {traceback.format_exc()}")
