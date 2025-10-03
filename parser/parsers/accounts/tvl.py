@@ -158,12 +158,16 @@ class TVLPoolStateParser(EmulatorParser):
             pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
         elif pool.platform == DEX_MOON:
             asset_id1, pool.reserves_left, asset_id2, pool.reserves_right = self._execute_method(emulator, 'get_reserves', [], db, obj)
+            lp_fee, protocol_fee, ref_fee = self._execute_method(emulator, 'get_fees', [], db, obj)
             current_jetton_left = asset_id1.load_address()
             if not current_jetton_left:
                 current_jetton_left = TON
             current_jetton_right = asset_id2.load_address()
             if not current_jetton_right:
                 current_jetton_right = TON
+            pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
+            pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
+            pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
         else:
             raise Exception(f"DEX is not supported: {pool.platform}")
         

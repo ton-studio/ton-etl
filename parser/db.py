@@ -478,7 +478,15 @@ class DB():
                 output[row['pool']] = pool
             return output
         
-
+    def get_dex_pool_addresses(self, platform: str) -> List[str]:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("select pool from prices.dex_pool where platform = %s", (platform,))
+            res = cursor.fetchall()
+            if not res:
+                return []
+            return [row['pool'] for row in res]
+        
     def update_dex_pool_jettons(self, pool: DexPool):
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:

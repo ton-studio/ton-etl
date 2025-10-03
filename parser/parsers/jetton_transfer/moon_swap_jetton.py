@@ -14,21 +14,27 @@ class MoonSwapJetton(MoonSwapTON):
         return [TOPIC_JETTON_TRANSFERS]
 
     def predicate(self, obj) -> bool:
-        return not obj.get("tx_aborted", True)
-    
+        self.update_pools()
+        return not obj.get('tx_aborted', True)
+
     def handle_internal(self, obj: dict, db: DB):
         try:
             fp = Cell.one_from_boc(obj.get('forward_payload')).begin_parse()
             op_id = fp.load_uint(32)
-            if op_id != 0xcb7f38d6:  # moon_swap_succeed#cb7f38d6
+            if (
+                obj.get('source') in self.pools
+                and op_id in self.NON_SWAP_OPCODES
+                or obj.get('source') not in self.pools
+                and op_id != self.SWAP_SUCCEED_OPCODE
+            ):
                 return
         except Exception:
             return
 
         try:
-            pool_state = Parser.get_account_state_safe(Address(obj.get("source")), db)
+            pool_state = Parser.get_account_state_safe(Address(obj.get('source')), db)
             if not self.validate_pool(db, pool_state):
-                logger.warning(f"Skipping invalid Moon pool {obj.get('source')}")
+                logger.warning(f"Skipping invalid Moon.cx pool {obj.get('source')}")
                 return
 
             tx = db.get_parent_transaction(obj.get('trace_id'), obj.get('tx_hash'))
@@ -40,6 +46,10 @@ class MoonSwapJetton(MoonSwapTON):
 
                 fp = Cell.one_from_boc(in_jetton_transfer.get('forward_payload')).begin_parse()
                 op_id = fp.load_uint(32)
+                if op_id != self.SWAP_OPCODE:
+                    logger.warning(f"Skipping Moon.cx non swap tx {obj.get('tx_hash')}")
+                    return
+
                 min_out = fp.load_coins()
                 deadline = fp.load_uint(64)
                 excess = fp.load_address()
@@ -59,6 +69,10 @@ class MoonSwapJetton(MoonSwapTON):
                 recipient = parent_message.get('source')
                 body = Cell.one_from_boc(parent_message.get('body')).begin_parse()
                 op_id = body.load_uint(32)
+                if op_id != self.SWAP_OPCODE:
+                    logger.warning(f"Skipping Moon.cx non swap tx {obj.get('tx_hash')}")
+                    return
+
                 query_id = body.load_uint(64)
                 swap_src_amount = body.load_coins()
                 min_out = body.load_coins()
@@ -75,7 +89,7 @@ class MoonSwapJetton(MoonSwapTON):
 
             swap_dst_amount = decode_decimal(obj.get('amount', 0))
             if swap_src_amount == 0 or swap_dst_amount == 0:
-                logger.warning(f"Skipping zero amount swap for Moon DEX {obj}")
+                logger.warning(f"Skipping zero amount swap for Moon.cx DEX {obj}")
                 return
 
             swap = DexSwapParsed(
@@ -92,14 +106,14 @@ class MoonSwapJetton(MoonSwapTON):
                 swap_dst_amount=swap_dst_amount,
                 referral_address=referral,
                 query_id=query_id,
-                min_out=min_out
+                min_out=min_out,
             )
             estimate_volume(swap, db)
 
-            logger.info(f"Moon swap parsed: {swap}")
+            logger.info(f"Moon.cx swap parsed: {swap}")
             db.serialize(swap)
             db.discover_dex_pool(swap)
 
         except Exception as e:
-            logger.warning(f"Failed to parse Moon swap (tx_hash = {obj.get('tx_hash')}): {e} {traceback.format_exc()}")
+            logger.warning(f"Failed to parse Moon.cx swap (tx_hash = {obj.get('tx_hash')}): {e} {traceback.format_exc()}")
             return

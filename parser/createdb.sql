@@ -254,7 +254,7 @@ END $$;
 
 -- Moon DEX support
 DO $$ BEGIN
-    ALTER TYPE public.dex_name ADD VALUE 'moon' AFTER 'bidask_clmm';
+    ALTER TYPE public.dex_name ADD VALUE 'moon.cx' AFTER 'bidask_clmm';
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
