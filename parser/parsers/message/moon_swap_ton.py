@@ -69,10 +69,11 @@ class MoonSwapTON(Parser):
 
     def handle_internal(self, obj, db: DB):
         try:
-            pool_state = Parser.get_account_state_safe(Address(obj.get("source")), db)
-            if not self.validate_pool(db, pool_state):
-                logger.warning(f"Skipping invalid Moon.cx pool {obj.get('source')}")
-                return
+            if obj.get('source') not in self.pools:
+                pool_state = Parser.get_account_state_safe(Address(obj.get("source")), db)
+                if not self.validate_pool(db, pool_state):
+                    logger.warning(f"Skipping invalid Moon.cx pool {obj.get('source')}")
+                    return
 
             in_jetton_transfer = db.get_parent_jetton_transfer(
                 Parser.require(obj.get('trace_id')), Parser.require(obj.get('tx_hash'))

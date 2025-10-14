@@ -31,10 +31,11 @@ class MoonSwapJetton(MoonSwapTON):
             return
 
         try:
-            pool_state = Parser.get_account_state_safe(Address(obj.get('source')), db)
-            if not self.validate_pool(db, pool_state):
-                logger.warning(f"Skipping invalid Moon.cx pool {obj.get('source')}")
-                return
+            if obj.get('source') not in self.pools:
+                pool_state = Parser.get_account_state_safe(Address(obj.get('source')), db)
+                if not self.validate_pool(db, pool_state):
+                    logger.warning(f"Skipping invalid Moon.cx pool {obj.get('source')}")
+                    return
 
             tx = db.get_parent_transaction(obj.get('trace_id'), obj.get('tx_hash'))
             msg_hash = db.get_out_msg_hashes(tx.get('trace_id'), tx.get('hash'))[0]
