@@ -9,7 +9,7 @@ import base64
 
 class BidaskDammSwap(EmulatorParser):
     BIDASK_POOLS_CODE_HASHES = [
-        "NmoGqSrfoW/6F7dbECL+axF8psb5kNp93YEPdYfLYfg="
+        "oTI7bKi3ig68sMDj7FmV0Sk1VoCmLKLp8JMAvSoUBsY="
         ]
 
     def __init__(self, emulator_path):
