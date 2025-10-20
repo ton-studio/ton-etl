@@ -108,8 +108,8 @@ class BidaskDammSwap(EmulatorParser):
             if fp_op == 0xdd79732c: # (jetton -> ton swap)
                 input_user_address = fp_body.load_address()
                 slippage = fp_body.load_coins()
-                exact_out = fp_body.load_coins()
                 from_user_address = fp_body.load_address()
+                exact_out = fp_body.load_coins()
                 ref_cell = fp_body.load_maybe_ref()
                 if ref_cell is not None:
                     ref_addr = ref_cell.begin_parse().load_address()
