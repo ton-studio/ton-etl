@@ -478,7 +478,15 @@ class DB():
                 output[row['pool']] = pool
             return output
         
-
+    def get_dex_pool_addresses(self, platform: str) -> List[str]:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("select pool from prices.dex_pool where platform = %s", (platform,))
+            res = cursor.fetchall()
+            if not res:
+                return []
+            return [row['pool'] for row in res]
+        
     def update_dex_pool_jettons(self, pool: DexPool):
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -715,3 +723,42 @@ class DB():
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute("select * from jetton_masters jm where address = %s", (serialize_addr(address),))
             return cursor.fetchone()
+
+    def get_parent_jetton_transfer(self, trace_id=str, tx_hash=str) -> dict:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                with edges as (
+                    select * from trace_edges where trace_id = %s
+                )
+                select jt.* from edges e0
+                join edges e1 on e1.right_tx = e0.left_tx
+                join jetton_transfers jt on jt.tx_hash = e1.left_tx
+                where e0.right_tx = %s
+                """, (trace_id, tx_hash)
+            )
+            return cursor.fetchone()
+
+    def get_parent_transaction(self, trace_id=str, tx_hash=str) -> dict:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                select t.* from trace_edges te
+                join transactions t on t.hash = te.left_tx
+                where te.trace_id = %s and te.right_tx = %s
+                """, (trace_id, tx_hash)
+            )
+            return cursor.fetchone()
+
+    def get_out_msg_hashes(self, trace_id=str, tx_hash=str) -> List[str]:
+        assert self.conn is not None
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                "select msg_hash from trace_edges where trace_id = %s and left_tx = %s", (trace_id, tx_hash)
+            )
+            res = cursor.fetchall()
+            if not res:
+                return None
+            return [row['msg_hash'] for row in res]

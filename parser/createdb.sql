@@ -252,6 +252,13 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
+-- Moon DEX support
+DO $$ BEGIN
+    ALTER TYPE public.dex_name ADD VALUE 'moon.cx' AFTER 'bidask_clmm';
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 -- Staking pools
 
 CREATE TABLE IF NOT EXISTS parsed.staking_pools_nominators (
