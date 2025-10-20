@@ -3,6 +3,7 @@ from parsers.accounts.nfts_parser import NFTItemsParser, TestnetNFTItemsParser
 from parsers.accounts.staking_pools import StakingPoolsParser
 from parsers.message.tonco import TONCOSwap, TestnetTONCOSwap
 from parsers.message.bidask_swap_clmm import BidaskClmmSwap
+from parsers.message.bidask_swap_damm import BidaskDammSwap
 from parsers.jetton_transfer.megaton import MegatonDexSwap
 from parsers.message.tonfun import TonFunTrade
 from parsers.jetton_masters.jetton_metadata import JettonMastersMetadataParser, TestnetJettonMastersMetadataParser
@@ -52,6 +53,7 @@ _mainnet_parsers = [
     JettonMintParser(),
     HipoTokensMinted(),
     BidaskClmmSwap(EMULATOR_PATH),
+    BidaskDammSwap(EMULATOR_PATH),
     MoonSwapTON(),
     MoonSwapJetton(),
 
