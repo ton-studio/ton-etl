@@ -51,7 +51,7 @@ class BidaskDammSwap(EmulatorParser):
             logger.warning(f"Skipping invalid pool {obj.get('source', None)}")
             return
         
-        pool_swap = Cell.one_from_boc(db.get_parent_message_body(obj.get('msg_hash'))).begin_parse()
+        pool_swap = Cell.one_from_boc(db.get_parent_message_body(obj.get('msg_hash')))
 
         pool_emulator = self._prepare_emulator(pool_state)
         input_user_address = None
@@ -72,6 +72,7 @@ class BidaskDammSwap(EmulatorParser):
             input_amount = body.load_coins()
             input_user_address = body.load_address()
             slippage = body.load_coins()
+            from_user_address = body.load_address()
             exact_out = body.load_coins()
             ref_cell = body.load_maybe_ref()
             if ref_cell is not None:
@@ -108,6 +109,7 @@ class BidaskDammSwap(EmulatorParser):
                 input_user_address = fp_body.load_address()
                 slippage = fp_body.load_coins()
                 exact_out = fp_body.load_coins()
+                from_user_address = fp_body.load_address()
                 ref_cell = fp_body.load_maybe_ref()
                 if ref_cell is not None:
                     ref_addr = ref_cell.begin_parse().load_address()
