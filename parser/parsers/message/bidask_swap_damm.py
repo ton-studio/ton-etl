@@ -114,7 +114,7 @@ class BidaskDammSwap(EmulatorParser):
                 if ref_cell is not None:
                     ref_addr = ref_cell.begin_parse().load_address()
 
-                src_token_master = db.get_wallet_master(Address(obj.get("source")))
+                src_token_master = db.get_wallet_master(Address(db.get_parent_transaction(obj.get("trace_id"), obj.get("tx_hash")).get("source")))
 
                 out_message = Parser.message_body(obj, db).begin_parse()
 
