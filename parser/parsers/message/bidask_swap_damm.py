@@ -9,7 +9,8 @@ import base64
 
 class BidaskDammSwap(EmulatorParser):
     BIDASK_POOLS_CODE_HASHES = [
-        "oTI7bKi3ig68sMDj7FmV0Sk1VoCmLKLp8JMAvSoUBsY="
+        "oTI7bKi3ig68sMDj7FmV0Sk1VoCmLKLp8JMAvSoUBsY=",
+        "soSSUgw7A7zd0cfq4QtcxolhyDQHawC1OfoIA8w9pqw="
         ]
 
     def __init__(self, emulator_path):
@@ -114,7 +115,7 @@ class BidaskDammSwap(EmulatorParser):
                 if ref_cell is not None:
                     ref_addr = ref_cell.begin_parse().load_address()
 
-                src_token_master = db.get_wallet_master(Address(db.get_parent_transaction(obj.get("trace_id"), obj.get("tx_hash")).get("source")))
+                src_token_master = db.get_wallet_master(Address(db.get_parent_message_with_body(obj.get("msg_hash")).get("source")))
 
                 out_message = Parser.message_body(obj, db).begin_parse()
 

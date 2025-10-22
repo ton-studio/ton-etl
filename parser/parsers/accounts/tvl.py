@@ -133,7 +133,13 @@ class TVLPoolStateParser(EmulatorParser):
             pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
             pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
             ref_fee, protocol_fee = pool_fees[0], pool_fees[1]
-            j0_wallet, j1_wallet, bin_step, lp_fee = self._execute_method(emulator, 'get_pool_info', [], db, obj)
+            pool_info = self._execute_method(emulator, 'get_pool_info', [], db, obj)
+            
+            j0_wallet, j1_wallet, bin_step, lp_fee = None, None, None, None
+            if len(pool_info) == 4:
+                j0_wallet, j1_wallet, bin_step, lp_fee = pool_info
+            else:
+                j0_wallet, j1_wallet, lp_fee = pool_info
 
             # Null addr for pools with native TON and jettons without master contract.
             j0_wallet_address = j0_wallet.load_address()
