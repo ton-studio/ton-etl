@@ -3,7 +3,7 @@ from loguru import logger
 from db import DB
 from parsers.accounts.emulator import EmulatorParser
 from pytoniq_core import Cell, Address
-from model.dexswap import DEX_BIDASK_CLMM, DexSwapParsed
+from model.dexswap import DEX_BIDASK_DAMM, DexSwapParsed
 from parsers.message.swap_volume import estimate_volume
 import base64
 
@@ -22,7 +22,7 @@ class BidaskDammSwap(EmulatorParser):
 
     def predicate(self, obj) -> bool:
         # only internal messages sent to the router
-        return obj.get("opcode", None) in [Parser.opcode_signed(0xf8a7ea5), Parser.opcode_signed(0x6edd65f0), Parser.opcode_signed(0x6edd65f0), Parser.opcode_signed(0x30a3f9bc)] and \
+        return obj.get("opcode", None) in [Parser.opcode_signed(0xf8a7ea5), Parser.opcode_signed(0x6edd65f0), Parser.opcode_signed(0x30a3f9bc)] and \
             obj.get("direction", None) == "in"
     
     def validate_pool(self, db: DB, pool_state): 
@@ -191,7 +191,7 @@ class BidaskDammSwap(EmulatorParser):
                 tx_hash=Parser.require(obj.get('tx_hash', None)),
                 msg_hash=Parser.require(obj.get('msg_hash', None)),
                 trace_id=Parser.require(obj.get('trace_id', None)),
-                platform=DEX_BIDASK_CLMM,
+                platform=DEX_BIDASK_DAMM,
                 swap_utime=Parser.require(obj.get('created_at', None)),
                 swap_user=input_user_address,
                 swap_pool=Parser.require(obj.get('source', None)),

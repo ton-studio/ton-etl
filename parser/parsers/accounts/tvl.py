@@ -5,7 +5,7 @@ from loguru import logger
 from db import DB
 from pytoniq_core import Address
 from model.dexpool import DexPool
-from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE, DEX_BIDASK_CLMM, DEX_MOON
+from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE, DEX_BIDASK_CLMM, DEX_BIDASK_DAMM, DEX_MOON
 from model.dedust import read_dedust_asset
 from model.coffee import read_coffee_asset
 from parsers.message.swap_volume import estimate_tvl
@@ -42,7 +42,7 @@ class TVLPoolStateParser(EmulatorParser):
         pool = self.pools[obj['account']]
         pool.last_updated = obj['timestamp']
 
-        # total supply is required for all cases except TONCO
+        # total supply is required for all cases except TONCO, Bidask DLMM
         if pool.platform not in [DEX_TONCO, DEX_BIDASK_CLMM]:
             try:
                 pool.total_supply, _, _, _, _= self._execute_method(emulator, 'get_jetton_data', [], db, obj)
@@ -132,15 +132,14 @@ class TVLPoolStateParser(EmulatorParser):
         elif pool.platform == DEX_BIDASK_CLMM:
             pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
             pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
-            ref_fee, protocol_fee = pool_fees[0], pool_fees[1]
+            ref_fee, protocol_fee_reduction_factor = pool_fees[0], pool_fees[1]
             pool_info = self._execute_method(emulator, 'get_pool_info', [], db, obj)
             
-            j0_wallet, j1_wallet, bin_step, lp_fee = None, None, None, None
-            if len(pool_info) == 4:
-                j0_wallet, j1_wallet, bin_step, lp_fee = pool_info
-            else:
-                j0_wallet, j1_wallet, lp_fee = pool_info
+            j0_wallet, j1_wallet, bin_step, base_fee = pool_info
 
+            lp_fee = base_fee
+
+            protocol_fee = lp_fee / protocol_fee_reduction_factor
             # Null addr for pools with native TON and jettons without master contract.
             j0_wallet_address = j0_wallet.load_address()
             if j0_wallet_address == TON:
@@ -156,6 +155,37 @@ class TVLPoolStateParser(EmulatorParser):
                 
             # total supply is not applicable for Bidask CLMM
             pool.total_supply = None
+            current_jetton_left = j0_master
+            current_jetton_right = j1_master
+            
+            pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
+            pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
+            pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
+        elif pool.platform == DEX_BIDASK_DAMM:
+            pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
+            pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
+            dynamic_fee, dynamic_fee_factor, previous_time, time_filter, time_decay, protocol_fee_reduction_factor = pool_fees[0], pool_fees[1], pool_fees[2], pool_fees[3], pool_fees[4], pool_fees[5]
+            pool_info = self._execute_method(emulator, 'get_pool_info', [], db, obj)
+            
+            j0_wallet, j1_wallet, base_fee = pool_info
+
+            current_dynamic_fee = self._execute_method(emulator, 'get_dynamic_fee_by_timestamp', [int(time.time())], db, obj)
+            lp_fee = current_dynamic_fee
+            protocol_fee = lp_fee / protocol_fee_reduction_factor
+            # Null addr for pools with native TON and jettons without master contract.
+            j0_wallet_address = j0_wallet.load_address()
+            if j0_wallet_address == TON:
+                j0_master = TON
+            else:
+                j0_master = Address(db.get_wallet_master(j0_wallet_address))
+
+            j1_wallet_address = j1_wallet.load_address()
+            if j1_wallet_address == TON:
+                j1_master = TON
+            else:
+                j1_master = Address(db.get_wallet_master(j1_wallet_address))
+                
+            # total supply is not applicable for Bidask CLMM
             current_jetton_left = j0_master
             current_jetton_right = j1_master
             

@@ -222,7 +222,7 @@ Supported projects:
 | dex | [megaton.fi](https://megaton.fi/) | Decentralized exchange with AMM pools | router_address |
 | dex | [tonco](https://app.tonco.io/) | Decentralized exchange with CLMM AMM pools | router_address, query_id |
 | dex | [coffee](https://swap.coffee/dex) | Decentralized exchange with AMM pools | referral_address, query_id |
-| dex | [bidask_clmm](https://bidask.finance/en/app) | Decentralized exchange with CLMM AMM pools | referral_address, query_id |
+| dex | [bidask_clmm,bidask_damm](https://bidask.finance/en/app) | Decentralized exchange with CLMM, DLMM, DAMM pools | referral_address, query_id |
 | dex | [moon.cx](https://moon.cx/) | Decentralized exchange with AMM pools | referral_address, query_id |
 | launchpad | [ton.fun](https://tonfun-1.gitbook.io/tonfun) | Launchpad SDK adopted by multiple projects ([Blum](https://blum.io/), [BigPump](https://docs.pocketfi.org/features/big.pump), etc) | referral_address, platform_tag |
 | launchpad | [gaspump](https://gaspump.tg/) | Bonding curve launchpad for memecoins ([docs](https://github.com/gas111-bot/gaspump-sdk)) | - |
