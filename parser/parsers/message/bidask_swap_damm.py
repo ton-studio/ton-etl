@@ -155,6 +155,7 @@ class BidaskDammSwap(EmulatorParser):
 
             if op == 0x30a3f9bc: # cpmm:trade_account:deposit
                 query_id = out_message.load_uint(64)
+                _, _ = out_message.load_maybe_ref(), out_message.load_maybe_ref()
                 amount_x = out_message.load_coins()
                 amount_y = out_message.load_coins()
             else:
