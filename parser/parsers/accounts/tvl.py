@@ -170,7 +170,7 @@ class TVLPoolStateParser(EmulatorParser):
             j0_wallet, j1_wallet, base_fee = pool_info
 
             current_dynamic_fee = self._execute_method(emulator, 'get_dynamic_fee_by_timestamp', [obj['timestamp']], db, obj)
-            lp_fee = current_dynamic_fee
+            lp_fee = current_dynamic_fee[0]
             protocol_fee = lp_fee / protocol_fee_reduction_factor
             # Null addr for pools with native TON and jettons without master contract.
             j0_wallet_address = j0_wallet.load_address()
