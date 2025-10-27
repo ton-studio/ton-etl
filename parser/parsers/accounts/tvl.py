@@ -132,7 +132,7 @@ class TVLPoolStateParser(EmulatorParser):
         elif pool.platform == DEX_BIDASK_CLMM:
             pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
             pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
-            ref_fee, protocol_fee_reduction_factor = pool_fees[0], pool_fees[1]
+            ref_fee, protocol_fee_reduction_factor = pool_fees
             pool_info = self._execute_method(emulator, 'get_pool_info', [], db, obj)
             
             j0_wallet, j1_wallet, bin_step, base_fee = pool_info
@@ -164,7 +164,7 @@ class TVLPoolStateParser(EmulatorParser):
         elif pool.platform == DEX_BIDASK_DAMM:
             pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
             pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
-            dynamic_fee, dynamic_fee_factor, previous_time, time_filter, time_decay, protocol_fee_reduction_factor = pool_fees[0], pool_fees[1], pool_fees[2], pool_fees[3], pool_fees[4], pool_fees[5]
+            dynamic_fee, dynamic_fee_factor, previous_time, time_filter, time_decay, protocol_fee_reduction_factor = pool_fees
             pool_info = self._execute_method(emulator, 'get_pool_info', [], db, obj)
             
             j0_wallet, j1_wallet, base_fee = pool_info
@@ -191,7 +191,7 @@ class TVLPoolStateParser(EmulatorParser):
             
             pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
             pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
-            pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
+            pool.referral_fee = None
         elif pool.platform == DEX_MOON:
             asset_id1, pool.reserves_left, asset_id2, pool.reserves_right = self._execute_method(emulator, 'get_reserves', [], db, obj)
             lp_fee, protocol_fee, ref_fee = self._execute_method(emulator, 'get_fees', [], db, obj)
