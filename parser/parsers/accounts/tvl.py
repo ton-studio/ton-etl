@@ -132,14 +132,20 @@ class TVLPoolStateParser(EmulatorParser):
         elif pool.platform == DEX_BIDASK_CLMM:
             pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
             pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
-            ref_fee, protocol_fee_reduction_factor = pool_fees
             pool_info = self._execute_method(emulator, 'get_pool_info', [], db, obj)
             
             j0_wallet, j1_wallet, bin_step, base_fee = pool_info
 
             lp_fee = base_fee
 
-            protocol_fee = lp_fee / protocol_fee_reduction_factor
+            if len(pool_fees) == 2:
+                ref_fee, protocol_fee_reduction_factor = pool_fees
+                protocol_fee = lp_fee / protocol_fee_reduction_factor
+            elif len(pool_fees) == 3:
+                ref_fee, protocol_fee, _ = pool_fees
+            else:
+                ref_fee, protocol_fee = 0, 0
+            
             # Null addr for pools with native TON and jettons without master contract.
             j0_wallet_address = j0_wallet.load_address()
             if j0_wallet_address == TON:
