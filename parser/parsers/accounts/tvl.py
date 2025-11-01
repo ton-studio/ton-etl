@@ -5,7 +5,7 @@ from loguru import logger
 from db import DB
 from pytoniq_core import Address
 from model.dexpool import DexPool
-from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE, DEX_BIDASK_CLMM, DEX_MOON
+from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE, DEX_BIDASK_CLMM, DEX_BIDASK_DAMM, DEX_MOON
 from model.dedust import read_dedust_asset
 from model.coffee import read_coffee_asset
 from parsers.message.swap_volume import estimate_tvl
@@ -42,7 +42,7 @@ class TVLPoolStateParser(EmulatorParser):
         pool = self.pools[obj['account']]
         pool.last_updated = obj['timestamp']
 
-        # total supply is required for all cases except TONCO
+        # total supply is required for all cases except TONCO, Bidask DLMM
         if pool.platform not in [DEX_TONCO, DEX_BIDASK_CLMM]:
             try:
                 pool.total_supply, _, _, _, _= self._execute_method(emulator, 'get_jetton_data', [], db, obj)
@@ -132,9 +132,20 @@ class TVLPoolStateParser(EmulatorParser):
         elif pool.platform == DEX_BIDASK_CLMM:
             pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
             pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
-            ref_fee, protocol_fee = pool_fees[0], pool_fees[1]
-            j0_wallet, j1_wallet, bin_step, lp_fee = self._execute_method(emulator, 'get_pool_info', [], db, obj)
+            pool_info = self._execute_method(emulator, 'get_pool_info', [], db, obj)
+            
+            j0_wallet, j1_wallet, bin_step, base_fee = pool_info
 
+            lp_fee = base_fee
+
+            if len(pool_fees) == 2:
+                ref_fee, protocol_fee_reduction_factor = pool_fees
+                protocol_fee = lp_fee / protocol_fee_reduction_factor
+            elif len(pool_fees) == 3:
+                ref_fee, protocol_fee, _ = pool_fees
+            else:
+                ref_fee, protocol_fee = 0, 0
+            
             # Null addr for pools with native TON and jettons without master contract.
             j0_wallet_address = j0_wallet.load_address()
             if j0_wallet_address == TON:
@@ -156,6 +167,37 @@ class TVLPoolStateParser(EmulatorParser):
             pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
             pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
             pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
+        elif pool.platform == DEX_BIDASK_DAMM:
+            pool.reserves_left, pool.reserves_right = self._execute_method(emulator, 'get_tvl', [], db, obj)
+            pool_fees = self._execute_method(emulator, 'get_fees_info', [], db, obj)
+            dynamic_fee, dynamic_fee_factor, previous_time, time_filter, time_decay, protocol_fee_reduction_factor = pool_fees
+            pool_info = self._execute_method(emulator, 'get_pool_info', [], db, obj)
+            
+            j0_wallet, j1_wallet, base_fee = pool_info
+
+            current_dynamic_fee = self._execute_method(emulator, 'get_dynamic_fee_by_timestamp', [obj['timestamp']], db, obj)
+            lp_fee = current_dynamic_fee[0]
+            protocol_fee = lp_fee / protocol_fee_reduction_factor
+            # Null addr for pools with native TON and jettons without master contract.
+            j0_wallet_address = j0_wallet.load_address()
+            if j0_wallet_address == TON:
+                j0_master = TON
+            else:
+                j0_master = Address(db.get_wallet_master(j0_wallet_address))
+
+            j1_wallet_address = j1_wallet.load_address()
+            if j1_wallet_address == TON:
+                j1_master = TON
+            else:
+                j1_master = Address(db.get_wallet_master(j1_wallet_address))
+                
+            # total supply is not applicable for Bidask CLMM
+            current_jetton_left = j0_master
+            current_jetton_right = j1_master
+            
+            pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
+            pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
+            pool.referral_fee = None
         elif pool.platform == DEX_MOON:
             asset_id1, pool.reserves_left, asset_id2, pool.reserves_right = self._execute_method(emulator, 'get_reserves', [], db, obj)
             lp_fee, protocol_fee, ref_fee = self._execute_method(emulator, 'get_fees', [], db, obj)
