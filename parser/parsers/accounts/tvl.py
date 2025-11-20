@@ -11,6 +11,7 @@ from model.coffee import read_coffee_asset
 from parsers.message.swap_volume import estimate_tvl
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 from parsers.accounts.emulator import EmulatorException, EmulatorParser
+import tracemalloc
 
 
 TON = Address("EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c")
@@ -26,6 +27,8 @@ class TVLPoolStateParser(EmulatorParser):
         # update intervals for pools
         self.update_interval = update_interval
         self.pools: Dict[str, DexPool] = {}
+        tracemalloc.start()
+        self.snapshots = []
 
     def prepare(self, db: DB):
         super().prepare(db)
@@ -228,3 +231,11 @@ class TVLPoolStateParser(EmulatorParser):
             self.pools = db.get_all_dex_pools()
             logger.info(f"Found {len(self.pools) - prev_len} new dex pools to handle")
             self.last_updated = int(time.time())
+
+            self.snapshots.append(tracemalloc.take_snapshot())
+            if len(self.snapshots) > 1:
+                snap1 = self.snapshots[-2]
+                snap2 = self.snapshots[-1]
+                stats = snap2.compare_to(snap1, 'lineno')
+                for stat in stats[:10]:
+                    logger.warning(f"Memory alloc: {stat}")
