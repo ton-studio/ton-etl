@@ -21,14 +21,13 @@ Listens to updates on DEX pools, exrtacts reserves and total_supply
 and estimates TVL.
 """
 class TVLPoolStateParser(EmulatorParser):
-    def __init__(self, emulator_path, update_interval=3600):
+    def __init__(self, emulator_path, update_interval=360):
         super().__init__(emulator_path)
         self.last_updated = int(time.time())
         # update intervals for pools
         self.update_interval = update_interval
         self.pools: Dict[str, DexPool] = {}
         tracemalloc.start()
-        self.snapshots = []
 
     def prepare(self, db: DB):
         super().prepare(db)
@@ -232,10 +231,7 @@ class TVLPoolStateParser(EmulatorParser):
             logger.info(f"Found {len(self.pools) - prev_len} new dex pools to handle")
             self.last_updated = int(time.time())
 
-            self.snapshots.append(tracemalloc.take_snapshot())
-            if len(self.snapshots) > 1:
-                snap1 = self.snapshots[-2]
-                snap2 = self.snapshots[-1]
-                stats = snap2.compare_to(snap1, 'lineno')
-                for stat in stats[:10]:
-                    logger.warning(f"Memory alloc: {stat}")
+            snapshot = tracemalloc.take_snapshot()
+            top_stats = snapshot.statistics('lineno')
+            for stat in top_stats[:10]:
+                logger.warning(f"Memory alloc: {stat}")
