@@ -5,6 +5,7 @@ import os
 import base64
 import asyncio
 import json
+import gc
 from loguru import logger
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 from pytvm.engine import EmulatorEngineC
@@ -72,11 +73,11 @@ CREATE TABLE parsed.mc_libraries (
 
 """
 class EmulatorParser(Parser):
-    def __init__(self, emulator_path):
-        if emulator_path is not None:
-            self.engine = EmulatorEngineC(emulator_path)
-            self.engine.emulator_set_verbosity_level(0)
-            logger.info(f"Emulator initialized {emulator_path}!")
+    def __init__(self, emulator_path, engine_reset_interval = None):
+        self.emulator_path = emulator_path
+        self.engine_reset_interval = engine_reset_interval
+        self.last_engine_reset = time.time()
+        self.engine = self._create_engine()
         self.libs = None
 
     def topics(self):
@@ -120,7 +121,7 @@ class EmulatorParser(Parser):
 
     def _prepare_emulator(self, obj):
         assert self.libs is not None, "libs are not inited"
-        emulator = TvmEmulator(obj.get('code_boc').encode("utf-8"), obj.get('data_boc').encode("utf-8"), verbosity_level=0, engine=self.engine)
+        emulator = TvmEmulator(obj.get('code_boc').encode("utf-8"), obj.get('data_boc').encode("utf-8"), verbosity_level=0, engine=self._get_engine())
         emulator.set_c7(address=obj.get('account'),
                         unixtime=int(time.time()),
                         balance=10, 
@@ -157,3 +158,26 @@ class EmulatorParser(Parser):
     # Actual implementation
     def _do_parse(self, obj, db: DB, emulator: TvmEmulator):
         raise Exception("Not implemented")
+
+    def _destroy_engine(self):
+        try:
+            del self.engine
+        except Exception:
+            pass
+        finally:
+            gc.collect()
+
+    def _create_engine(self):
+        if self.emulator_path is not None:
+            engine = EmulatorEngineC(self.emulator_path)
+            engine.emulator_set_verbosity_level(0)
+            logger.info(f"Emulator initialized {self.emulator_path}")
+            return engine
+
+    def _get_engine(self):
+        if self.engine_reset_interval and time.time() - self.last_engine_reset > self.engine_reset_interval:
+            logger.info("Recreating emulator engine to prevent memory leaks...")
+            self._destroy_engine()
+            self.engine = self._create_engine()
+            self.last_engine_reset = time.time()
+        return self.engine

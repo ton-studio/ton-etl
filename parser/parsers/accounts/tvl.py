@@ -20,8 +20,8 @@ Listens to updates on DEX pools, exrtacts reserves and total_supply
 and estimates TVL.
 """
 class TVLPoolStateParser(EmulatorParser):
-    def __init__(self, emulator_path, update_interval=3600):
-        super().__init__(emulator_path)
+    def __init__(self, emulator_path, update_interval=3600, engine_reset_interval=3600):
+        super().__init__(emulator_path, engine_reset_interval)
         self.last_updated = int(time.time())
         # update intervals for pools
         self.update_interval = update_interval

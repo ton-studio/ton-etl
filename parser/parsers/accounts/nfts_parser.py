@@ -29,8 +29,8 @@ class NFTItemsParser(EmulatorParser):
         'MNzX1bb89ZaMJ5Hh4xrXMvJnLymG4daXDrA8yiLSMlE=',  # Telegram gifts
     ]
 
-    def __init__(self, emulator_path):
-        super().__init__(emulator_path)
+    def __init__(self, emulator_path, engine_reset_interval=3600):
+        super().__init__(emulator_path, engine_reset_interval)
         self.code_hash_blacklist = set()
         self.collections_emulators = {}
 
