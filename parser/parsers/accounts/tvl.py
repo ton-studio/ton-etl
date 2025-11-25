@@ -225,6 +225,10 @@ class TVLPoolStateParser(EmulatorParser):
         if int(time.time()) > self.last_updated + self.update_interval:
             logger.info("Updating dex pools")
             prev_len = len(self.pools)
+            self.pools.clear()
+            del self.pools
+            import gc
+            gc.collect()
             self.pools = db.get_all_dex_pools()
             logger.info(f"Found {len(self.pools) - prev_len} new dex pools to handle")
             self.last_updated = int(time.time())
