@@ -108,8 +108,18 @@ class EmulatorParser(Parser):
         return obj.get("data_boc", None) is not None and obj.get("code_boc", None) is not None
     
     def handle_internal(self, obj, db: DB):
-        emulator = self._prepare_emulator(obj)
-        self._do_parse(obj, db, emulator)
+        emulator = None
+        try:
+            emulator = self._prepare_emulator(obj)
+            self._do_parse(obj, db, emulator)
+        finally:
+            if emulator is not None:
+                try:
+                    del emulator
+                except Exception:
+                    pass
+                import gc
+                gc.collect()
 
     async def get_lib(self, lib_hash):
         client = create_lite_client()
