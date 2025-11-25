@@ -5,6 +5,7 @@ import os
 import base64
 import asyncio
 import json
+import copy
 from loguru import logger
 from pytvm.tvm_emulator.tvm_emulator import TvmEmulator
 from pytvm.engine import EmulatorEngineC
@@ -162,7 +163,7 @@ class EmulatorParser(Parser):
         if result['vm_exit_code'] != 0:
             raise EmulatorException(f"Method {method} execution failed with wrong exit code {result['vm_exit_code']}: {result}", result)
         # logger.info(f"Method {method} execution result: {result}")
-        return result['stack']
+        return copy.deepcopy(result['stack'])
 
     # Actual implementation
     def _do_parse(self, obj, db: DB, emulator: TvmEmulator):
