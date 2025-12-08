@@ -107,7 +107,7 @@ class StonfiSwapV2(Parser):
             logger.info(f"{owner} {exit_code} {fwd_ton_amount} {amount0_out} {token0_address} {amount1_out} {token1_address}")
 
         except Exception as e:
-            logger.error(f"Can't parse message for {obj.get('tx_hash', None)}: {e}")
+            logger.error(f"Can't parse message for tx_hash = {obj.get('tx_hash', None)}: {e}")
             return
 
         tx = Parser.require(db.is_tx_successful(Parser.require(obj.get('tx_hash', None))))
