@@ -83,28 +83,32 @@ class StonfiSwapV2(Parser):
     
 
     def handle_internal(self, obj, db: DB):
-        cell = Parser.message_body(obj, db).begin_parse()
-        cell.load_uint(32) # 0x657b54f5
-        query_id = cell.load_uint(64)
-        owner = cell.load_address()
-        excesses_address = cell.load_address()
-        excesses_address_2 = cell.load_address()
-        exit_code = cell.load_uint(32)
+        try:
+            cell = Parser.message_body(obj, db).begin_parse()
+            cell.load_uint(32) # 0x657b54f5
+            query_id = cell.load_uint(64)
+            owner = cell.load_address()
+            excesses_address = cell.load_address()
+            excesses_address_2 = cell.load_address()
+            exit_code = cell.load_uint(32)
 
-        if exit_code != 0xc64370e5: # swap_ok
-            logger.debug(f"Message is not a payment to user, exit code {exit_code}")
+            if exit_code != 0xc64370e5: # swap_ok
+                logger.debug(f"Message is not a payment to user, exit code {exit_code}")
+                return
+
+            custom_payload = cell.load_maybe_ref()
+        
+            additional_info = cell.load_ref().begin_parse()
+            fwd_ton_amount = additional_info.load_coins()
+            amount0_out = additional_info.load_coins()
+            token0_address = additional_info.load_address()
+            amount1_out = additional_info.load_coins()
+            token1_address = additional_info.load_address()
+            logger.info(f"{owner} {exit_code} {fwd_ton_amount} {amount0_out} {token0_address} {amount1_out} {token1_address}")
+
+        except Exception as e:
+            logger.error(f"Can't parse message for tx_hash = {obj.get('tx_hash', None)}: {e}")
             return
-
-        custom_payload = cell.load_maybe_ref()
-    
-        additional_info = cell.load_ref().begin_parse()
-        fwd_ton_amount = additional_info.load_coins()
-        amount0_out = additional_info.load_coins()
-        token0_address = additional_info.load_address()
-        amount1_out = additional_info.load_coins()
-        token1_address = additional_info.load_address()
-        logger.info(f"{owner} {exit_code} {fwd_ton_amount} {amount0_out} {token0_address} {amount1_out} {token1_address}")
-
 
         tx = Parser.require(db.is_tx_successful(Parser.require(obj.get('tx_hash', None))))
         if not tx:
