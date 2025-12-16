@@ -3,5 +3,5 @@
 	url = https://github.com/ton-blockchain/ton.git
 [submodule "indexer/ton-index-worker"]
 	path = indexer/ton-index-worker
-	url = https://github.com/shuva10v/ton-index-worker.git
-	branch = datalake
+	url = https://github.com/ton-studio/ton-index-worker.git
+	branch = main
