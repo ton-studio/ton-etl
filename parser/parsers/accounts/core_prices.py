@@ -146,7 +146,9 @@ class CorePricesStormTrade(CorePrices, EmulatorParser):
         return EmulatorParser.predicate(self, obj) and CorePrices.predicate(self, obj)
 
     def _do_parse(self, obj, db: DB, emulator: TvmEmulator): 
-        _, _, lp_total_supply, free_balance, _, _, _, _ = self._execute_method(emulator, 'get_vault_data', [], db, obj)
+        result = self._execute_method(emulator, 'get_vault_data', [], db, obj)
+        lp_total_supply = result[2]
+        free_balance = result[3]
         
         if lp_total_supply > 0:
             self.update_price(1.0 * free_balance / lp_total_supply, obj, db)
