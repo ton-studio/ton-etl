@@ -190,6 +190,32 @@ ALTER TABLE parsed.memeslab_trade_event DROP CONSTRAINT memeslab_trade_event_pke
 ALTER TABLE parsed.memeslab_trade_event ADD PRIMARY KEY (tx_hash, event_type);
 COMMIT;
 
+-- Uranus memepad
+CREATE TABLE IF NOT EXISTS parsed.uranus_trade (
+    tx_hash bpchar(44) NULL,
+    trace_id bpchar(44) NULL,
+    msg_hash bpchar(44) NULL,
+    event_time int4 NULL,
+    meme_master varchar NULL,
+    event_type varchar NULL,
+    trader_address varchar NULL,
+    amount_in numeric NULL,
+    amount_out numeric NULL,
+    creator_fee numeric NULL,
+    protocol_fee numeric NULL,
+    partner_fee numeric NULL,
+    referrer_fee numeric NULL,
+    current_supply numeric NULL,
+    raised_funds numeric NULL,
+    is_graduated bool NULL,
+    volume_usd numeric NULL,
+    created timestamp NULL,
+    updated timestamp NULL
+);
+BEGIN;
+ALTER TABLE parsed.uranus_trade ADD PRIMARY KEY (tx_hash, event_type);
+COMMIT;
+
 
 -- Adding usd volume for memepads
 ALTER TABLE parsed.gaspump_trade ADD column if not exists "volume_usd" numeric NULL;
@@ -262,6 +288,13 @@ END $$;
 -- Bidask DAMM DEX support
 DO $$ BEGIN
     ALTER TYPE public.dex_name ADD VALUE 'bidask_damm' AFTER 'moon.cx';
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- CPMM v3 DEX support
+DO $$ BEGIN
+    ALTER TYPE public.dex_name ADD VALUE 'cpmm_pool_v3' AFTER 'bidask_damm';
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
