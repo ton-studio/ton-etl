@@ -98,9 +98,7 @@ class UranusTrade(Parser):
             is_graduated = None
             if is_buy_event:
                 is_graduated = cell.load_bit()
-                if is_graduated and not self._is_first_graduation(
-                    db, meme_master_raw
-                ):
+                if is_graduated and not self._is_first_graduation(meme_master_raw):
                     is_graduated = False
 
             ton_price = db.get_core_price(USDT, created_at)
@@ -142,29 +140,9 @@ class UranusTrade(Parser):
                 f"Failed to parse uranus trade event: {e} {traceback.format_exc()}"
             ) from e
 
-    def _is_first_graduation(self, db: DB, meme_master_raw: str) -> bool:
+    def _is_first_graduation(self, meme_master_raw: str) -> bool:
         if meme_master_raw in self._graduated_seen:
             return False
-
-        conn = getattr(db, "conn", None)
-        if conn is not None:
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        """
-                        select 1 from parsed.uranus_trade
-                        where meme_master = %s and is_graduated = true
-                        limit 1
-                        """,
-                        (meme_master_raw,),
-                    )
-                    if cursor.fetchone():
-                        self._graduated_seen.add(meme_master_raw)
-                        return False
-            except Exception as exc:
-                logger.warning(
-                    f"Failed to check uranus graduation for {meme_master_raw}: {exc}"
-                )
 
         self._graduated_seen.add(meme_master_raw)
         return True

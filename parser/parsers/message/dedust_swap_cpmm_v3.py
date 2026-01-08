@@ -3,17 +3,19 @@ from typing import Optional
 
 from db import DB
 from loguru import logger
-from model.dexswap import DEX_CPMM_POOL_V3, DexSwapParsed
+from model.dexswap import DEX_DEDUST_CPMM_V3, DexSwapParsed
 from model.parser import TOPIC_MESSAGES, Parser
 from parsers.accounts.emulator import EmulatorParser
 from parsers.message.swap_volume import estimate_volume
 from pytoniq_core import Address, Cell
 
-ZERO_ADDR = "0:0000000000000000000000000000000000000000000000000000000000000000"
+TON_NATIVE_ADDRESS = (
+    "0:0000000000000000000000000000000000000000000000000000000000000000"
+)
 
 
 def _addr_or_zero(addr: Optional[Address]) -> str:
-    return addr.to_str(is_user_friendly=False).upper() if addr else ZERO_ADDR
+    return addr.to_str(is_user_friendly=False).upper() if addr else TON_NATIVE_ADDRESS
 
 class CPMMV3Swap(EmulatorParser):
     """Parses swaps emitted by CPMM v3 pools (default & uranus-linked)."""
@@ -135,7 +137,7 @@ class CPMMV3Swap(EmulatorParser):
             tx_hash=tx_hash,
             msg_hash=Parser.require(obj.get("msg_hash")),
             trace_id=Parser.require(obj.get("trace_id")),
-            platform=DEX_CPMM_POOL_V3,
+            platform=DEX_DEDUST_CPMM_V3,
             swap_utime=Parser.require(obj.get("created_at")),
             swap_user=initiator.to_str(is_user_friendly=False).upper()
             if initiator
