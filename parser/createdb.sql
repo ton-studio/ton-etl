@@ -294,7 +294,7 @@ END $$;
 
 -- CPMM v3 DEX support
 DO $$ BEGIN
-    ALTER TYPE public.dex_name ADD VALUE 'cpmm_pool_v3' AFTER 'bidask_damm';
+    ALTER TYPE public.dex_name ADD VALUE 'cpmm_pool_v3' AFTER 'dedust';
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
