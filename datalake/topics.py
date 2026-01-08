@@ -18,6 +18,7 @@ TOPIC_DEX_SWAPS = "ton.parsed.dex_swap_parsed"
 TOPIC_GASPUMP_EVENTS = "ton.parsed.gaspump_trade"
 TOPIC_TONFUN = "ton.parsed.tonfun_bcl_trade"
 TOPIC_MEMESLAB = "ton.parsed.memeslab_trade_event"
+TOPIC_URANUS = "ton.parsed.uranus_trade"
 
 TOPIC_DEX_POOLS = "ton.prices.dex_pool"
 TOPIC_EXTRA_NFT_SALES = "ton.parsed.extra_nft_sales"

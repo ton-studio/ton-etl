@@ -2,7 +2,13 @@ import base64
 from dataclasses import dataclass, asdict
 import decimal
 from typing import List
-from topics import TOPIC_DEX_SWAPS, TOPIC_GASPUMP_EVENTS, TOPIC_TONFUN, TOPIC_MEMESLAB
+from topics import (
+    TOPIC_DEX_SWAPS,
+    TOPIC_GASPUMP_EVENTS,
+    TOPIC_TONFUN,
+    TOPIC_MEMESLAB,
+    TOPIC_URANUS,
+)
 from loguru import logger
 from converters.converter import Converter
 
@@ -16,6 +22,7 @@ PLATFORM_TYPE_LAUNCHPAD = "launchpad"
 PROJECT_TONFUN = "ton.fun"
 PROJECT_GASPUMP = "gaspump"
 PROJECT_MEMESLAB = "memeslab"
+PROJECT_URANUS = "uranus"
 
 EVENT_TYPE_TRADE = "trade"
 EVENT_TYPE_LAUNCH = "launch" # launch from bonding curve
@@ -66,7 +73,13 @@ class DexTradesConverter(Converter):
             return obj['event_time']
         
     def topics(self) -> List[str]:
-        return [TOPIC_DEX_SWAPS, TOPIC_GASPUMP_EVENTS, TOPIC_TONFUN, TOPIC_MEMESLAB]
+        return [
+            TOPIC_DEX_SWAPS,
+            TOPIC_GASPUMP_EVENTS,
+            TOPIC_TONFUN,
+            TOPIC_MEMESLAB,
+            TOPIC_URANUS,
+        ]
 
     def convert(self, obj, table_name=None):
         trades = []
@@ -211,6 +224,47 @@ class DexTradesConverter(Converter):
                     volume_ton=int(self.decode_numeric(obj['ton_amount'])) / 1e9,
                     volume_usd=self.decode_numeric(obj['volume_usd']),
                 ))
+        elif table_name == "uranus_trade":
+            # Uranus memepad trades
+            is_buy = obj['event_type'] == 'BuyEvent'
+            ton_amount_raw = obj['amount_in'] if is_buy else obj['amount_out']
+            common = {
+                'tx_hash': obj['tx_hash'],
+                'trace_id': obj['trace_id'],
+                'project_type': PLATFORM_TYPE_LAUNCHPAD,
+                'project': PROJECT_URANUS,
+                'version': 1,
+                'event_time': obj['event_time'],
+                'pool_address': obj['meme_master'],
+                'router_address': None,
+                'query_id': None,
+                'referral_address': None,
+                'platform_tag': None,
+            }
+            trades.append(Trade(
+                **common,
+                event_type=EVENT_TYPE_TRADE,
+                trader_address=obj['trader_address'],
+                token_sold_address=TON_NATIVE_ADDRESS if is_buy else obj['meme_master'],
+                token_bought_address=obj['meme_master'] if is_buy else TON_NATIVE_ADDRESS,
+                amount_sold_raw=self.decode_numeric(obj['amount_in'] if is_buy else obj['amount_out']),
+                amount_bought_raw=self.decode_numeric(obj['amount_out'] if is_buy else obj['amount_in']),
+                volume_ton=int(self.decode_numeric(ton_amount_raw)) / 1e9,
+                volume_usd=self.decode_numeric(obj['volume_usd']),
+            ))
+            if is_buy:
+                if obj.get('is_graduated') is True:
+                    trades.append(Trade(
+                        **common,
+                        event_type=EVENT_TYPE_LAUNCH,
+                        trader_address=None,
+                        token_sold_address=None,
+                        token_bought_address=None,
+                        amount_sold_raw=None,
+                        amount_bought_raw=None,
+                        volume_ton=None,
+                        volume_usd=None,
+                    ))
 
         for trade in trades:
             if trade.volume_ton is not None:
