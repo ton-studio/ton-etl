@@ -210,11 +210,9 @@ CREATE TABLE IF NOT EXISTS parsed.uranus_trade (
     is_graduated bool NULL,
     volume_usd numeric NULL,
     created timestamp NULL,
-    updated timestamp NULL
+    updated timestamp NULL,
+    CONSTRAINT uranus_trade_pkey PRIMARY KEY (tx_hash, event_type)
 );
-BEGIN;
-ALTER TABLE parsed.uranus_trade ADD PRIMARY KEY (tx_hash, event_type);
-COMMIT;
 
 
 -- Adding usd volume for memepads
