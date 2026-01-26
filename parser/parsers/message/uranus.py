@@ -97,7 +97,7 @@ class UranusTrade(Parser):
 
             is_graduated = None
             if is_buy_event:
-                is_graduated = cell.load_bit()
+                is_graduated = bool(cell.load_bit())
                 if is_graduated and not self._is_first_graduation(meme_master_raw):
                     is_graduated = False
 
