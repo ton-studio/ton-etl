@@ -35,6 +35,7 @@ DEX_COFFEE = "coffee"
 DEX_BIDASK_CLMM = "bidask_clmm"
 DEX_BIDASK_DAMM = "bidask_damm"
 DEX_MOON = "moon.cx"
+DEX_DEDUST_CPMM_V3 = "cpmm_pool_v3"
 
 @dataclass
 class DexSwapParsed:

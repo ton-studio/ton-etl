@@ -5,7 +5,7 @@ from loguru import logger
 from db import DB
 from pytoniq_core import Address
 from model.dexpool import DexPool
-from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE, DEX_BIDASK_CLMM, DEX_BIDASK_DAMM, DEX_MOON
+from model.dexswap import DEX_DEDUST, DEX_MEGATON, DEX_STON, DEX_STON_V2, DEX_TONCO, DEX_COFFEE, DEX_BIDASK_CLMM, DEX_BIDASK_DAMM, DEX_MOON, DEX_DEDUST_CPMM_V3
 from model.dedust import read_dedust_asset
 from model.coffee import read_coffee_asset
 from parsers.message.swap_volume import estimate_tvl
@@ -43,7 +43,7 @@ class TVLPoolStateParser(EmulatorParser):
         pool.last_updated = obj['timestamp']
 
         # total supply is required for all cases except TONCO, Bidask DLMM
-        if pool.platform not in [DEX_TONCO, DEX_BIDASK_CLMM]:
+        if pool.platform not in [DEX_TONCO, DEX_BIDASK_CLMM, DEX_DEDUST_CPMM_V3]:
             try:
                 pool.total_supply, _, _, _, _= self._execute_method(emulator, 'get_jetton_data', [], db, obj)
             except EmulatorException as e:
@@ -210,6 +210,9 @@ class TVLPoolStateParser(EmulatorParser):
             pool.lp_fee = lp_fee / 1e4 if lp_fee is not None else None
             pool.protocol_fee = protocol_fee / 1e4 if protocol_fee is not None else None
             pool.referral_fee = ref_fee / 1e4 if ref_fee is not None else None
+        elif pool.platform == DEX_DEDUST_CPMM_V3:
+            logger.warning(f"CPMM v3 TVL parsing not implemented for pool {pool.pool}")
+            return
         else:
             raise Exception(f"DEX is not supported: {pool.platform}")
         

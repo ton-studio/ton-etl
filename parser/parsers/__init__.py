@@ -26,6 +26,8 @@ from parsers.message.coffee_swap import CoffeeSwap
 from parsers.accounts.nft_sales import NFTSalesParser
 from parsers.message.moon_swap_ton import MoonSwapTON
 from parsers.jetton_transfer.moon_swap_jetton import MoonSwapJetton
+from parsers.message.dedust_swap_cpmm_v3 import CPMMV3Swap
+from parsers.message.uranus import UranusTrade
 from model.parser import Parser
 from loguru import logger
 import os
@@ -56,6 +58,8 @@ _mainnet_parsers = [
     BidaskDammSwap(EMULATOR_PATH),
     MoonSwapTON(),
     MoonSwapJetton(),
+    CPMMV3Swap(EMULATOR_PATH),
+    UranusTrade(),
 
     CorePricesUSDT(),
     CorePricesLSDstTON(),
