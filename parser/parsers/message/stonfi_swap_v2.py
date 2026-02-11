@@ -70,6 +70,8 @@ class StonfiSwapV2(Parser):
         "EQBqgCTdrtSod76UrcOeALSiLCp3WuNIFQBQvyjjlQMvwLkc",
         # 2025-12-05
         "EQD11suHkrO_1Mb5IIdYFx5ZPy38MuHoeHx6dA-QRaD8w0UJ",
+        # 2026-02-11
+        "EQC67o2-2UzR1cJFrUGL5M7OAnLgG8oY_tHaTgGmR63LQNV-",
     ]))
     
     def topics(self):
