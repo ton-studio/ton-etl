@@ -1,3 +1,35 @@
-.venv
+# Virtual environment
+.venv/
+
+# Python
 __pycache__/
-.vscode
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Testing
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment / Secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+
+# Linters / Type checkers
+.mypy_cache/
+.ruff_cache/
+
+# Data files (backfill, datalake dumps)
+*.csv
+*.avro
+
+# AI assistant
+CLAUDE.md
