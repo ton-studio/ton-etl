@@ -77,7 +77,11 @@ Perform daily sync of data of the datalake
     catchup=False,
     concurrency=4,
     max_active_runs=1,
-    tags=['ton', 'datalake']
+    tags=['ton', 'datalake'],
+    default_args={
+        'retries': 2,
+        'retry_delay': timedelta(minutes=5),
+    },
 )
 def datalake_daily_sync():
     datalake_output_bucket = Variable.get("DATALAKE_ATHENA_DATALAKE_OUTPUT_BUCKET")
