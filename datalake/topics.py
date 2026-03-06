@@ -13,12 +13,3 @@ TOPIC_NFT_SALES = "ton.public.getgems_nft_sales"
 TOPIC_NFT_AUCTIONS = "ton.public.getgems_nft_auctions"
 TOPIC_NFT_ITEMS_METADATA = "ton.parsed.nft_item_metadata"
 TOPIC_NFT_COLLECTIONS_METADATA = "ton.parsed.nft_collection_metadata"
-
-TOPIC_DEX_SWAPS = "ton.parsed.dex_swap_parsed"
-TOPIC_GASPUMP_EVENTS = "ton.parsed.gaspump_trade"
-TOPIC_TONFUN = "ton.parsed.tonfun_bcl_trade"
-TOPIC_MEMESLAB = "ton.parsed.memeslab_trade_event"
-TOPIC_URANUS = "ton.parsed.uranus_trade"
-
-TOPIC_DEX_POOLS = "ton.prices.dex_pool"
-TOPIC_EXTRA_NFT_SALES = "ton.parsed.extra_nft_sales"
