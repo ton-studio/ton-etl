@@ -101,7 +101,7 @@ class DatalakeWriter:
         self.log_interval = int(os.environ.get("LOG_INTERVAL", '10'))
 
         # We should commit after commit_interval
-        self.commit_interval = int(os.environ.get("COMMIT_INTERVAL", '7200'))
+        self.commit_interval = int(os.environ.get("COMMIT_INTERVAL", '1800'))
         # But only if we have at least min_commit_size in the buffer
         self.min_commit_size = int(os.environ.get("MIN_COMMIT_SIZE", '1000000'))
 
