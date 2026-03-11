@@ -106,7 +106,7 @@ def test_estimate_tvl(
         (USDe, tsUSDe, 1e10, 6e10, 1738000000, 0.005, 1.2, 8.2e4, 1.64e4, True),
     ],
 )
-def test_estimate_tvl_USDe(
+def test_estimate_tvl_usde(
     jetton_left,
     jetton_right,
     reserves_left,
