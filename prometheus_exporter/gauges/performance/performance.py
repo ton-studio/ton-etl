@@ -114,7 +114,7 @@ class PerformanceGauge(Gauge):
             }
 
     def _default_handler(self, obj: dict) -> None:
-        logger.debug(f"No handler defined for message type '{obj.get('__table')}'")
+        pass
 
     def _cleanup(self) -> None:
         """Remove stale records older than _interval * interval_factor from each table."""
