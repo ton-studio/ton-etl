@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.12
 
 COPY requirements.txt /opt/app/
 RUN pip3 install -r /opt/app/requirements.txt
