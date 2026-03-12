@@ -12,7 +12,7 @@ from gauges.performance.traces import TracesPerformanceGauge
 from gauges.performance.tps import TPSPerformanceGauge
 
 
-if __name__ == "__main__":
+def main() -> None:
     exporter_port = int(os.environ.get("EXPORTER_PORT", "8066"))
     commit_batch_size = int(os.environ.get("COMMIT_BATCH_SIZE", "100"))
     calc_interval = int(os.environ.get("CALC_INTERVAL", "3600"))
@@ -104,3 +104,7 @@ if __name__ == "__main__":
             logger.info(f"Processed {kafka_batch} messages, making commit")
             consumer.commit()  # commit kafka offset
             kafka_batch = 0
+
+
+if __name__ == "__main__":
+    main()

@@ -5,6 +5,8 @@ from gauges.performance.performance import PerformanceGauge
 
 
 class P2pPerformanceGauge(PerformanceGauge):
+    """Gauge for P2P transfer latency metrics (average, p50, p75, p95), tracking 2-node traces."""
+
     def __init__(
         self,
         name: str,
@@ -25,9 +27,9 @@ class P2pPerformanceGauge(PerformanceGauge):
         self._tables = ["blocks", "traces"]
         self._trace_nodes = [2]
 
-    def _calc_metrics(self):
+    def _calc_metrics(self) -> list | None:
         if not self._data["traces"]:
-            logger.warning("No trace data available for calculating metrics")
+            logger.debug("No trace data available for calculating metrics")
             return None
 
         data_list = [value["delay"] for value in self._data["traces"].values()]

@@ -5,6 +5,8 @@ from gauges.performance.performance import PerformanceGauge
 
 
 class TPSPerformanceGauge(PerformanceGauge):
+    """Gauge for TON transactions per second (TPS), calculated over a rolling block window."""
+
     def __init__(
         self,
         name: str,
@@ -24,7 +26,7 @@ class TPSPerformanceGauge(PerformanceGauge):
         )
         self._tables = ["blocks"]
 
-    def _handle_blocks(self, obj: dict):
+    def _handle_blocks(self, obj: dict) -> None:
         super()._handle_blocks(obj)
 
         workchain = obj.get("workchain")
@@ -42,9 +44,9 @@ class TPSPerformanceGauge(PerformanceGauge):
                 "tx_count": tx_count,
             }
 
-    def _calc_metrics(self):
+    def _calc_metrics(self) -> list | None:
         if not self._data["blocks"]:
-            logger.warning("No block data available for calculating metrics")
+            logger.debug("No block data available for calculating metrics")
             return None
 
         tps = sum([value["tx_count"] for value in self._data["blocks"].values()]) / self._interval
