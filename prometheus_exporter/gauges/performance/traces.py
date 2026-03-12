@@ -5,6 +5,8 @@ from gauges.performance.performance import PerformanceGauge
 
 
 class TracesPerformanceGauge(PerformanceGauge):
+    """Gauge for trace throughput: finished ops/sec and count of pending operations."""
+
     def __init__(
         self,
         name: str,
@@ -25,9 +27,9 @@ class TracesPerformanceGauge(PerformanceGauge):
         self._tables = ["blocks", "traces"]
         self._trace_states = ["complete", "pending"]
 
-    def _calc_metrics(self):
+    def _calc_metrics(self) -> list | None:
         if not self._data["traces"]:
-            logger.warning("No trace data available for calculating metrics")
+            logger.debug("No trace data available for calculating metrics")
             return None
 
         finished_ops_per_second = (

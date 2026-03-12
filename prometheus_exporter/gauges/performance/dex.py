@@ -5,6 +5,8 @@ from gauges.performance.performance import PerformanceGauge
 
 
 class DexPerformanceGauge(PerformanceGauge):
+    """Gauge for DEX swap latency metrics (average, p50, p75, p95), filtered by platform."""
+
     def __init__(
         self,
         name: str,
@@ -26,9 +28,9 @@ class DexPerformanceGauge(PerformanceGauge):
         self._tables = ["blocks", "traces", "dex_swap_parsed"]
         self._platforms = platforms
 
-    def _calc_metrics(self):
+    def _calc_metrics(self) -> list | None:
         if not self._data["dex_swap_parsed"]:
-            logger.warning("No DEX swap data available for calculating metrics")
+            logger.debug("No DEX swap data available for calculating metrics")
             return None
 
         data_list = [
@@ -38,7 +40,7 @@ class DexPerformanceGauge(PerformanceGauge):
         ]
 
         if not data_list:
-            logger.warning("No matching trace data found for DEX swaps")
+            logger.debug("No matching trace data found for DEX swaps")
             return None
 
         return self._metrics_from_delay(data_list)

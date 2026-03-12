@@ -5,6 +5,8 @@ from gauges.performance.performance import PerformanceGauge
 
 
 class JettonTransfersPerformanceGauge(PerformanceGauge):
+    """Gauge for jetton transfer latency metrics, tracking non-aborted transfers with 3-5 trace nodes."""
+
     def __init__(
         self,
         name: str,
@@ -25,9 +27,9 @@ class JettonTransfersPerformanceGauge(PerformanceGauge):
         self._tables = ["blocks", "traces", "jetton_transfers"]
         self._trace_nodes = [3, 4, 5]
 
-    def _calc_metrics(self):
+    def _calc_metrics(self) -> list | None:
         if not self._data["jetton_transfers"]:
-            logger.warning("No jetton transfer data available for calculating metrics")
+            logger.debug("No jetton transfer data available for calculating metrics")
             return None
 
         data_list = [
@@ -37,7 +39,7 @@ class JettonTransfersPerformanceGauge(PerformanceGauge):
         ]
 
         if not data_list:
-            logger.warning("No matching trace data found for jetton transfers")
+            logger.debug("No matching trace data found for jetton transfers")
             return None
 
         return self._metrics_from_delay(data_list)

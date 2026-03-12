@@ -100,9 +100,17 @@ AVRO serialization.
 
 ## TON Performance Prometheus exporter
 
-[TON Performance Prometheus exporter](./prometheus_exporter/)  is a showcase of streaming analytics built on top of 
-Kafka streams produces by TON-ETL. It listens to blocks, traces, jetton_transfers and dex_swaps topics to calculate
-number of events, medain and average time of operations.
+[TON Performance Prometheus exporter](./prometheus_exporter/) is a showcase of real-time streaming analytics
+built on top of Kafka topics produced by TON-ETL. It consumes `blocks`, `traces`, `jetton_transfers`,
+`dex_swap_parsed` and `p2p_transfers` topics and exposes the following metrics:
+
+* **TPS** — transactions per second, calculated over a rolling block window
+* **Traces** — finished operations per second and count of pending operations
+* **Jetton transfers** — end-to-end latency (average, p50, p75, p95) for jetton transfers
+* **DEX swaps** — end-to-end latency for swaps, broken down by platform (DeDust, Ston.fi, etc.)
+* **P2P transfers** — end-to-end latency for direct TON transfers between wallets
+
+All latency metrics are derived from trace delay — the time from the first message in a trace to the last one.
 
 # DB Schema
 
