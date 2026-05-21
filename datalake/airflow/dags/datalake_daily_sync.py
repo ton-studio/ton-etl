@@ -1281,7 +1281,7 @@ def datalake_daily_sync():
         task_instance = kwargs['task_instance']
         start_of_the_day_ts = task_instance.xcom_pull(key="start_of_the_day_ts", task_ids='perform_last_block_check')
         start_of_the_day = datetime.fromtimestamp(start_of_the_day_ts, pytz.utc)
-        current_date = (start_of_the_day).strftime("%Y%m%d")
+        current_date = start_of_the_day.strftime("%Y-%m-%d")
         project_name = kwargs['project_name']
         destination_condition = kwargs['destination_condition']
         url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{project_name}.py"
@@ -1332,10 +1332,10 @@ def datalake_daily_sync():
             opcode_str = ', '.join(str(op) for op in opcodes)
             query = f"""
                 select distinct jm.jetton_wallet_code_hash
-                from messages m
+                from messages_with_data m
                 join jetton_metadata jm on jm.address = m.source
-                where m.direction = 'out' and m.destination is {destination_condition} 
-                and m.opcode in ({opcode_str}) and m.block_date = '{current_date}'
+                where m.direction = 'out' and m.destination is {destination_condition}
+                and m.opcode in ({opcode_str}) and m.date = '{current_date}'
             """
             query_id = athena.run_query(query,
                                         query_context={"Database": "datalake_parquet"},
