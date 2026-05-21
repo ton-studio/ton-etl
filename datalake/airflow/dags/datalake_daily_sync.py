@@ -1520,7 +1520,9 @@ def datalake_daily_sync():
         jetton_metadata_task >> create_jetton_metadata_snapshot_task
 
         # checkers wait for parquet to be ready so they read fresh data
-        parquet_tasks >> checker_tasks
+        # (Airflow's >> doesn't accept list >> list, so iterate one side)
+        for t in parquet_tasks:
+            t >> checker_tasks
 
         extra_tasks = parquet_tasks
 
