@@ -1281,7 +1281,7 @@ def datalake_daily_sync():
         task_instance = kwargs['task_instance']
         start_of_the_day_ts = task_instance.xcom_pull(key="start_of_the_day_ts", task_ids='perform_last_block_check')
         start_of_the_day = datetime.fromtimestamp(start_of_the_day_ts, pytz.utc)
-        current_date = (start_of_the_day).strftime("%Y%m%d")
+        current_date = start_of_the_day.strftime("%Y-%m-%d")
         project_name = kwargs['project_name']
         destination_condition = kwargs['destination_condition']
         url = f"https://raw.githubusercontent.com/ton-studio/ton-etl/refs/heads/main/parser/parsers/message/{project_name}.py"
@@ -1332,13 +1332,13 @@ def datalake_daily_sync():
             opcode_str = ', '.join(str(op) for op in opcodes)
             query = f"""
                 select distinct jm.jetton_wallet_code_hash
-                from messages m
+                from messages_with_data m
                 join jetton_metadata jm on jm.address = m.source
-                where m.direction = 'out' and m.destination is {destination_condition} 
-                and m.opcode in ({opcode_str}) and m.block_date = '{current_date}'
+                where m.direction = 'out' and m.destination is {destination_condition}
+                and m.opcode in ({opcode_str}) and m.date = '{current_date}'
             """
             query_id = athena.run_query(query,
-                                        query_context={"Database": Variable.get("DATALAKE_TARGET_DATABASE")},
+                                        query_context={"Database": "datalake_parquet"},
                                         result_configuration={'OutputLocation': f's3://{datalake_athena_temp_bucket}/'},
                                         workgroup=Variable.get("DATALAKE_ATHENA_WORKGROUP"))
             final_state = athena.poll_query_status(query_id)
@@ -1358,34 +1358,6 @@ def datalake_daily_sync():
         except Exception as e:
             send_notification(f"📛 Jetton wallet code hash checker (project = '{project_name}'): {e}")
             raise e
-
-    check_blum_code_hashes_task = PythonOperator(
-        task_id='check_blum_code_hashes',
-        python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_blum_code_hashes"),
-        op_kwargs={
-            'project_name': 'blum',
-            'destination_condition': 'null',
-        }
-    )
-
-    check_memeslab_code_hashes_task = PythonOperator(
-        task_id='check_memeslab_code_hashes',
-        python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_memeslab_code_hashes"),
-        op_kwargs={
-            'project_name': 'memeslab',
-            'destination_condition': 'not null',
-        }
-    )
-
-    check_tonfun_code_hashes_task = PythonOperator(
-        task_id='check_tonfun_code_hashes',
-        python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_tonfun_code_hashes"),
-        op_kwargs={
-            'project_name': 'tonfun',
-            'destination_condition': 'null',
-        }
-    )
-
 
     """
     Converts table from raw exported items into output table
@@ -1504,26 +1476,53 @@ def datalake_daily_sync():
         )
     
 
-    extra_tasks = [check_blum_code_hashes_task, check_memeslab_code_hashes_task, check_tonfun_code_hashes_task]
+    # extra_tasks (parquet conversion + wallet code-hash sanity checks) run only
+    # in environments where DATALAKE_CONVERT_TO_PARQUET is enabled (prod).
+    # The check_*_code_hashes_task instances are defined here (not at module
+    # scope) so they exist only when the gate is on — otherwise Airflow would
+    # pick them up as orphan tasks on dev/testnet.
+    extra_tasks = []
     if str(Variable.get("DATALAKE_CONVERT_TO_PARQUET")) == 'True':
+        check_blum_code_hashes_task = PythonOperator(
+            task_id='check_blum_code_hashes',
+            python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_blum_code_hashes"),
+            op_kwargs={'project_name': 'blum', 'destination_condition': 'null'},
+        )
+        check_memeslab_code_hashes_task = PythonOperator(
+            task_id='check_memeslab_code_hashes',
+            python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_memeslab_code_hashes"),
+            op_kwargs={'project_name': 'memeslab', 'destination_condition': 'not null'},
+        )
+        check_tonfun_code_hashes_task = PythonOperator(
+            task_id='check_tonfun_code_hashes',
+            python_callable=lambda **kwargs: safe_python_callable(check_wallet_code_hashes, kwargs, "check_tonfun_code_hashes"),
+            op_kwargs={'project_name': 'tonfun', 'destination_condition': 'null'},
+        )
+        checker_tasks = [check_blum_code_hashes_task, check_memeslab_code_hashes_task, check_tonfun_code_hashes_task]
+
         jetton_metadata_task = convert_table_task("jetton_metadata", partition_field='adding_date')
-        extra_tasks.extend([
-                    convert_table_task("account_states"),
-                    convert_table_task("balances_history"),
-                    convert_table_task("blocks"),
-                    convert_table_task("dex_trades"), 
-                    convert_table_task("dex_pools"),
-                    convert_table_task("jetton_events"),
-                    jetton_metadata_task,
-                    convert_table_task("messages_with_data"),
-                    convert_table_task("nft_metadata", partition_field='adding_date'),
-                    convert_table_task("nft_items"),
-                    convert_table_task("nft_sales"),
-                    convert_table_task("nft_transfers"),
-                    convert_table_task("nft_events"),
-                    convert_table_task("transactions")
-                    ])
+        parquet_tasks = [
+            convert_table_task("account_states"),
+            convert_table_task("balances_history"),
+            convert_table_task("blocks"),
+            convert_table_task("dex_trades"),
+            convert_table_task("dex_pools"),
+            convert_table_task("jetton_events"),
+            jetton_metadata_task,
+            convert_table_task("messages_with_data"),
+            convert_table_task("nft_metadata", partition_field='adding_date'),
+            convert_table_task("nft_items"),
+            convert_table_task("nft_sales"),
+            convert_table_task("nft_transfers"),
+            convert_table_task("nft_events"),
+            convert_table_task("transactions"),
+        ]
         jetton_metadata_task >> create_jetton_metadata_snapshot_task
+
+        # checkers wait for parquet to be ready so they read fresh data
+        parquet_tasks >> checker_tasks
+
+        extra_tasks = parquet_tasks
 
     perform_last_block_check_task >> [
         convert_blocks_task,
