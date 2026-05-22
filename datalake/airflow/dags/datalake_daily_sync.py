@@ -1561,17 +1561,19 @@ def datalake_daily_sync():
         MIRROR_TABLES = [
             ('account_states', 'block_date'),
             ('balances_history', 'block_date'),
+            ('balances_snapshot', 'block_date'),
             ('blocks', 'block_date'),
-            ('dex_trades', 'block_date'),
             ('dex_pools', 'block_date'),
+            ('dex_trades', 'block_date'),
             ('jetton_events', 'block_date'),
             ('jetton_metadata', 'adding_date'),
+            ('messages', 'block_date'),
             ('messages_with_data', 'block_date'),
-            ('nft_metadata', 'adding_date'),
+            ('nft_events', 'block_date'),
             ('nft_items', 'block_date'),
+            ('nft_metadata', 'adding_date'),
             ('nft_sales', 'block_date'),
             ('nft_transfers', 'block_date'),
-            ('nft_events', 'block_date'),
             ('transactions', 'block_date'),
         ]
         mirror_tasks = [mirror_to_eu_task(t, partition_field=pf) for (t, pf) in MIRROR_TABLES]
