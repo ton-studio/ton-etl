@@ -1484,8 +1484,8 @@ def datalake_daily_sync():
         table = kwargs['table']
         partition_field = kwargs['partition_field']
 
-        src = f"s3://{datalake_output_bucket}/v1/{table}/{partition_field}={day}/"
-        dst = f"s3://{datalake_eu_mirror_bucket}/v1/{table}/{partition_field}={day}/"
+        src = f"s3://{datalake_output_bucket}/v1/{table}/{partition_field}={day}"
+        dst = f"s3://{datalake_eu_mirror_bucket}/v1/{table}"
         logging.info(f"Mirroring {table} {partition_field}={day}: {src} -> {dst}")
 
         output_size, output_files = transfer_s3_objects(s3_hook.get_conn(), src, dst)
