@@ -87,6 +87,7 @@ def datalake_daily_sync():
     datalake_output_bucket = Variable.get("DATALAKE_ATHENA_DATALAKE_OUTPUT_BUCKET")
     datalake_exporters_bucket = Variable.get("DATALAKE_ATHENA_DATALAKE_EXPORTERS_BUCKET")
     datalake_exporters_prefix = Variable.get("DATALAKE_ATHENA_DATALAKE_EXPORTERS_PREFIX")
+    datalake_eu_mirror_bucket = Variable.get("DATALAKE_EU_MIRROR_BUCKET", default_var="")
     datalake_athena_temp_bucket = Variable.get("DATALAKE_TMP_LOCATION")
     env_tag = Variable.get("DATALAKE_TARGET_DATABASE")
     is_testnet_mode = True if int(Variable.get("TESTNET_MODE", "0")) else False
@@ -1474,7 +1475,33 @@ def datalake_daily_sync():
                 'partition_field': partition_field
             }
         )
-    
+
+    def mirror_partition_to_eu(kwargs):
+        """Copy today's AVRO partition from US output bucket to EU mirror bucket for partner consumers."""
+        s3_hook = S3Hook(aws_conn_id='s3_conn')
+        logical_time = pendulum.parse(kwargs['logical_time'])
+        day = logical_time.format('YYYYMMDD')
+        table = kwargs['table']
+        partition_field = kwargs['partition_field']
+
+        src = f"s3://{datalake_output_bucket}/v1/{table}/{partition_field}={day}/"
+        dst = f"s3://{datalake_eu_mirror_bucket}/v1/{table}/{partition_field}={day}/"
+        logging.info(f"Mirroring {table} {partition_field}={day}: {src} -> {dst}")
+
+        output_size, output_files = transfer_s3_objects(s3_hook.get_conn(), src, dst)
+        send_notification(f"🪞 [{env_tag}] {table} mirrored to EU: {sizeof_fmt(output_size)}, {output_files} files")
+
+    def mirror_to_eu_task(table_name, partition_field='block_date'):
+        return PythonOperator(
+            task_id="mirror_to_eu_" + table_name,
+            python_callable=lambda **kwargs: safe_python_callable(mirror_partition_to_eu, kwargs, "mirror_to_eu_" + table_name),
+            op_kwargs={
+                'logical_time': '{{ data_interval_start }}',
+                'table': table_name,
+                'partition_field': partition_field,
+            }
+        )
+
 
     # extra_tasks (parquet conversion + wallet code-hash sanity checks) run only
     # in environments where DATALAKE_CONVERT_TO_PARQUET is enabled (prod).
@@ -1519,12 +1546,35 @@ def datalake_daily_sync():
         ]
         jetton_metadata_task >> create_jetton_metadata_snapshot_task
 
-        # checkers wait for parquet to be ready so they read fresh data
-        # (Airflow's >> doesn't accept list >> list, so iterate one side)
+        # Checkers wait for parquet to be ready so they read fresh data.
+        # (Airflow's >> doesn't accept list >> list, so iterate one side.)
         for t in parquet_tasks:
             t >> checker_tasks
 
         extra_tasks = parquet_tasks
+
+    # Mirror today's AVRO partitions US -> EU for partner consumers (Dune etc).
+    # Independent of parquet conversion; gated only on DATALAKE_EU_MIRROR_BUCKET
+    # being set (prod). Runs in parallel with parquet conversion.
+    mirror_tasks = []
+    if datalake_eu_mirror_bucket:
+        MIRROR_TABLES = [
+            ('account_states', 'block_date'),
+            ('balances_history', 'block_date'),
+            ('blocks', 'block_date'),
+            ('dex_trades', 'block_date'),
+            ('dex_pools', 'block_date'),
+            ('jetton_events', 'block_date'),
+            ('jetton_metadata', 'adding_date'),
+            ('messages_with_data', 'block_date'),
+            ('nft_metadata', 'adding_date'),
+            ('nft_items', 'block_date'),
+            ('nft_sales', 'block_date'),
+            ('nft_transfers', 'block_date'),
+            ('nft_events', 'block_date'),
+            ('transactions', 'block_date'),
+        ]
+        mirror_tasks = [mirror_to_eu_task(t, partition_field=pf) for (t, pf) in MIRROR_TABLES]
 
     perform_last_block_check_task >> [
         convert_blocks_task,
@@ -1538,5 +1588,9 @@ def datalake_daily_sync():
         (perform_last_block_check_task >> convert_balances_history_task >> generate_balances_snapshot_task),
     ] >> check_nft_parser_offset_task >> convert_nft_items_task >> convert_nft_transfers_task >> convert_nft_sales_task >> \
         refresh_nft_metadata_partitions_task >> nft_events_task >> extra_tasks
+
+    # Mirror runs in parallel with parquet (both downstream of nft_events_task)
+    if mirror_tasks:
+        nft_events_task >> mirror_tasks
 
 datalake_daily_sync_dag = datalake_daily_sync()
