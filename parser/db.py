@@ -27,7 +27,14 @@ def serialize_addr(addr: Union[Address, ExternalAddress, None]) -> str:
     if isinstance(addr, ExternalAddress): # extrernal addresses are not supported
         return None
     return None
-    
+
+
+def _strip_surrogates(value):
+    if isinstance(value, str):
+        return value.encode('utf-8', errors='replace').decode('utf-8')
+    return value
+
+
 class DB():
     def __init__(self, use_message_content: bool, dex_pool_history: bool=False, run_migrations: bool=False):
         self.use_message_content = use_message_content
@@ -637,10 +644,11 @@ class DB():
                            sources = EXCLUDED.sources,
                            tonapi_image_url = EXCLUDED.tonapi_image_url
                            -- where jetton_metadata.update_time_onchain = %s and jetton_metadata.update_time_metadata = %s
-            """, (metadata.address, metadata.update_time_onchain, metadata.update_time_metadata, metadata.mintable, metadata.admin_address,
+            """, tuple(_strip_surrogates(v) for v in (
+                  metadata.address, metadata.update_time_onchain, metadata.update_time_metadata, metadata.mintable, metadata.admin_address,
                   jetton_content, metadata.jetton_wallet_code_hash, metadata.code_hash, metadata.metadata_status,
                   metadata.symbol, metadata.name, metadata.description, metadata.image, metadata.image_data, metadata.decimals, metadata.sources,
-                  metadata.tonapi_image_url, prev_ts_onchain, prev_ts_offchain))
+                  metadata.tonapi_image_url, prev_ts_onchain, prev_ts_offchain)))
             self.updated += 1
 
     """
@@ -674,9 +682,10 @@ class DB():
                            sources = EXCLUDED.sources,
                            tonapi_image_url = EXCLUDED.tonapi_image_url
                            -- where jetton_metadata.update_time_onchain = %s and jetton_metadata.update_time_metadata = %s
-            """, (metadata.address, metadata.update_time_onchain, metadata.update_time_metadata, metadata.collection_address, content,
+            """, tuple(_strip_surrogates(v) for v in (
+                  metadata.address, metadata.update_time_onchain, metadata.update_time_metadata, metadata.collection_address, content,
                   metadata.metadata_status, metadata.name, metadata.description, attributes, metadata.image, metadata.image_data,
-                  metadata.sources, metadata.tonapi_image_url, prev_ts_onchain, prev_ts_offchain))
+                  metadata.sources, metadata.tonapi_image_url, prev_ts_onchain, prev_ts_offchain)))
             self.updated += 1
 
     """
@@ -706,9 +715,10 @@ class DB():
                            sources = EXCLUDED.sources,
                            tonapi_image_url = EXCLUDED.tonapi_image_url
                            -- where jetton_metadata.update_time_onchain = %s and jetton_metadata.update_time_metadata = %s
-            """, (metadata.address, metadata.update_time_onchain, metadata.update_time_metadata, metadata.owner_address, content, 
+            """, tuple(_strip_surrogates(v) for v in (
+                  metadata.address, metadata.update_time_onchain, metadata.update_time_metadata, metadata.owner_address, content,
                   metadata.metadata_status, metadata.name, metadata.description, metadata.image, metadata.image_data, metadata.sources,
-                  metadata.tonapi_image_url, prev_ts_onchain, prev_ts_offchain))
+                  metadata.tonapi_image_url, prev_ts_onchain, prev_ts_offchain)))
             self.updated += 1
 
     def get_jetton_transfers_by_trace_id(self, trace_id: str) -> List[dict]:
