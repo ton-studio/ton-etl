@@ -2,6 +2,7 @@
 #!/usr/bin/env python
 
 import os
+import time
 from typing import Any, Dict
 from pytoniq_core import Address, Cell
 from db import DB
@@ -114,33 +115,68 @@ class Parser:
     For example, we can have NFT item to parse but missing the account state for the collection.
     To overcome this we can use additional step to fetch states using RPC (toncenter) and cache it to minimize RPC calls.
     """
-    @classmethod    
+    @classmethod
     def get_account_state_safe(clz, address: Address, db: DB):
         res = db.get_latest_account_state(address)
         if res:
+            ACCOUNT_STATE_CACHE.pop(address, None)
             return res
 
         if address in ACCOUNT_STATE_CACHE:
             return ACCOUNT_STATE_CACHE[address]
         
         logger.info(f"Fetching account state from toncenter RPC for {address}")
-        
+
         toncenter_base_url = "https://testnet.toncenter.com" if Parser.TESTNET_MODE else "https://toncenter.com"
-        res = requests.get(f"{toncenter_base_url}/api/v3/accountStates?address={address.to_str(is_user_friendly=False)}")
-        if res.status_code != 200:
-            raise Exception(f"Failed to fetch account state from toncenter RPC for {address}")
-        
-        result = res.json()
-        for account in result['accounts']:
-            if Address(account['address']) == address and account['status'] == 'active':
-                logger.info(f"Found account state for {address} in toncenter RPC")
-                account_state = {
-                    'account': address.to_str(is_user_friendly=False).upper(),
-                    'code_boc': account['code_boc'],
-                    'data_boc': account['data_boc'],
-                }
-                ACCOUNT_STATE_CACHE[address] = account_state
-                return account_state
-        
-        logger.warning(f"No account state found for {address} in toncenter RPC")
-        return None
+        url = f"{toncenter_base_url}/api/v3/accountStates?address={address.to_str(is_user_friendly=False)}"
+
+        backoff = 1.0
+        last_error = None
+        for attempt in range(5):
+            try:
+                res = requests.get(url, timeout=10)
+            except requests.exceptions.RequestException as e:
+                last_error = f"request error: {e}"
+                logger.warning(f"toncenter {last_error} for {address}, retry {attempt + 1}/5 in {backoff}s")
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 30)
+                continue
+
+            if res.status_code == 429:
+                try:
+                    wait = float(res.headers.get('Retry-After', backoff))
+                except (TypeError, ValueError):
+                    wait = backoff
+                last_error = "HTTP 429 (rate limited)"
+                logger.warning(f"toncenter {last_error} for {address}, sleep {wait}s, retry {attempt + 1}/5")
+                time.sleep(wait)
+                backoff = min(backoff * 2, 30)
+                continue
+
+            if res.status_code >= 500:
+                last_error = f"HTTP {res.status_code}"
+                logger.warning(f"toncenter {last_error} for {address}, retry {attempt + 1}/5 in {backoff}s")
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 30)
+                continue
+
+            if res.status_code != 200:
+                raise Exception(f"toncenter HTTP {res.status_code} for {address}: {res.text[:200]}")
+
+            result = res.json()
+            for account in result['accounts']:
+                if Address(account['address']) == address and account['status'] == 'active':
+                    logger.info(f"Found account state for {address} in toncenter RPC")
+                    account_state = {
+                        'account': address.to_str(is_user_friendly=False).upper(),
+                        'code_boc': account['code_boc'],
+                        'data_boc': account['data_boc'],
+                    }
+                    ACCOUNT_STATE_CACHE[address] = account_state
+                    return account_state
+
+            logger.warning(f"No account state found for {address} in toncenter RPC (cached as missing)")
+            ACCOUNT_STATE_CACHE[address] = None
+            return None
+
+        raise Exception(f"Failed to fetch account state from toncenter RPC for {address} after 5 attempts: {last_error}")
