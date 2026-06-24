@@ -8,7 +8,7 @@ import json
 import traceback
 from typing import Dict
 from loguru import logger
-from kafka import KafkaConsumer
+from confluent_kafka import Consumer, KafkaError
 import boto3
 import avro.schema
 from avro.datafile import DataFileWriter
@@ -71,7 +71,7 @@ class Partition:
         self.last_event_ts = int(time.time())
         if self.total % FLUSH_INTERVAL == 0:
             self.writer.flush()
-                
+
         self.file_size = os.path.getsize(self.filename)
 
     def flush_file(self, datalake):
@@ -80,7 +80,7 @@ class Partition:
             sha256 = hashlib.sha256(f.read()).hexdigest()[0:32]
         path = f"{datalake.datalake_s3_prefix}{datalake.converter.name()}/date={self.partition}/{sha256}.avro"
         self.file_size = os.path.getsize(self.filename)
-    
+
 
 PARTITION_MODE_ADDING_DATE = "adding_date"
 PARTITION_MODE_OBJ_IMESTAMP = "obj_timestamp"
@@ -108,13 +108,12 @@ class DatalakeWriter:
         self.datalake_s3_bucket = os.environ.get("DATALAKE_S3_BUCKET")
         self.datalake_s3_prefix = os.environ.get("DATALAKE_S3_PREFIX")
 
-
-        self.consumer = KafkaConsumer(
-                group_id=group_id,
-                bootstrap_servers=os.environ.get("KAFKA_BROKER"),
-                auto_offset_reset=os.environ.get("KAFKA_OFFSET_RESET", 'earliest'),
-                enable_auto_commit=False
-                )
+        self.consumer = Consumer({
+            'group.id': group_id,
+            'bootstrap.servers': os.environ.get("KAFKA_BROKER"),
+            'auto.offset.reset': os.environ.get("KAFKA_OFFSET_RESET", 'earliest'),
+            'enable.auto.commit': False,
+        })
 
         logger.info(f"Subscribing to {topics}")
         self.consumer.subscribe(topics)
@@ -140,27 +139,38 @@ class DatalakeWriter:
         if self.total % FLUSH_INTERVAL == 0:
             self.writer.flush()
         self.file_size = os.path.getsize(AVRO_TMP_BUFFER)
-        if self.file_size > self.max_file_size or (time.time() - self.last_commit > self.commit_interval):
-            logger.info(f"Reached max file size {self.file_size}, {time.time() - self.last_commit:0.1f}s since last commit, flushing file")
-            self.writer.flush()
-            self.writer.close()
-            with open(AVRO_TMP_BUFFER, "rb") as f:
-                sha256 = hashlib.sha256(f.read()).hexdigest()[0:32]
-            partition = datetime.now().strftime('%Y%m%d')
-            path = f"{self.datalake_s3_prefix}{self.converter.name()}/adding_date={partition}/{sha256}.avro"
-            logger.info(f"Going to flush file, total size is {self.file_size}B, {time.time() - self.last_commit:0.1f}s since last commit, {self.total} items to {path}")
-
-            self.s3.upload_file(AVRO_TMP_BUFFER, self.datalake_s3_bucket, path)
-            self.writer = DataFileWriter(open(AVRO_TMP_BUFFER, "wb"), DatumWriter(), self.converter.schema)
-            now = time.time()
-            self.last_commit = now
-            logger.info(f"{1.0 * self.total / (now - self.last):0.2f} Kafka messages per second")
-            self.last = now
-            self.total = 0
-            self.consumer.commit()
+        self._maybe_flush()
 
     def append_obj_timestamp(self, obj, partition):
         raise NotImplementedError("Not implemented yet")
+
+    def _maybe_flush(self):
+        # Idle drain: also called from run() when poll() returns None, so the timer fires even
+        # when the upstream producer (Debezium) is quiet — otherwise the AVRO buffer sits forever
+        # and the consumer offset never advances on a stopped indexer.
+        if self.total == 0:
+            return
+        if not (self.file_size > self.max_file_size or (time.time() - self.last_commit > self.commit_interval)):
+            return
+
+        logger.info(f"Reached max file size {self.file_size}, {time.time() - self.last_commit:0.1f}s since last commit, flushing file")
+        self.writer.flush()
+        self.writer.close()
+        with open(AVRO_TMP_BUFFER, "rb") as f:
+            sha256 = hashlib.sha256(f.read()).hexdigest()[0:32]
+        partition = datetime.now().strftime('%Y%m%d')
+        path = f"{self.datalake_s3_prefix}{self.converter.name()}/adding_date={partition}/{sha256}.avro"
+        logger.info(f"Going to flush file, total size is {self.file_size}B, {time.time() - self.last_commit:0.1f}s since last commit, {self.total} items to {path}")
+
+        self.s3.upload_file(AVRO_TMP_BUFFER, self.datalake_s3_bucket, path)
+        self.writer = DataFileWriter(open(AVRO_TMP_BUFFER, "wb"), DatumWriter(), self.converter.schema)
+        now = time.time()
+        self.last_commit = time.time()
+        if now - self.last > 0:
+            logger.info(f"{1.0 * self.total / (now - self.last):0.2f} Kafka messages per second")
+        self.last = now
+        self.total = 0
+        self.consumer.commit(asynchronous=False)
 
 
     def run(self):
@@ -169,10 +179,23 @@ class DatalakeWriter:
         self.total = 0
         self.s3 = boto3.client('s3')
 
-        for msg in self.consumer:
+        while True:
+            msg = self.consumer.poll(timeout=1.0)
+            if msg is None:
+                # Idle path — timer-based flush check, drains buffer when upstream is quiet
+                self._maybe_flush()
+                continue
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    continue
+                logger.error(f"Consumer error: {msg.error()}")
+                continue
+
             try:
-                self.total += 1
-                obj = json.loads(msg.value.decode("utf-8"))
+                # NB: self.total is bumped inside append_adding_date() per appended AVRO row,
+                # NOT per Kafka message — so filter-skipped or convert-failed messages do not
+                # inflate the counter and trigger spurious flushes of an empty buffer.
+                obj = json.loads(msg.value().decode("utf-8"))
                 __op = obj.get('__op', None)
                 if not (__op == 'c' or __op == 'r' or (self.converter.updates_enabled and __op == 'u')): # ignore everything apart from new items (c - new item, r - initial snapshot)
                     continue
@@ -191,7 +214,7 @@ class DatalakeWriter:
                     except Exception as e:
                         logger.error(f"Failed to convert item {obj}: {e} {traceback.format_exc()}")
                         continue
-                    
+
             except Exception as e:
                 logger.error(f"Failted to process item {msg}: {e} {traceback.format_exc()}")
                 raise
@@ -204,4 +227,3 @@ if __name__ == "__main__":
         os.remove(AVRO_TMP_BUFFER)
 
     DatalakeWriter(os.environ.get("PARTITION_MODE", PARTITION_MODE_ADDING_DATE)).run()
-

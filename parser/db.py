@@ -1,5 +1,8 @@
 import base64
 import decimal
+import functools
+import os
+import time
 from typing import Dict, List, Set, Union
 from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
@@ -14,6 +17,28 @@ from model.dexpool import DexPool
 from model.jetton_metadata import JettonMetadata
 from model.nft_item_metadata import NFTItemMetadata
 from model.nft_collection_metadata import NFTCollectionMetadata
+
+# Retry budget for read-only lookups that may briefly miss due to out-of-order indexer blocks.
+# Defaults: 0.1s + 0.2s + 0.4s + 0.8s = 1.5s worst case before giving up.
+_RETRY_ATTEMPTS = int(os.environ.get("DB_LOOKUP_RETRY_ATTEMPTS", "4"))
+_RETRY_BASE_DELAY = float(os.environ.get("DB_LOOKUP_RETRY_BASE_DELAY", "0.1"))
+
+
+def retry_if_none(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        delay = _RETRY_BASE_DELAY
+        result = None
+        for attempt in range(_RETRY_ATTEMPTS):
+            result = fn(*args, **kwargs)
+            if result is not None:
+                return result
+            if attempt < _RETRY_ATTEMPTS - 1:
+                time.sleep(delay)
+                delay *= 2
+        return result
+    return wrapper
+
 
 @dataclass
 class FakeRecord:
@@ -84,6 +109,7 @@ class DB():
     """
     Returns message body by body hash
     """
+    @retry_if_none
     def get_message_body(self, body_hash) -> str:
         assert self.use_message_content, "get_message_body is not supported in datalake mode"
         assert self.conn is not None
@@ -97,6 +123,7 @@ class DB():
     """
     Returns jetton master
     """
+    @retry_if_none
     def get_wallet_master(self, jetton_wallet: Address) -> str:
         assert self.conn is not None
         assert type(jetton_wallet) == Address
@@ -111,6 +138,7 @@ class DB():
     """
     Returns jetton wallet
     """
+    @retry_if_none
     def get_jetton_wallet(self, jetton_wallet: Address) -> str:
         assert self.conn is not None
         assert type(jetton_wallet) == Address
@@ -122,6 +150,7 @@ class DB():
     """
     Returns message body for the parent message
     """
+    @retry_if_none
     def get_parent_message_body(self, msg_hash) -> str:
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -150,6 +179,7 @@ class DB():
     """
     Returns parent message with message body
     """
+    @retry_if_none
     def get_parent_message_with_body(self, msg_hash) -> dict:
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -178,6 +208,8 @@ class DB():
                     res['body'] = res['body_boc']
                 return res
 
+    # NOT decorated with @retry_if_none: most NFT transfers are not sales, so None is the
+    # common expected result — a retry would block the parser ~1.5s on every plain transfer.
     def get_nft_sale(self, address: str) -> dict:
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -196,6 +228,7 @@ class DB():
             res = cursor.fetchone()
             return res
         
+    @retry_if_none
     def get_transaction(self, tx_hash: str):
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -207,6 +240,7 @@ class DB():
             )
             return cursor.fetchone()
     
+    @retry_if_none
     def is_tx_successful(self, tx_hash: str) -> bool:
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -383,6 +417,7 @@ class DB():
             return set(map(lambda x: x['h'], cursor.fetchall()))
         
     # Returns the latest account state
+    @retry_if_none
     def get_latest_account_state(self, address: Address):
         assert self.conn is not None
         with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:

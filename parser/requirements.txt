@@ -1,4 +1,4 @@
-kafka-python==2.0.2
+confluent-kafka==2.5.3
 loguru==0.6.0
 psycopg2==2.9.9
 pytoniq-core==0.1.37
