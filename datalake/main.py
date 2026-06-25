@@ -8,7 +8,7 @@ import json
 import traceback
 from typing import Dict
 from loguru import logger
-from confluent_kafka import Consumer, KafkaError
+from confluent_kafka import Consumer, KafkaError, KafkaException
 import boto3
 import avro.schema
 from avro.datafile import DataFileWriter
@@ -174,7 +174,16 @@ class DatalakeWriter:
             logger.info(f"No AVRO data buffered, advancing Kafka offset only ({time.time() - self.last_commit:0.1f}s since last commit)")
 
         self.last_commit = time.time()
-        self.consumer.commit(asynchronous=False)
+        try:
+            self.consumer.commit(asynchronous=False)
+        except KafkaException as e:
+            # _NO_OFFSET on a truly idle group (no messages polled since last commit) is expected
+            # — librdkafka has nothing in its local store to commit. Suppress; the next non-empty
+            # poll will populate the store and commit will succeed normally.
+            if e.args[0].code() == KafkaError._NO_OFFSET:
+                logger.info("Nothing to commit (no offsets stored since last commit)")
+            else:
+                raise
 
 
     def run(self):
