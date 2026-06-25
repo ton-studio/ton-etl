@@ -181,6 +181,7 @@ class DatalakeWriter:
         self.last = time.time()
         self.last_commit = time.time()
         self.total = 0
+        self.file_size = 0
         self.s3 = boto3.client('s3')
 
         while True:
