@@ -148,28 +148,32 @@ class DatalakeWriter:
         # Idle drain: also called from run() when poll() returns None, so the timer fires even
         # when the upstream producer (Debezium) is quiet — otherwise the AVRO buffer sits forever
         # and the consumer offset never advances on a stopped indexer.
-        if self.total == 0:
-            return
         if not (self.file_size > self.max_file_size or (time.time() - self.last_commit > self.commit_interval)):
             return
 
-        logger.info(f"Reached max file size {self.file_size}, {time.time() - self.last_commit:0.1f}s since last commit, flushing file")
-        self.writer.flush()
-        self.writer.close()
-        with open(AVRO_TMP_BUFFER, "rb") as f:
-            sha256 = hashlib.sha256(f.read()).hexdigest()[0:32]
-        partition = datetime.now().strftime('%Y%m%d')
-        path = f"{self.datalake_s3_prefix}{self.converter.name()}/adding_date={partition}/{sha256}.avro"
-        logger.info(f"Going to flush file, total size is {self.file_size}B, {time.time() - self.last_commit:0.1f}s since last commit, {self.total} items to {path}")
+        # S3 upload only when there is buffered AVRO data; consumer.commit() runs unconditionally
+        # so that the offset advances even when every consumed message was filtered out
+        # (otherwise the lag stays pinned on a stream of irrelevant CDC events).
+        if self.total > 0:
+            logger.info(f"Reached max file size {self.file_size}, {time.time() - self.last_commit:0.1f}s since last commit, flushing file")
+            self.writer.flush()
+            self.writer.close()
+            with open(AVRO_TMP_BUFFER, "rb") as f:
+                sha256 = hashlib.sha256(f.read()).hexdigest()[0:32]
+            partition = datetime.now().strftime('%Y%m%d')
+            path = f"{self.datalake_s3_prefix}{self.converter.name()}/adding_date={partition}/{sha256}.avro"
+            logger.info(f"Going to flush file, total size is {self.file_size}B, {time.time() - self.last_commit:0.1f}s since last commit, {self.total} items to {path}")
+            self.s3.upload_file(AVRO_TMP_BUFFER, self.datalake_s3_bucket, path)
+            self.writer = DataFileWriter(open(AVRO_TMP_BUFFER, "wb"), DatumWriter(), self.converter.schema)
+            now = time.time()
+            if now - self.last > 0:
+                logger.info(f"{1.0 * self.total / (now - self.last):0.2f} Kafka messages per second")
+            self.last = now
+            self.total = 0
+        else:
+            logger.info(f"No AVRO data buffered, advancing Kafka offset only ({time.time() - self.last_commit:0.1f}s since last commit)")
 
-        self.s3.upload_file(AVRO_TMP_BUFFER, self.datalake_s3_bucket, path)
-        self.writer = DataFileWriter(open(AVRO_TMP_BUFFER, "wb"), DatumWriter(), self.converter.schema)
-        now = time.time()
         self.last_commit = time.time()
-        if now - self.last > 0:
-            logger.info(f"{1.0 * self.total / (now - self.last):0.2f} Kafka messages per second")
-        self.last = now
-        self.total = 0
         self.consumer.commit(asynchronous=False)
 
 

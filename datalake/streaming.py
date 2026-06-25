@@ -10,7 +10,7 @@ import traceback
 from typing import Dict
 from topics import TOPIC_BLOCKS
 from loguru import logger
-from confluent_kafka import Consumer, Producer, KafkaError
+from confluent_kafka import Consumer, Producer, KafkaError, KafkaException
 from converters.messages import MessageConverter, MessageWithDataConverter
 from converters.jetton_events import JettonEventsConverter
 from converters.blocks import BlocksConverter
@@ -75,6 +75,9 @@ class StreamWriter:
 
         self.producer = Producer({
             'bootstrap.servers': bootstrap,
+            # Default librdkafka cap is 1 MB which is below realistic TON-message sizes
+            # (rare BOC-heavy messages can exceed it). Broker accepts up to 200 MB.
+            'message.max.bytes': 10485760,
         })
 
         topics = set()
@@ -104,6 +107,10 @@ class StreamWriter:
             logger.warning(f"Producer queue full, draining and retrying produce to {topic}")
             self.producer.poll(1.0)
             self.producer.produce(topic, value, on_delivery=self._on_delivery, **kwargs)
+        except KafkaException as e:
+            # Skip rather than crash on a single bad message — best-effort streaming semantics
+            # already allow gaps on broker hiccups, so dropping an oversize record is consistent.
+            logger.error(f"Producer rejected message for {topic}, skipping: {e}")
 
     def _flush_and_commit(self, total):
         # Always flush producer BEFORE committing consumer offset — otherwise we could
