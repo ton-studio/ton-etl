@@ -2,6 +2,7 @@ from model.parser import TOPIC_ACCOUNT_STATES, NonCriticalParserError, Parser
 from db import DB
 import time
 import os
+import gc
 import base64
 import asyncio
 import json
@@ -107,9 +108,27 @@ class EmulatorParser(Parser):
     def predicate(self, obj) -> bool:
         return obj.get("data_boc", None) is not None and obj.get("code_boc", None) is not None
     
+    _emu_handle_count = 0
+    _EMU_GC_INTERVAL = 100
+
     def handle_internal(self, obj, db: DB):
         emulator = self._prepare_emulator(obj)
-        self._do_parse(obj, db, emulator)
+        try:
+            self._do_parse(obj, db, emulator)
+        finally:
+            del emulator
+            EmulatorParser._emu_handle_count += 1
+            if EmulatorParser._emu_handle_count % self._EMU_GC_INTERVAL == 0:
+                gc.collect()
+                try:
+                    with open('/proc/self/status') as f:
+                        for line in f:
+                            if line.startswith('VmRSS:'):
+                                rss = line.split()[1]
+                                logger.info(f"[EMU-GC-DEBUG] handles={EmulatorParser._emu_handle_count} VmRSS={rss}kB")
+                                break
+                except Exception:
+                    pass
 
     async def get_lib(self, lib_hash):
         client = create_lite_client()
