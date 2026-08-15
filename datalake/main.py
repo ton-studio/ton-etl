@@ -230,7 +230,7 @@ class DatalakeWriter:
                         continue
 
             except Exception as e:
-                logger.error(f"Failted to process item {msg}: {e} {traceback.format_exc()}")
+                logger.error(f"Failed to process item {msg.topic()}:{msg.partition()}:{msg.offset()} {msg.value()}: {e} {traceback.format_exc()}")
                 raise
 
 

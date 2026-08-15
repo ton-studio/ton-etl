@@ -199,7 +199,7 @@ if __name__ == "__main__":
                         cache_obj = json.loads(cache_msg.value().decode("utf-8"))
                         process_cache_event(cache_obj, cache_msg.topic(), cache_parsers_map, db)
                     except Exception as e:
-                        logger.error(f"Failed to process cache item {cache_msg}: {e} {traceback.format_exc()}")
+                        logger.error(f"Failed to process cache item {cache_msg.topic()}:{cache_msg.partition()}:{cache_msg.offset()} {cache_msg.value()}: {e} {traceback.format_exc()}")
 
             msg = consumer.poll(timeout=1.0)
             if msg is None:
@@ -227,5 +227,5 @@ if __name__ == "__main__":
                     successful = 0
                     total = 0
             except Exception as e:
-                logger.error(f"Failed to process item {msg}: {e} {traceback.format_exc()}")
+                logger.error(f"Failed to process item {msg.topic()}:{msg.partition()}:{msg.offset()} {msg.value()}: {e} {traceback.format_exc()}")
                 raise

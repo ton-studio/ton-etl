@@ -178,7 +178,7 @@ class StreamWriter:
                             total = 0
 
             except Exception as e:
-                logger.error(f"Failed to process item {msg}: {e} {traceback.format_exc()}")
+                logger.error(f"Failed to process item {msg.topic()}:{msg.partition()}:{msg.offset()} {msg.value()}: {e} {traceback.format_exc()}")
                 raise
 
         logger.info("Shutdown: final producer flush + consumer commit")
