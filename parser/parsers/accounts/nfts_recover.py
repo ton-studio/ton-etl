@@ -57,7 +57,7 @@ class NFTsRecover(EmulatorParser):
             
             original_address, = self._execute_method(collection_emulator, 'get_nft_address_by_index', [index], db, obj)
             original_address = original_address.load_address()
-            if original_address != nft_address:
+            if original_address is None or original_address != nft_address:
                 logger.warning(f"NFT address mismatch: {original_address} != {nft_address}")
                 return
 
