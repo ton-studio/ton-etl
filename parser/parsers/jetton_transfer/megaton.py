@@ -1,3 +1,4 @@
+import base64
 from model.parser import TOPIC_JETTON_TRANSFERS, Parser
 from loguru import logger
 from db import DB
@@ -35,7 +36,7 @@ class MegatonDexSwap(Parser):
         if len(transfers) == 0:
             logger.warning(f"No transfers found for {obj.get('trace_id', None)}")
             return
-        obj["query_id"] = decode_decimal(obj.get("query_id", 0))
+        obj["query_id"] = int.from_bytes(base64.b64decode(obj["query_id"]["value"]), "big")
         obj["amount"] = decode_decimal(obj.get("amount", 0))
         # filter out aborted transfers and transfers with lt greater than current transfer
         transfers = list(filter(lambda x: x.get("tx_aborted", True) == False and \
