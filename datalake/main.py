@@ -26,6 +26,7 @@ from converters.nft_items import NFTItemsConverter
 from converters.nft_transfers import NFTTransfersConverter
 from converters.nft_sales import NFTSalesConverter
 from converters.nft_metadata import NFTMetadataConverter
+from converters.tg_wallet_requests import TgWalletRequestsConverter
 
 AVRO_TMP_BUFFER = "tmp_buffer.avro"
 FLUSH_INTERVAL = 100
@@ -44,7 +45,8 @@ CONVERTERS = {
     "nft_items": NFTItemsConverter(),
     "nft_transfers": NFTTransfersConverter(),
     "nft_sales": NFTSalesConverter(),
-    "nft_metadata": NFTMetadataConverter()
+    "nft_metadata": NFTMetadataConverter(),
+    "tg_wallet_requests": TgWalletRequestsConverter()
 }
 
 FIELDS_TO_REMOVE = ['__op', '__table', '__source_ts_ms', '__lsn']
