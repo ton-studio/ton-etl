@@ -399,7 +399,11 @@ def datalake_daily_sync():
         python_callable=lambda **kwargs: safe_python_callable(perform_last_block_check, kwargs, "last_block_check"),
         op_kwargs={
             'logical_time': '{{ data_interval_start }}'
-        }
+        },
+        retries=4,
+        retry_delay=timedelta(minutes=5),
+        retry_exponential_backoff=True,
+        max_retry_delay=timedelta(hours=1),
     )
 
     convert_blocks_task = PythonOperator(
