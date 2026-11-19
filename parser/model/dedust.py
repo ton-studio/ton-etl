@@ -7,7 +7,7 @@ def read_dedust_asset(cell: Slice):
     if kind == 0:
         return TON
     else:
-        wc = cell.load_uint(8)
+        wc = cell.load_int(8)
         account_id = cell.load_bytes(32) # 256 bits
         return Address((wc, account_id))
     
@@ -17,6 +17,6 @@ def write_dedust_asset(address: Address) -> Cell:
         builder.store_uint(0, 4)
     else:
         builder.store_uint(1, 4)
-        builder.store_uint(address.wc, 8)
+        builder.store_int(address.wc, 8)
         builder.store_bytes(address.hash_part)
     return builder.end_cell()

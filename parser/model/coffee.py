@@ -8,7 +8,7 @@ def read_coffee_asset(cell: Slice) -> Address:
     if kind == 0b00:
         return TON
     elif kind == 0b01:
-        wc = cell.load_uint(8)
+        wc = cell.load_int(8)
         hash_part = cell.load_bytes(32)  # 256 bits
         return Address((wc, hash_part))
     elif kind == 0b10:
@@ -23,6 +23,6 @@ def write_coffee_asset(address: Address) -> Cell:
         builder.store_uint(0, 2)
     else:
         builder.store_uint(1, 2)
-        builder.store_uint(address.wc, 8)
+        builder.store_int(address.wc, 8)
         builder.store_bytes(address.hash_part)
     return builder.end_cell()
