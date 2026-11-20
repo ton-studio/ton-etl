@@ -259,6 +259,24 @@ services:
       options:
         max-size: 10M
 
+  exporter_tg_wallet_requests:
+    build: ./
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      - KAFKA_GROUP_ID=exporter_tg_wallet_requests
+      - KAFKA_TOPICS=ton.parsed.tg_wallet_request
+      - CONVERTER=tg_wallet_requests
+      - PARTITION_MODE=adding_date
+    env_file:
+      - exporter.env
+    logging:
+      driver: local
+      options:
+        max-size: 10M
+
   streaming:
     build:
       context: ./

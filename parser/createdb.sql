@@ -385,3 +385,24 @@ CREATE TABLE IF NOT EXISTS parsed.extra_nft_sales
     created timestamp NULL,
     updated timestamp NULL
 );
+
+-- Telegram native wallet (WalletTg) signed requests
+CREATE TABLE IF NOT EXISTS parsed.tg_wallet_request (
+    tx_hash bpchar(44) NULL primary key,
+    msg_hash bpchar(44) NULL,
+    trace_id bpchar(44) NULL,
+    event_time int4 NULL,
+    tx_lt int8 NULL,
+    successful boolean NULL,
+    wallet varchar NULL,
+    "source" varchar NULL,
+    gasless boolean NULL,
+    request_type varchar NULL,
+    subwallet_id int8 NULL,
+    valid_until int8 NULL,
+    seqno int8 NULL,
+    messages_count int4 NULL,
+    new_public_key varchar NULL,
+    created timestamp NULL,
+    updated timestamp NULL
+);

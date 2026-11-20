@@ -201,6 +201,20 @@ Includes following fields:
 * ton_amount - amount of TON sold/bought (zero for ``ListEvent``)
 * bcl_amount - amount of jetton bought/sold (zero for ``ListEvent``)
 
+### tg_wallet_request
+
+Contains decoded signed requests to [Telegram native wallets](https://github.com/ton-blockchain/tg-wallet-contract)
+(all accounts share code hash ``kUmuUcHkaJcQzr94MCl7Fqz7rbNjqSClN4k+f/7sp2g=``). Produced from messages table stream
+with [TgWalletRequestParser](./parser/parsers/message/tg_wallet.py) parser.
+Includes following fields:
+* wallet - Telegram wallet address
+* source - sender of the internal request (Telegram gas relayer), null for external requests
+* gasless - ``true`` for internal requests (gas is paid by the sender), ``false`` for external requests
+* request_type - ``send_one``, ``send_bulk`` or ``change_key``
+* subwallet_id, valid_until, seqno - request header
+* messages_count - number of messages sent by the request (0 for ``change_key``)
+* new_public_key - new public key in hex for ``change_key``
+
 ### staking_pools_nominators
 
 Contains latest values for nominators pools. Produced from accounts table stream

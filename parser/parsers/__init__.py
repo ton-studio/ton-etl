@@ -28,6 +28,7 @@ from parsers.message.moon_swap_ton import MoonSwapTON
 from parsers.jetton_transfer.moon_swap_jetton import MoonSwapJetton
 from parsers.message.dedust_swap_cpmm_v3 import CPMMV3Swap
 from parsers.message.uranus import UranusTrade
+from parsers.message.tg_wallet import TgWalletRequestParser
 from model.parser import Parser
 from loguru import logger
 import os
@@ -60,6 +61,9 @@ _mainnet_parsers = [
     MoonSwapJetton(),
     CPMMV3Swap(EMULATOR_PATH),
     UranusTrade(),
+
+    # Telegram native wallet
+    TgWalletRequestParser(),
 
     CorePricesUSDT(),
     CorePricesLSDstTON(),

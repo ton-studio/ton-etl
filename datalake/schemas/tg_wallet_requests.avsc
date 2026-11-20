@@ -1,0 +1,67 @@
+{
+  "namespace": "ton",
+  "type": "record",
+  "name": "tg_wallet_requests",
+  "fields": [
+    {
+      "name": "tx_hash",
+      "type": "string"
+    },
+    {
+      "name": "msg_hash",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "trace_id",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "event_time",
+      "type": ["int", "null"]
+    },
+    {
+      "name": "tx_lt",
+      "type": ["long", "null"]
+    },
+    {
+      "name": "successful",
+      "type": ["boolean", "null"]
+    },
+    {
+      "name": "wallet",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "source",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "gasless",
+      "type": ["boolean", "null"]
+    },
+    {
+      "name": "request_type",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "subwallet_id",
+      "type": ["long", "null"]
+    },
+    {
+      "name": "valid_until",
+      "type": ["long", "null"]
+    },
+    {
+      "name": "seqno",
+      "type": ["long", "null"]
+    },
+    {
+      "name": "messages_count",
+      "type": ["int", "null"]
+    },
+    {
+      "name": "new_public_key",
+      "type": ["string", "null"]
+    }
+  ]
+}
